@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>10.0.0</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{662328B8-5DAE-4AB0-9C8F-083DAFCA0431}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>G35_USB</RootNamespace>
+    <AssemblyName>G35_USB</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+    <Externalconsole>true</Externalconsole>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="Custom" name="Push to Netbook" command="gnome-terminal --command=&quot;bash '${TargetDir}/update-g35_usb.sh'&quot;" pauseExternalConsole="True" />
+      </CustomCommands>
+    </CustomCommands>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+    <Externalconsole>true</Externalconsole>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Main.cs" />
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="LED.cs" />
+    <Compile Include="Color.cs" />
+    <Compile Include="LED_Set.cs" />
+    <Compile Include="MathUtilities.cs" />
+    <Compile Include="RandomColorGenerator.cs" />
+    <Compile Include="LinearColorInterpolator.cs" />
+    <Compile Include="LightSystem.cs" />
+    <Compile Include="ReactiveSystem.cs" />
+    <Compile Include="LightProcessing.cs" />
+    <Compile Include="Animations\AbstractAnimation.cs" />
+    <Compile Include="Animations\AbstractReactiveAnimation.cs" />
+    <Compile Include="Animations\AudioBitmapAnimation.cs" />
+    <Compile Include="Animations\BeatPulseReactiveAnimation.cs" />
+    <Compile Include="Animations\BitmapAnimation.cs" />
+    <Compile Include="Animations\IntervalAnimation.cs" />
+    <Compile Include="Animations\AnimationUtilities.cs" />
+    <Compile Include="Animations\SimpleFadeAnimation.cs" />
+    <Compile Include="Animations\SimpleSpinnerAnimation.cs" />
+    <Compile Include="Animations\SimpleStrobeAnimation.cs" />
+    <Compile Include="Animations\RaveMoodReactiveAnimation.cs" />
+    <Compile Include="OutputSystems\ArduinoOutput.cs" />
+    <Compile Include="OutputSystems\AbstractOutput.cs" />
+    <Compile Include="OutputSystems\DummyOutput.cs" />
+    <Compile Include="Animations\SpinnerReactiveAnimation.cs" />
+    <Compile Include="Animations\LegacyReactiveAnimation.cs" />
+    <Compile Include="LED_Queue.cs" />
+    <Compile Include="Animations\IAnimationOneshot.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <None Include="Animations\ArchivedVuMeters.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Animations\" />
+    <Folder Include="OutputSystems\" />
+  </ItemGroup>
+</Project>
