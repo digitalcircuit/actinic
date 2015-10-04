@@ -7,7 +7,7 @@ G35 USB
 
 *Please be patient* :)
 
-G35 USB interfaces with strands of LED lights to control them in various flashy or useful ways according to music, time of day, and multiple types of animations.  Currently supports an Arduino-based LED controller firmware (*to be uploaded*), but support can be easily added for other controllers.
+G35 USB interfaces with strands of LED lights to control them in various flashy or useful ways according to music, time of day, and multiple types of animations.  Currently supports an [Arduino-based LED controller firmware](https://github.com/digitalcircuit/G35Arduino_Controller), but support can be easily added for other controllers.
 
 ## Installing
 
