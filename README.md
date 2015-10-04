@@ -23,3 +23,9 @@ Tools needed:
 
 * MonoDevelop (preferably 4.0 or higher)
 * *To be done*
+
+## Credits
+
+* [Impulse Python module](https://launchpad.net/impulse.bzr) for audio processing; some information on [GNOME Look](http://gnome-look.org/content/show.php/Impulse+-+PulseAudio+visualizer?content=99383)
+* [LinearColorInterpolator.cs](https://stackoverflow.com/questions/2307726/how-to-calculate-color-based-on-a-range-of-values-in-c?rq=1) by [Mark Byers](https://stackoverflow.com/users/61974/mark-byers)
+* *If you're missing, let me know, and I'll fix it as soon as I can!*

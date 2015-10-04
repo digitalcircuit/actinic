@@ -13,8 +13,11 @@ App_Data/
 # MonoDevelop state
 *.userprefs
 
-# Linux temporary files
+# Linux temporary and backup files
 *~
+
+# Impulse build files
+Impulse/build
 
 # Files not yet ready to be part of the repository
 Supporting Material/
