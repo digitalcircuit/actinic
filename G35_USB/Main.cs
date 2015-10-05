@@ -1877,7 +1877,7 @@ namespace G35_USB
 			if (Audio_Capture_Process != null)
 				Audio_Stop_Capture ();
 			Audio_Capture_Process = new System.Diagnostics.Process ();
-			Audio_Capture_Process.StartInfo = new System.Diagnostics.ProcessStartInfo ("python", "print_volume.py");
+			Audio_Capture_Process.StartInfo = new System.Diagnostics.ProcessStartInfo ("impulse-print");
 
 			Audio_Capture_Process.StartInfo.UseShellExecute = false;
 			//Note: added to fix error
@@ -1895,6 +1895,9 @@ namespace G35_USB
 			
 			Audio_Capture_Process.Start ();
 
+			Audio_Capture_Process.PriorityClass = System.Diagnostics.ProcessPriorityClass.BelowNormal;
+			// Don't let the capture process take away CPU time from getting frames made and sent out
+
 			Audio_Capture_Process.BeginOutputReadLine ();
 
 		}
@@ -1908,48 +1911,49 @@ namespace G35_USB
 
 		private static void Audio_Capture_Process_DataReceived (object sender, System.Diagnostics.DataReceivedEventArgs e)
 		{
-			if (e.Data != null)
-			if (e.Data.StartsWith ("audio_data:"))
-				Audio_Add_Volumes (ParsePythonDoubleArray (e.Data.Replace ("audio_data:", "")));
+			if (e.Data != null) {
+				const string AUDIO_DATA_HEADER = "audio_data:";
+				if (e.Data.StartsWith (AUDIO_DATA_HEADER))
+					Audio_Add_Volumes (ParseStringFloatArray (e.Data.Substring (AUDIO_DATA_HEADER.Length)));
+			}
 		}
 
-		private static void Audio_Add_Volumes (List<double> Current_VU_Volumes)
+		private static void Audio_Add_Volumes (float[] Current_VU_Volumes)
 		{
 			if (G35_Lights_Queue.AnimationActive == false || !(G35_Lights_Queue.SelectedAnimation is AbstractReactiveAnimation))
 				return;
 			lock (Audio_Volumes) {
-				while (Audio_Volumes.Count < Current_VU_Volumes.Count) {
+				while (Audio_Volumes.Count < Current_VU_Volumes.Length) {
 					Audio_Volumes.Add (0);
 				}
-				while (Audio_Volumes.Count > Current_VU_Volumes.Count) {
+				while (Audio_Volumes.Count > Current_VU_Volumes.Length) {
 					Audio_Volumes.RemoveAt (Audio_Volumes.Count - 1);
 				}
-				for (int i = 0; i < Current_VU_Volumes.Count; i++) {
+				for (int i = 0; i < Current_VU_Volumes.Length; i++) {
 					Audio_Volumes [i] = Math.Max (Audio_Volumes [i], Current_VU_Volumes [i]);
 				}
 			}
 		}
 
 		/// <summary>
-		/// Parses a Python array of doubles to a List<double>.
+		/// Parses a string array of floats to a float[] array.
 		/// </summary>
 		/// <returns>
-		/// A List<double>.
+		/// A float array.
 		/// </returns>
 		/// <param name='PrintedArray'>
-		/// The Python array, converted to a string.
+		/// The string representation of the array.
 		/// </param>
-		private static List<double> ParsePythonDoubleArray (string PrintedArray)
+		private static float[] ParseStringFloatArray (string PrintedArray)
 		{
 			if (String.IsNullOrEmpty (PrintedArray))
 				return null;
 
-			PrintedArray = PrintedArray.Replace (" ", "").Replace ("(", "").Replace (")", "");
+			string[] string_array = PrintedArray.Split(',');
+			float[] result = new float[string_array.Length];
 
-			List<double> result = new List<double> ();
-			foreach (string s in PrintedArray.Split(',')) {
-				if (s != "")
-					result.Add (Convert.ToDouble (s));
+			for (int i = 0; i < string_array.Length; i++) {
+				float.TryParse (string_array [i], out result [i]);
 			}
 			return result;
 		}

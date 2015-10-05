@@ -24,7 +24,7 @@
     <CustomCommands>
       <CustomCommands>
         <Command type="Custom" name="Push to Netbook" command="gnome-terminal --command=&quot;bash '${TargetDir}/update-g35_usb.sh'&quot;" />
-        <Command type="AfterBuild" command="bash &quot;${ProjectDir}/Audio/prepare-audio-processing.sh&quot;" externalConsole="True" />
+        <Command type="AfterBuild" command="&quot;${ProjectDir}/Audio/prepare-audio-processing.sh&quot;" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>

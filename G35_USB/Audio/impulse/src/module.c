@@ -20,7 +20,7 @@
  */
 
 #include <Python.h>
-#include "Impulse.h"
+#include "impulse.h"
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
@@ -31,10 +31,9 @@ static PyObject * impulse_getSnapshot( PyObject *self, PyObject *args, PyObject 
 
 	int fft = 0;
 
-	static char *kwlist[] = { "fft", NULL };
+	static char *kwlist[] = { "fft" };
 
-	if ( !PyArg_ParseTupleAndKeywords( args, kwargs, "b", kwlist, &fft ) )
-		return NULL;
+	PyArg_ParseTupleAndKeywords( args, kwargs, "b", kwlist, &fft );
 
 	magnitude = PyTuple_New( 256 );
 
@@ -47,25 +46,11 @@ static PyObject * impulse_getSnapshot( PyObject *self, PyObject *args, PyObject 
 	return magnitude; // PyString_FromStringAndSize( (char *) snapshot, CHUNK );
 }
 
-static PyObject* impulse_setSourceIndex( PyObject* self, PyObject* args, PyObject* kwargs ) {
-	uint32_t index;
-
-	static char *kwlist[] = { "index", NULL };
-
-	if ( !PyArg_ParseTupleAndKeywords( args, kwargs, "i", kwlist, &index ) )
-		return NULL;
-
-	im_setSourceIndex( index );
-
-	Py_RETURN_NONE;
-}
-
 static PyObject *ImpulseError;
 
 static PyMethodDef ImpulseMethods[ ] = {
 	{ "getSnapshot",  (PyCFunction)impulse_getSnapshot, METH_VARARGS | METH_KEYWORDS, "Returns the current audio snapshot from Pulseaudio." },
-	{ "setSourceIndex",  (PyCFunction)impulse_setSourceIndex, METH_VARARGS | METH_KEYWORDS, "Changes the Pulseaudio source by it's index." },
-	{ NULL }		/* Sentinel */
+	{ NULL, NULL, 0, NULL }		/* Sentinel */
 };
 
 PyMODINIT_FUNC initimpulse ( void ) {

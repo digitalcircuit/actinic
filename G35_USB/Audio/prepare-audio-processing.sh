@@ -7,63 +7,42 @@ _LOCAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SOURCE_DIR="$_LOCAL_DIR"
 TARGET_DIR="$SOURCE_DIR/../bin/Debug"
 
-FILES_SKIP_AUDIO="$TARGET_DIR/skip-audio"
+FLAG_SKIP_AUDIO="$TARGET_DIR/skip-audio"
 
-FILES_PYTHON_BRIDGE="print_volume.py"
+FILES_WARN_BUILD_FAIL="README-impulse-failed-to-build"
+FILES_IMPULSE_PRINTOUT="impulse-print"
 
-IMPULSE_PREBUILT_DIR="$SOURCE_DIR/impulse-prebuilt"
-IMPULSE_PREBUILT_32BIT_DIR="$IMPULSE_PREBUILT_DIR/i686"
-IMPULSE_PREBUILT_64BIT_DIR="$IMPULSE_PREBUILT_DIR/x86_64"
-
-FILES_IMPULSE_LIBIMPULSE="libimpulse.so"
-FILES_IMPULSE_IMPULSE="impulse.so"
-
-IMPULSE_DIR="$SOURCE_DIR/Impulse"
+IMPULSE_DIR="$SOURCE_DIR/impulse"
 IMPULSE_BUILD_DIR="$IMPULSE_DIR/build"
+IMPULSE_SRC_DIR="$IMPULSE_DIR/src"
 
-copy_prebuilt_impulse ()
-{
-	local SOURCE_PATH=""
-	if [ "$(getconf LONG_BIT)" = "64" ]; then
-		echo " * Copying 64-bit libraries..."
-		SOURCE_PATH="$IMPULSE_PREBUILT_64BIT_DIR"
-	else
-		echo " * Copying 32-bit libraries..."
-		SOURCE_PATH="$IMPULSE_PREBUILT_32BIT_DIR"
-	fi
-	cp --update "$SOURCE_PATH/$FILES_IMPULSE_IMPULSE" "$TARGET_DIR/$FILES_IMPULSE_IMPULSE"
-	cp --update "$SOURCE_PATH/$FILES_IMPULSE_LIBIMPULSE" "$TARGET_DIR/$FILES_IMPULSE_LIBIMPULSE"
-}
+IMPULSE_PRINTOUT_SRC="$IMPULSE_SRC_DIR/impulse-print.c"
 
 build_and_copy_impulse ()
 {
-	# FIXME:  Can't figure out how to build this - fix it..?
 	local CURRENT_DIR="$(pwd)"
 	cd "$IMPULSE_DIR"
-	make python-impulse
+	make clean init impulse-print
 	local result=$?
 	if [ $result -ne 0 ]; then
-		echo "----------------------------------------------------"
-		echo " /!\ Could not build impulse.so and/or libimpulse.so"
-		echo " Do you have all the needed development headers installed?"
-		echo "  Needed packages: libpulse-dev libfftw3-dev python-dev"
-		echo " Note: G35_USB will still work, you just can't use the audio"
-		echo " processing functionality.  To ignore this, create a file"
-		echo " named 'skip-audio' in the Bin/Debug directory"
-		echo "----------------------------------------------------"
-		echo " [press Enter to continue]"
-		read
+		echo " /!\ Could not build impulse.so
+Do you have all the development headers installed?
+> Needed packages: libpulse-dev libfftw3-dev
+(Manually run ./prepare-audio-processing.sh to see build output)
+Note: G35_USB still works, you just can't use the audio processing functionality.
+To ignore this, create a file named 'skip-audio' in the bin/Debug directory." > "$TARGET_DIR/$FILES_WARN_BUILD_FAIL"
 		return 1
+	elif [ -f "$TARGET_DIR/$FILES_WARN_BUILD_FAIL" ]; then
+		# Build no longer failing; remove the warning
+		rm "$TARGET_DIR/$FILES_WARN_BUILD_FAIL"
 	fi
+	# Copy the resulting files
+	find "$IMPULSE_BUILD_DIR/" -path "*/print/*" -type f -name "$FILES_IMPULSE_PRINTOUT" -exec cp '{}' "$TARGET_DIR/" ';'
 	cd "$CURRENT_DIR"
-	find "$IMPULSE_BUILD_DIR/" -path "*/python-impulse/*" -type f -name '*.so' -exec cp '{}' "$TARGET_DIR/" ';'
 }
 
-echo " * Updating Python audio bridge..."
-cp --update "$SOURCE_DIR/$FILES_PYTHON_BRIDGE" "$TARGET_DIR/$FILES_PYTHON_BRIDGE"
-
-if [ ! -f "$FILES_SKIP_AUDIO" ] && [ ! -f "$TARGET_DIR/$FILES_IMPULSE_LIBIMPULSE" ] || [ ! -f "$TARGET_DIR/$FILES_IMPULSE_IMPULSE" ]; then
+if [ ! -f "$FLAG_SKIP_AUDIO" ] && [ "$IMPULSE_PRINTOUT_SRC" -nt "$TARGET_DIR/$FILES_IMPULSE_PRINTOUT" ]; then
+	# Only build if the source file is newer than the output
 	echo " * Setting up Impulse library..."
-	copy_prebuilt_impulse
-	#build_and_copy_impulse
+	build_and_copy_impulse
 fi
