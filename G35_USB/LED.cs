@@ -100,18 +100,19 @@ namespace G35_USB
 
 		public void SetColor (byte R_Component, byte G_Component, byte B_Component)
 		{
-			byte brightest_color = Math.Max (R_Component, Math.Max (G_Component, B_Component));
-//			byte boost_amount = Math.Min ((byte)(255 - brightest_color), (byte)255);
-//			R = (byte)(R_Component + boost_amount);
-//			G = (byte)(G_Component + boost_amount);
-//			B = (byte)(B_Component + boost_amount);
-//			Brightness = brightest_color;
+			SetColor (R_Component, G_Component, B_Component, true);
+		}
+
+		public void SetColor (byte R_Component, byte G_Component, byte B_Component, bool DeriveBrightness)
+		{
+			if (DeriveBrightness) {
+				byte brightest_color = Math.Max (R_Component, Math.Max (G_Component, B_Component));
+				Brightness = brightest_color;
+			}
 
 			R = R_Component;
 			G = G_Component;
 			B = B_Component;
-			Brightness = brightest_color;
-			//Brightness = (byte)(0.33*R_Component + 0.5*G_Component + 0.16*B_Component);
 		}
 
 		public void SetColor (byte R_Component, byte G_Component, byte B_Component, byte Brightness_Component)
