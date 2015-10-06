@@ -131,11 +131,20 @@ namespace G35_USB
 				DesaturateBoost_ColorShift_Blue = Held_ColorShift_Blue;
 			}
 
-			for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
-				CurrentFrame [i].R = DesaturateBoost_ColorShift_Red;
-				CurrentFrame [i].G = DesaturateBoost_ColorShift_Green;
-				CurrentFrame [i].B = DesaturateBoost_ColorShift_Blue;
-			}
+			// Set the middle lights to the new colors (don't touch the brightness)
+			CurrentFrame [LightSystem.LIGHT_INDEX_MIDDLE].SetColor (DesaturateBoost_ColorShift_Red,
+			                                                        DesaturateBoost_ColorShift_Green,
+			                                                        DesaturateBoost_ColorShift_Blue,
+			                                                        false);
+			CurrentFrame [LightSystem.LIGHT_INDEX_MIDDLE - 1].SetColor (DesaturateBoost_ColorShift_Red,
+			                                                            DesaturateBoost_ColorShift_Green,
+			                                                            DesaturateBoost_ColorShift_Blue,
+			                                                            false);
+
+			// Ripple the colors outwards more quickly than brightness
+			// This creates a cool effect at higher intensities with the desaturation 'pushing' out different colors
+			// At lower intensities, color shifts slowly enough it doesn't have much of an effect.
+			LightProcessing.ShiftLightsOutward (CurrentFrame, 4);
 
 			// Mirror the one half of the lights to the other side
 			int i_source = 0;
