@@ -363,7 +363,7 @@ namespace G35_USB
 				if (ReactiveSystem.Audio_Frequency_Scale_Linear) {
 					NextStep = 0;
 				}
-				if (ReactiveSystem.Audio_Frequency_Scale_Multiplier == 0 | ReactiveSystem.Audio_Frequency_Scale_Multiplier == 1) {
+				if (ReactiveSystem.Audio_Frequency_Scale_Multiplier == 0 || ReactiveSystem.Audio_Frequency_Scale_Multiplier == 1) {
 					ReactiveSystem.Processing_CalculateFrequencyStepMultiplier (Current_Audio_Volumes, MirrorMeters);
 				}
 				for (int i = 0; i < Current_Audio_Volumes.Count; i++) {

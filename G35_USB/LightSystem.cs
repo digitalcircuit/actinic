@@ -28,17 +28,56 @@ namespace G35_USB
 
 #region Lights
 
-//		public const int PROTOCOL_OUTPUT_PROCESSING_LATENCY = 47; // ms
-//		// Above is an average of sampled values (see #define DEBUG_USB_PERFORMANCE)
-//		//  Adjusting this affects the minimum VU animation speed
-//		//  Before Arduino adjustments, 49, now, 47
+		private static int lastLightCount = 0;
+		/// <summary>
+		/// Gets the number of lights in the system.
+		/// </summary>
+		/// <value>Number of lights.</value>
+		public static int LIGHT_COUNT {
+			get {
+				System.Diagnostics.Debug.Assert ((lastLightCount != 0), "LIGHT_COUNT should not equal 0 when requested");
+				return lastLightCount;
+			}
+			private set {
+				if (lastLightCount != value) {
+					// Store the values
+					lastLightCount = value;
+					LIGHT_INDEX_MAX = lastLightCount - 1;
+					LIGHT_INDEX_MIDDLE = ((lastLightCount / 2) - 1);
+					// New value means this will need recalculated
+					ReactiveSystem.Processing_ClearFrequencyStepMultiplier ();
+				}
+			}
+		}
 
-		public const int LIGHT_COUNT = 50;
-		// Number of lights in the system
-		//  Note: The G35 LED protocol only allows for up to 63 individually-addressable lights
+		/// <summary>
+		/// Sets the number of lights in the system.  DO NOT SET without recreating queues!
+		/// </summary>
+		/// <param name="NewLightCount">Desired number of lights in the system.</param>
+		public static void SetLightCount (int NewLightCount)
+		{
+			// Do this in a method in order to avoid inadvertently setting LIGHT_COUNT
+			LIGHT_COUNT = NewLightCount;
+		}
 
-		public const int LIGHT_INDEX_MAX = LIGHT_COUNT - 1;
-		public const int LIGHT_INDEX_MIDDLE = ((LIGHT_COUNT / 2) - 1);
+		/// <summary>
+		/// Gets the index of the last light in the system.
+		/// </summary>
+		/// <value>Highest index of light.</value>
+		public static int LIGHT_INDEX_MAX {
+			get;
+			private set;
+		}
+
+		/// <summary>
+		/// Gets the index of the middle light in the system.
+		/// </summary>
+		/// <value>Middle index of light.</value>
+		public static int LIGHT_INDEX_MIDDLE {
+			get;
+			private set;
+		}
+
 		// Based on above, just a range of handy LED indexes so you don't have to keep recalculating them
 
 #endregion

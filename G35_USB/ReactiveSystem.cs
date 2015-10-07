@@ -152,6 +152,14 @@ namespace G35_USB
 			Audio_Frequency_Scale_Multiplier = StepMultiplier_Attempt;
 		}
 
+		/// <summary>
+		/// Reset the frequency-step multiplier to account for the current lights, e.g. if the number of lights change
+		/// </summary>
+		public static void Processing_ClearFrequencyStepMultiplier ()
+		{
+			Audio_Frequency_Scale_Multiplier = 1;
+		}
+
 		#endregion
 
 		#region Display

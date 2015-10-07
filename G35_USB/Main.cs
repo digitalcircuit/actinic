@@ -23,6 +23,8 @@
 //#define DEBUG_BRIEF_PERFORMANCE
 //#define DEBUG_VU_PERFORMANCE
 //#define DEBUG_OVERLAY_MANAGEMENT
+//#define DEBUG_FORCE_DUMMYOUTPUT
+
 using System;
 using System.IO.Ports;
 using System.Collections.Generic;
@@ -50,7 +52,7 @@ namespace G35_USB
 #if DEBUG_VU_PERFORMANCE
 		private static System.Diagnostics.Stopwatch VU_Processing_PerfStopwatch = new System.Diagnostics.Stopwatch ();
 #endif
-		private static LED_Queue G35_Lights_Queue = new LED_Queue (LightSystem.LIGHT_COUNT);
+		private static LED_Queue G35_Lights_Queue;
 		private const string G35_Lights_Queue_Name = "base_layer";
 
 		private static Dictionary<string, LED_Queue> G35_Lights_Overlay_Queues = new Dictionary<string, LED_Queue>();
@@ -111,6 +113,9 @@ namespace G35_USB
 #if DEBUG_OVERLAY_MANAGEMENT
 			Console.WriteLine ("DEBUGGING:  Compiled with 'DEBUG_OVERLAY_MANAGEMENT' enabled");
 #endif
+#if DEBUG_FORCE_DUMMYOUTPUT
+			Console.WriteLine ("DEBUGGING:  Compiled with 'DEBUG_FORCE_DUMMYOUTPUT' enabled");
+#endif
 
 			int retriesSinceLastSuccess = 0;
 			while (true)
@@ -149,13 +154,17 @@ namespace G35_USB
 		{
 			Console.WriteLine ("Connecting to output system...");
 
+#if DEBUG_FORCE_DUMMYOUTPUT
+			Console.WriteLine ("DEBUGGING:  Forcing DummyOutput, not checking other options!");
+			InitializeOutputSystem (new DummyOutput ());
+#else
 			bool retryAgain = true;
 			while (retryAgain) {
 				if (InitializeOutputSystem (new ArduinoOutput ()))
 					break;
 				if (RunWithoutInteraction == false) {
 					Console.WriteLine ("Could not open connection to output system, is device plugged in?\n" +
-						"(press 's' for simulation mode, 'r' to retry, any other key to exit)");
+					                   "(press 's' for simulation mode, 'r' to retry, any other key to exit)");
 					switch (Console.ReadKey ().Key) {
 					case ConsoleKey.S:
 						retryAgain = false;
@@ -175,6 +184,7 @@ namespace G35_USB
 					return false;
 				}
 			}
+#endif
 
 			if (SkipPreparingSystem == false) {
 				Console.WriteLine ("Preparing system...");
@@ -1393,17 +1403,44 @@ namespace G35_USB
 					HaltActivity (queue.Value);
 				}
 			} else {
-				HaltActivity (G35_Lights_Queue);
+				if (G35_Lights_Queue != null)
+					HaltActivity (G35_Lights_Queue);
 			}
 		}
 
 		private static void HaltActivity (LED_Queue QueueToModify, bool ForceQueueCleanup = false)
 		{
+			if (G35_Lights_Queue == null)
+				return;
 			if (ForceQueueCleanup) {
 				QueueToModify.ClearQueue ();
 			}
 			if (QueueToModify.AnimationActive)
 				Animation_Stop (QueueToModify);
+		}
+
+		/// <summary>
+		/// Recreates the light queues with the specified number of lights, halting animations if changes are needed.
+		/// </summary>
+		/// <param name="LightCount">Light count.  If specified number of lights differs from before, halts animations and recreates queues; otherwise, nothing happens.</param>
+		private static void CreateLightQueues (int LightCount)
+		{
+			if (G35_Lights_Queue != null && G35_Lights_Queue.LightCount == LightCount) {
+				// No update needed
+				// Note: other queues cannot become de-synced as this queue always exists and will need updates if inaccurate.
+				return;
+			} else {
+				if (G35_Lights_Queue != null) {
+					Console.WriteLine ("Detected {0} lights, stopping animations and updating configuration...", LightCount);
+				} else {
+					Console.WriteLine ("Detected {0} lights", LightCount);
+				}
+				HaltActivity (true);
+				lock (G35_Lights_Overlay_Queues) {
+					G35_Lights_Overlay_Queues.Clear ();
+				}
+				G35_Lights_Queue = new LED_Queue (LightCount);
+			}
 		}
 
 		private static void G35_Light_Start_Queue ()
@@ -1793,6 +1830,7 @@ namespace G35_USB
 			if (QueueToModify.QueueCount > 0 && Command_ConflictsExpected == false)
 				Console.WriteLine ("(Warning: interrupting fade, appearance may vary.  If intended, prefix with '!')");
 			// Don't warn about clearing the output queue if it's expected by running multiple commands at once
+
 			QueueToModify.ClearQueue ();
 			if (Animation_Fading_Enabled) {
 				double Avg_OldPercent = Math.Min (Animation_Smoothing_Percentage_DEFAULT, 1);
@@ -2132,6 +2170,10 @@ namespace G35_USB
 			if (success) {
 				// Don't allow a shorter animation time than the output system processing can manage
 				Light_Animation_Latency = Math.Max (ActiveOutputSystem.ProcessingLatency + 1, Light_Animation_Target_Latency);
+
+				// Update number of lights, (re-)initalize the light queues
+				LightSystem.SetLightCount (ActiveOutputSystem.LightCount);
+				CreateLightQueues (LightSystem.LIGHT_COUNT);
 
 				string outputType = ActiveOutputSystem.GetType ().Name.Trim ();
 				if (outputType == "") {

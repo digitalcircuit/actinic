@@ -91,9 +91,7 @@ namespace G35_USB
 		//Originally 50 copied from Moving Bars
 		private const double VU_Hueshift_Flicker_Chance = 0.017;
 		//Originally 0.07 copied from Moving Bars
-		private const double VU_Hueshift_Bar_Max_Length = (LightSystem.LIGHT_COUNT / 25);
 		//Originally LightSystem.LIGHT_COUNT / 2.7 copied from Moving Bars, but too long to avoid saturating the lights
-		private const int VU_Hueshift_Bar_Half_Max_Length = (int)(VU_Hueshift_Bar_Max_Length / 2);
 		// Since the bars grow outwards from the middle, length / 2 * mirrored = desired value
 		#endregion
 
@@ -140,9 +138,9 @@ namespace G35_USB
 		private G35_USB.Color VU_RandomColor = new G35_USB.Color (0, 0, 0);
 
 		#region VU Meter: Moving Bars
-		private const double VU_Moving_Bar_Max_Length = (LightSystem.LIGHT_COUNT / 2.7);
+		private double VU_Moving_Bar_Max_Length = (LightSystem.LIGHT_COUNT / 2.7);
 		//Above was originally LightSystem.LIGHT_COUNT / 2.2, but wrap-around was added for lights, making it too long
-		private const int VU_Moving_Bar_Half_Max_Length = (int)(VU_Moving_Bar_Max_Length / 2);
+		private int VU_Moving_Bar_Half_Max_Length = -1;  // See InitializeLayersAndVariables ()
 		// Since the bars grow outwards from the middle, length / 2 * mirrored = desired value
 		private const double VU_Moving_Bar_Max_Position_Change = 1.3;
 		//Above was originally 1.5, but it seemed too fast
@@ -161,12 +159,12 @@ namespace G35_USB
 		private bool VU_Moving_Bar_Low_Position_Increasing = true;
 		private bool VU_Moving_Bar_Mid_Position_Increasing = true;
 		private bool VU_Moving_Bar_High_Position_Increasing = true;
-		private const int VU_Moving_Bar_Split_Distance = (LightSystem.LIGHT_COUNT / 3);
+		private int VU_Moving_Bar_Split_Distance = (LightSystem.LIGHT_COUNT / 3);
 		#endregion 
 
 		#region VU Meter: Stationary Bars
 
-		private const double VU_Stationary_Bar_Max_Length = (LightSystem.LIGHT_COUNT / 3.5);
+		private double VU_Stationary_Bar_Max_Length = (LightSystem.LIGHT_COUNT / 3.5);
 		// Was / 4 with separate lengths for each
 
 		private const byte VU_Stationary_Bar_Min_Brightness = 128;
@@ -184,18 +182,20 @@ namespace G35_USB
 
 		public LegacyReactiveAnimation (int Light_Count):base(Light_Count)
 		{
-			InitializeLayers ();
+			InitializeLayersAndVariables ();
 		}
 		public LegacyReactiveAnimation (List<LED> PreviouslyShownFrame):base(PreviouslyShownFrame)
 		{
-			InitializeLayers ();
+			InitializeLayersAndVariables ();
 		}
 
-		private void InitializeLayers ()
+		private void InitializeLayersAndVariables ()
 		{
 			for (int i = 0; i < CurrentFrame.Count; i++) {
 				G35_Lights_Unprocessed.Add (new LED ());
 			}
+			// When LIGHT_COUNT was made a property, these could no longer be calculated at compile-time.  Do it here.
+			VU_Moving_Bar_Half_Max_Length = (int)(VU_Moving_Bar_Max_Length / 2);
 		}
 
 		public override List<LED> GetNextFrame ()
@@ -758,7 +758,7 @@ namespace G35_USB
 
 			CustomColorShift_Blue = (byte)(200 * Math.Max ((1 - (Audio_High_Intensity * 2.8)), LightSystem.Color_MIN));
 
-			const int Stationary_Bar_Low_Index = LightSystem.LIGHT_INDEX_MIDDLE; // Always starts from the center
+			int Stationary_Bar_Low_Index = LightSystem.LIGHT_INDEX_MIDDLE; // Always starts from the center
 			int Stationary_Bar_Low_Size = (int)Math.Round (Audio_Low_Intensity * VU_Stationary_Bar_Max_Length);
 
 			int Stationary_Bar_Mid_Index = (int)MathUtilities.CapToRange ((1 - Audio_Average_Intensity) * LightSystem.LIGHT_INDEX_MIDDLE, 1, LightSystem.LIGHT_INDEX_MAX - 1);
