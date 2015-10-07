@@ -42,15 +42,17 @@ namespace G35_USB
 		private const string Protocol_Firmware_Negotiation_Average_Latency = "avg_latency:";
 		private const string Protocol_Firmware_Negotiation_End = "end_init";
 
-		private uint Protocol_Light_Count = 50;
+		private int Protocol_Light_Count;
+		// Note: The G35 LED protocol only allows for up to 63 individually-addressable lights
 
-		private int Protocol_Processing_Latency = 47;
+		private int Protocol_Processing_Latency;
+		// G35Arduino Controller tends to take 47-49 ms to update all lights
 
-		private int Protocol_Color_MAX = 15;
+		private int Protocol_Color_MAX;
 		private const int Protocol_Color_MIN = 0;
 		// G35 LED protocol uses a range of 0-15 for each component of RGB
 
-		private int Protocol_Brightness_MAX = 204;
+		private int Protocol_Brightness_MAX;
 		private const int Protocol_Brightness_MIN = 0;
 		// G35 LED protocol uses a range of 0-255 for brightness, HOWEVER, the firmware limits maximum brightness to 204
 		//  This originated from the original controller, so it's followed in the Arduino version out of concern for safety
@@ -84,7 +86,7 @@ namespace G35_USB
 			}
 		}
 
-		public override uint LightCount {
+		public override int LightCount {
 			get {
 				return Protocol_Light_Count;
 			}
@@ -215,7 +217,7 @@ namespace G35_USB
 						if (protocol_entry.Trim () == "")
 							continue;
 						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Light_Count)) {
-							uint.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Light_Count.Length),
+							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Light_Count.Length),
 							               out Protocol_Light_Count);
 						}
 						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Color_Max)) {

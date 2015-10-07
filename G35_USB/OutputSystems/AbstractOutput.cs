@@ -55,7 +55,7 @@ namespace G35_USB
 		/// Gets the number of lights controlled by this output.
 		/// </summary>
 		/// <value>Number of controlled lights</value>
-		public abstract uint LightCount {
+		public abstract int LightCount {
 			get;
 		}
 

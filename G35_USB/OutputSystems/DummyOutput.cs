@@ -47,7 +47,7 @@ namespace G35_USB
 			}
 		}
 
-		public override uint LightCount {
+		public override int LightCount {
 			get {
 				return 50;
 				// Feel free to use whatever number you wish; this just represents my own lighting system
