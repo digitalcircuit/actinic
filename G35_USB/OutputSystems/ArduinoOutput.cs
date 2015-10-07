@@ -34,13 +34,23 @@ namespace G35_USB
 
 #region Protocol
 
-		private const string Protocol_Firmware_Version = "G35_USBv1";
+		private const string Protocol_Firmware_Identifier = "G35Arduino_Controller:";
+		private const string Protocol_Firmware_Version = Protocol_Firmware_Identifier + "2.0";
+		private const string Protocol_Firmware_Negotiation_Light_Count = "light_count:";
+		private const string Protocol_Firmware_Negotiation_Color_Max = "color_max:";
+		private const string Protocol_Firmware_Negotiation_Brightness_Max = "bright_max:";
+		private const string Protocol_Firmware_Negotiation_Average_Latency = "avg_latency:";
+		private const string Protocol_Firmware_Negotiation_End = "end_init";
 
-		private const int Protocol_Color_MAX = 15;
+		private uint Protocol_Light_Count = 50;
+
+		private int Protocol_Processing_Latency = 47;
+
+		private int Protocol_Color_MAX = 15;
 		private const int Protocol_Color_MIN = 0;
 		// G35 LED protocol uses a range of 0-15 for each component of RGB
 
-		private const int Protocol_Brightness_MAX = 204;
+		private int Protocol_Brightness_MAX = 204;
 		private const int Protocol_Brightness_MIN = 0;
 		// G35 LED protocol uses a range of 0-255 for brightness, HOWEVER, the firmware limits maximum brightness to 204
 		//  This originated from the original controller, so it's followed in the Arduino version out of concern for safety
@@ -55,7 +65,7 @@ namespace G35_USB
 
 		public override bool Initialized {
 			get {
-				return (ResettingSystem == false && USB_Serial != null && USB_Serial.IsOpen);
+				return (ResettingSystem == false && USB_Serial != null && USB_Serial.IsOpen && ConnectionStatus == ConnectionState.Ready);
 			}
 		}
 
@@ -67,13 +77,29 @@ namespace G35_USB
 
 		public override int ProcessingLatency {
 			get {
-				return 47;
+				return (int)Protocol_Processing_Latency;
 				// An average of sampled values (see #define DEBUG_USB_PERFORMANCE)
 				//  Adjusting this affects the minimum VU animation speed
 				//  Before Arduino adjustments, 49 ms, now, 47 ms
 			}
 		}
 
+		public override uint LightCount {
+			get {
+				return Protocol_Light_Count;
+			}
+		}
+
+		private enum ConnectionState
+		{
+			Disconnected,
+			Connecting,
+			FirmwareFound,
+			ProtocolFound,
+			Ready
+		}
+
+		private ConnectionState ConnectionStatus = ConnectionState.Disconnected;
 		private string Arduino_TTY = "";
 		private SerialPort USB_Serial;
 
@@ -119,9 +145,16 @@ namespace G35_USB
 			return false;
 		}
 
+		/// <summary>
+		/// Attempts to open a connection to the serial port and negotiate the protocol.
+		/// </summary>
+		/// <returns><c>true</c>, if connection successful, <c>false</c> otherwise.</returns>
+		/// <param name="SerialDevice">Connection string for USB serial device.</param>
 		private bool CheckSerialPort (string SerialDevice)
 		{
 			Arduino_TTY = SerialDevice;
+
+			ConnectionStatus = ConnectionState.Connecting;
 
 			USB_Serial = new SerialPort (Arduino_TTY);
 			USB_Serial.BaudRate = 115200;
@@ -134,9 +167,8 @@ namespace G35_USB
 				USB_Serial.Open ();
 
 				System.Text.StringBuilder receiveBuffer = new System.Text.StringBuilder();
-				string result;
+				string result = "";
 				const int bufSize = 20;
-				bool success = false;
 
 				// Check for a valid response twenty times; assume failed if no success
 				for (int retry = 0; retry < 20; retry++) {
@@ -150,20 +182,75 @@ namespace G35_USB
 						receiveBuffer.Append(s);
 					}
 					result = receiveBuffer.ToString ();
-					if (result.Contains (Protocol_Firmware_Version) == true) {
-						success = true;
+
+					switch (ConnectionStatus) {
+					case ConnectionState.Connecting:
+						if (result.Contains (Protocol_Firmware_Version) == true)
+							ConnectionStatus = ConnectionState.FirmwareFound;
+						break;
+					case ConnectionState.FirmwareFound:
+						if (result.Contains (Protocol_Firmware_Negotiation_End) == true)
+							ConnectionStatus = ConnectionState.ProtocolFound;
+						break;
+					default:
+						// Most likely still waiting for results
 						break;
 					}
+
+					// Break down here, for otherwise it only exits the switch
+					if(ConnectionStatus == ConnectionState.ProtocolFound)
+						break;
 				}
 
-				if (success) {
-					USB_Serial.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
-					return true;
+				if (ConnectionStatus == ConnectionState.ProtocolFound && result != "") {
+					// Reset protocol values
+					Protocol_Light_Count = 0;
+					Protocol_Color_MAX = 0;
+					Protocol_Brightness_MAX = 0;
+					Protocol_Processing_Latency = 0;
+
+					// Load protocol information
+					string[] negotiation_results = result.Split ('\n');
+					foreach (string protocol_entry in negotiation_results) {
+						if (protocol_entry.Trim () == "")
+							continue;
+						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Light_Count)) {
+							uint.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Light_Count.Length),
+							               out Protocol_Light_Count);
+						}
+						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Color_Max)) {
+							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Color_Max.Length),
+							               out Protocol_Color_MAX);
+						}
+						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Brightness_Max)) {
+							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Brightness_Max.Length),
+							               out Protocol_Brightness_MAX);
+						}
+						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Average_Latency)) {
+							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Average_Latency.Length),
+							              out Protocol_Processing_Latency);
+						}
+					}
+
+					if ((Protocol_Light_Count < 1) || (Protocol_Processing_Latency < 1) || (Protocol_Color_MAX < 1) || (Protocol_Brightness_MAX < 1)) {
+						// Something's wrong with the connection or the Arduino firmware's configuration
+						// Just treat this as a non-existent device, but print a warning
+						Console.Error.WriteLine ("Arduino on '{0}' provided invalid configuration, ignoring device", Arduino_TTY);
+						ShutdownSystem ();
+						return false;
+					} else {
+						// Wait to connect DataReceived until now so others don't nom the protocol negotiation data
+						USB_Serial.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
+						// All is good, mark system as ready
+						ConnectionStatus = ConnectionState.Ready;
+						return true;
+					}
 				} else {
 					ShutdownSystem ();
 					return false;
 				}
 			} catch (System.IO.IOException) {
+				ConnectionStatus = ConnectionState.Disconnected;
 				return false;
 			}
 		}
@@ -172,6 +259,7 @@ namespace G35_USB
 		public override bool ShutdownSystem ()
 		{
 			if (USB_Serial != null) {
+				ConnectionStatus = ConnectionState.Disconnected;
 				USB_Serial.Close ();
 				USB_Serial = null;
 				return true;
@@ -185,6 +273,7 @@ namespace G35_USB
 		{
 			if (Initialized == false)
 				return false;
+			ValidateLightSet (G35_Light_Set);
 
 			try {
 				List<byte> output_all = new List<byte> ();
@@ -206,6 +295,7 @@ namespace G35_USB
 		{
 			if (Initialized == false)
 				return false;
+			ValidateLightSet (G35_Light_Set);
 
 			try {
 				List<byte> output_all = new List<byte> ();
@@ -232,6 +322,7 @@ namespace G35_USB
 		{
 			if (Initialized == false)
 				return false;
+			ValidateLightSet (G35_Light_Set);
 
 			try {
 				List<byte> output_all = new List<byte> ();

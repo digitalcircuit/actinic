@@ -47,6 +47,13 @@ namespace G35_USB
 			}
 		}
 
+		public override uint LightCount {
+			get {
+				return 50;
+				// Feel free to use whatever number you wish; this just represents my own lighting system
+			}
+		}
+
 		public override bool InitializeSystem ()
 		{
 			return true;
@@ -57,19 +64,21 @@ namespace G35_USB
 			return true;
 		}
 
-
 		public override bool UpdateLightsBrightness (System.Collections.Generic.List<LED> G35_Light_Set)
 		{
+			ValidateLightSet (G35_Light_Set);
 			return true;
 		}
 
 		public override bool UpdateLightsColor (System.Collections.Generic.List<LED> G35_Light_Set)
 		{
+			ValidateLightSet (G35_Light_Set);
 			return true;
 		}
 
 		public override bool UpdateLightsAll (System.Collections.Generic.List<LED> G35_Light_Set)
 		{
+			ValidateLightSet (G35_Light_Set);
 			return true;
 		}
 

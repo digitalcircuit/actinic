@@ -51,6 +51,14 @@ namespace G35_USB
 			get;
 		}
 
+		/// <summary>
+		/// Gets the number of lights controlled by this output.
+		/// </summary>
+		/// <value>Number of controlled lights</value>
+		public abstract uint LightCount {
+			get;
+		}
+
 		public delegate void SystemDataReceivedHandler (object sender, EventArgs e);
 		/// <summary>
 		/// Occurs when the output system provides data.
@@ -91,6 +99,16 @@ namespace G35_USB
 			return result;
 		}
 
+		/// <summary>
+		/// Verifies the given LED light set provides the right number of lights, etc
+		/// <exception cref="ArgumentException">Thrown when provided with an invalid light set</exception>
+		/// </summary>
+		/// <param name="G35_Light_Set">List of LEDs to verify</param>
+		protected void ValidateLightSet (List<LED> G35_Light_Set)
+		{
+			if (G35_Light_Set.Count != LightCount)
+				throw new ArgumentException (string.Format ("Given G35_Light_Set with {0} lights, needed {1}", G35_Light_Set.Count, LightCount));
+		}
 
 		/// <summary>
 		/// Updates the brightness of the lights.
