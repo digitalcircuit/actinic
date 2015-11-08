@@ -32,6 +32,12 @@ namespace G35_USB
 	public class ArduinoOutput:AbstractOutput
 	{
 
+		/// <summary>
+		/// Priority of this system to other output systems, lower numbers result in higher priority.
+		/// </summary>
+		private const int Arduino_Priority = 36943;
+		// Feel free to change this as desired
+
 #region Protocol
 
 		private const string Protocol_Firmware_Identifier = "G35Arduino_Controller:";
@@ -74,6 +80,12 @@ namespace G35_USB
 		public override string Identifier {
 			get {
 				return Arduino_TTY;
+			}
+		}
+
+		public override int Priority {
+			get {
+				return Arduino_Priority;
 			}
 		}
 

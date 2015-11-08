@@ -23,7 +23,7 @@ using System.Collections.Generic;
 
 namespace G35_USB
 {
-	public abstract class AbstractOutput
+	public abstract class AbstractOutput : IComparable <AbstractOutput>
 	{
 
 		/// <summary>
@@ -40,6 +40,14 @@ namespace G35_USB
 		/// </summary>
 		/// <value>Output system connection identifier.</value>
 		public abstract string Identifier {
+			get;
+		}
+
+		/// <summary>
+		/// Gets the priority of this output system, with lower numbers being higher priority.
+		/// </summary>
+		/// <value>The priority.</value>
+		public abstract int Priority {
 			get;
 		}
 
@@ -143,6 +151,16 @@ namespace G35_USB
 				handler (this, e);
 		}
 
+		/// <summary>
+		/// Returns the sort order of this output system compared with another.
+		/// </summary>
+		/// <returns>The sort order, positive preceding, negative following, zero equals.</returns>
+		/// <param name="obj">The AbstractOutput to compare to this instance.</param>
+		public int CompareTo (AbstractOutput otherOutput) {
+			if (otherOutput == null) return 1;
+
+			return this.Priority.CompareTo(otherOutput.Priority);
+		}
 	}
 }
 

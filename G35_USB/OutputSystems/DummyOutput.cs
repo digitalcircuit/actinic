@@ -22,7 +22,7 @@ using System;
 
 namespace G35_USB
 {
-	public class DummyOutput:AbstractOutput
+	public class DummyOutput:AbstractOutput, IOutputDummy
 	{
 		public DummyOutput ()
 		{
@@ -37,6 +37,13 @@ namespace G35_USB
 		public override string Identifier {
 			get {
 				return "/dev/null";
+			}
+		}
+
+		public override int Priority {
+			get {
+				return int.MaxValue;
+				// This should be the last output system to try; it provides the least functionality.
 			}
 		}
 

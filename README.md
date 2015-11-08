@@ -33,7 +33,8 @@ To manually compile, run [`prepare-audio-processing.sh`](https://github.com/digi
 ## Credits
 
 * [Impulse Python module](https://launchpad.net/impulse.bzr) for audio processing; some information on [GNOME Look](http://gnome-look.org/content/show.php/Impulse+-+PulseAudio+visualizer?content=99383)
-* [LinearColorInterpolator.cs](https://stackoverflow.com/questions/2307726/how-to-calculate-color-based-on-a-range-of-values-in-c?rq=1) by [Mark Byers](https://stackoverflow.com/users/61974/mark-byers)
+* [LinearColorInterpolator.cs](https://stackoverflow.com/questions/2307726/how-to-calculate-color-based-on-a-range-of-values-in-c) by [Mark Byers](https://stackoverflow.com/users/61974/mark-byers)
+* [ReflectiveEnumerator.cs](https://stackoverflow.com/questions/5411694/get-all-inherited-classes-of-an-abstract-class) by [Repo Man](https://stackoverflow.com/users/140126/repo-man)
 * *If you're missing, let me know, and I'll fix it as soon as I can!*
 
 [arduino-firmware]: https://github.com/digitalcircuit/G35Arduino_Controller

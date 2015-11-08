@@ -48,9 +48,7 @@
     <Compile Include="LED.cs" />
     <Compile Include="Color.cs" />
     <Compile Include="LED_Set.cs" />
-    <Compile Include="MathUtilities.cs" />
     <Compile Include="RandomColorGenerator.cs" />
-    <Compile Include="LinearColorInterpolator.cs" />
     <Compile Include="LightSystem.cs" />
     <Compile Include="ReactiveSystem.cs" />
     <Compile Include="LightProcessing.cs" />
@@ -72,6 +70,10 @@
     <Compile Include="Animations\LegacyReactiveAnimation.cs" />
     <Compile Include="LED_Queue.cs" />
     <Compile Include="Animations\IAnimationOneshot.cs" />
+    <Compile Include="Utilities\MathUtilities.cs" />
+    <Compile Include="Utilities\ReflectiveEnumerator.cs" />
+    <Compile Include="Utilities\LinearColorInterpolator.cs" />
+    <Compile Include="OutputSystems\IOutputDummy.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -80,5 +82,6 @@
   <ItemGroup>
     <Folder Include="Animations\" />
     <Folder Include="OutputSystems\" />
+    <Folder Include="Utilities\" />
   </ItemGroup>
 </Project>

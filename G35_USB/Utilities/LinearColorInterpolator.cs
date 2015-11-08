@@ -3,7 +3,7 @@
 //
 //  Author:
 //       Mark Byers <https://stackoverflow.com/users/61974/mark-byers>
-//       (From <https://stackoverflow.com/questions/2307726/how-to-calculate-color-based-on-a-range-of-values-in-c?rq=1>)
+//       (From <https://stackoverflow.com/questions/2307726/how-to-calculate-color-based-on-a-range-of-values-in-c>)
 //  Edited by:
 //       Shane Synan <digitalcircuit36939@gmail.com>
 //

@@ -159,29 +159,44 @@ namespace G35_USB
 			InitializeOutputSystem (new DummyOutput ());
 #else
 			bool retryAgain = true;
-			while (retryAgain) {
-				if (InitializeOutputSystem (new ArduinoOutput ()))
-					break;
-				if (RunWithoutInteraction == false) {
-					Console.WriteLine ("Could not open connection to output system, is device plugged in?\n" +
-					                   "(press 's' for simulation mode, 'r' to retry, any other key to exit)");
-					switch (Console.ReadKey ().Key) {
-					case ConsoleKey.S:
-						retryAgain = false;
-						Console.WriteLine ("\nNote:  Running in simulation mode; no commands will be sent to USB");
-						InitializeOutputSystem (new DummyOutput ());
+			bool success = false;
+			while (retryAgain && success == false) {
+				success = false;
+				foreach (AbstractOutput output_system in ReflectiveEnumerator.GetFilteredEnumerableOfType
+				         <AbstractOutput, IOutputDummy> (false) ) {
+					if (InitializeOutputSystem (output_system)) {
+						success = true;
 						break;
-					case ConsoleKey.R:
-						Console.WriteLine ("\nTrying again...");
-						break;
-					default:
-						retryAgain = false;
-						// Quit called, exit the application
+					}
+				}
+				if (success == false) {
+					if (RunWithoutInteraction == false) {
+						Console.WriteLine ("Could not open connection to output system, is device plugged in?\n" +
+						                   "(press 's' for simulation mode, 'r' to retry, any other key to exit)");
+						switch (Console.ReadKey ().Key) {
+						case ConsoleKey.S:
+							foreach (AbstractOutput output_system in ReflectiveEnumerator.GetFilteredEnumerableOfType
+							         <AbstractOutput, IOutputDummy> (true) ) {
+								if (InitializeOutputSystem (output_system)) {
+									success = true;
+									retryAgain = false;
+									Console.WriteLine ("\n[Note]  Running in simulation mode; no commands will be sent to USB");
+									break;
+								}
+							}
+							break;
+						case ConsoleKey.R:
+							Console.WriteLine ("\nTrying again...");
+							break;
+						default:
+							retryAgain = false;
+							// Quit called, exit the application
+							return false;
+						}
+					} else {
+						// Can't prompt for feedback, just bail out
 						return false;
 					}
-				} else {
-					// Can't prompt for feedback, just bail out
-					return false;
 				}
 			}
 #endif
@@ -2167,19 +2182,22 @@ namespace G35_USB
 			ActiveOutputSystem = DesiredOutputSystem;
 			success = ActiveOutputSystem.InitializeSystem ();
 
+			string outputType = ActiveOutputSystem.GetType ().Name.Trim ();
+			if (outputType == "") {
+				outputType = "Unknown";
+			}
+
 			if (success) {
+				Console.WriteLine ("- Connected to '{0}' via '{1}'", outputType, ActiveOutputSystem.Identifier);
+
 				// Don't allow a shorter animation time than the output system processing can manage
 				Light_Animation_Latency = Math.Max (ActiveOutputSystem.ProcessingLatency + 1, Light_Animation_Target_Latency);
 
 				// Update number of lights, (re-)initalize the light queues
 				LightSystem.SetLightCount (ActiveOutputSystem.LightCount);
 				CreateLightQueues (LightSystem.LIGHT_COUNT);
-
-				string outputType = ActiveOutputSystem.GetType ().Name.Trim ();
-				if (outputType == "") {
-					outputType = "Unknown";
-				}
-				Console.WriteLine ("Connected to '{0}' via '{1}'", outputType, ActiveOutputSystem.Identifier);
+			} else {
+				Console.WriteLine ("- Could not connect to '{0}'", outputType);
 			}
 
 			SkipInput = false;
