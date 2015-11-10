@@ -2224,7 +2224,7 @@ namespace G35_USB
 				if (outputType == "") {
 					outputType = "Unknown";
 				}
-				Console.WriteLine ("Connected to '{0}' via '{1}'", outputType, ActiveOutputSystem.Identifier);
+				Console.WriteLine ("- Connected to '{0}' via '{1}'", outputType, ActiveOutputSystem.Identifier);
 
 				return true;
 			} else {
