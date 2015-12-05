@@ -205,8 +205,8 @@ void im_start ( void ) {
 	int r;
 	char *server = NULL;
 
-	client_name = pa_xstrdup( "cimpulse" );
-	stream_name = pa_xstrdup( "cimpulse" );
+	client_name = pa_xstrdup( "Impulse" );
+	stream_name = pa_xstrdup( "Audio analyzer input" );
 
 	// Set up a new main loop
 

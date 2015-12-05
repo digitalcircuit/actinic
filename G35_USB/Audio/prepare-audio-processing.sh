@@ -16,6 +16,8 @@ IMPULSE_DIR="$SOURCE_DIR/impulse"
 IMPULSE_BUILD_DIR="$IMPULSE_DIR/build"
 IMPULSE_SRC_DIR="$IMPULSE_DIR/src"
 
+IMPULSE_MAIN_SRC="$IMPULSE_SRC_DIR/impulse.c"
+IMPULSE_MAIN_SRC_HEADER="$IMPULSE_SRC_DIR/impulse.h"
 IMPULSE_PRINTOUT_SRC="$IMPULSE_SRC_DIR/impulse-print.c"
 
 build_and_copy_impulse ()
@@ -41,8 +43,12 @@ To ignore this, create a file named 'skip-audio' in the bin/Debug directory." > 
 	cd "$CURRENT_DIR"
 }
 
-if [ ! -f "$FLAG_SKIP_AUDIO" ] && [ "$IMPULSE_PRINTOUT_SRC" -nt "$TARGET_DIR/$FILES_IMPULSE_PRINTOUT" ]; then
-	# Only build if the source file is newer than the output
-	echo " * Setting up Impulse library..."
-	build_and_copy_impulse
+if [ ! -f "$FLAG_SKIP_AUDIO" ]; then
+	if [ "$IMPULSE_PRINTOUT_SRC" -nt "$TARGET_DIR/$FILES_IMPULSE_PRINTOUT" ]\
+		|| [ "$IMPULSE_MAIN_SRC" -nt "$TARGET_DIR/$FILES_IMPULSE_PRINTOUT" ]\
+		|| [ "$IMPULSE_MAIN_SRC_HEADER" -nt "$TARGET_DIR/$FILES_IMPULSE_PRINTOUT" ]; then
+		# Only build if the source file is newer than the output
+		echo " * Setting up Impulse library..."
+		build_and_copy_impulse
+	fi
 fi
