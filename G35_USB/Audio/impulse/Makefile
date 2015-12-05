@@ -17,7 +17,7 @@ init:
 impulse: init module.o impulse.o
 	gcc -pthread -shared -Wl,-O2 -Bsymbolic-functions\
 		-L$(BUILD_DIR)/impulse/ $(BUILD_DIR)/impulse/module.o\
-		$(BUILD_DIR)/impulse/impulse.o -o $(BUILD_DIR)/impulse/impulse.so\
+		$(BUILD_DIR)/impulse/impulse.o -o $(BUILD_DIR)/impulse/libimpulse.so\
 		-lfftw3 -lpulse
 
 test: impulse.o
