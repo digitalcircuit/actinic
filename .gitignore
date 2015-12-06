@@ -19,5 +19,8 @@ App_Data/
 # Impulse build files
 **/impulse/build
 
+# Personal configuration
+config-ssh-g35-usb.sh
+
 # Files not yet ready to be part of the repository
 Supporting Material/

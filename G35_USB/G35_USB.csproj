@@ -23,8 +23,9 @@
     <Externalconsole>true</Externalconsole>
     <CustomCommands>
       <CustomCommands>
-        <Command type="Custom" name="Push to Netbook" command="gnome-terminal --command=&quot;bash '${TargetDir}/update-g35_usb.sh'&quot;" />
+        <Command type="Custom" name="Push to Remote Device" command="gnome-terminal --command=&quot;bash '${ProjectDir}/additional-material/remote-update.sh'&quot;" />
         <Command type="AfterBuild" command="&quot;${ProjectDir}/Audio/prepare-audio-processing.sh&quot;" />
+        <Command type="BeforeClean" command="rm -f &quot;${TargetDir}/libimpulse.so&quot;" />
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
