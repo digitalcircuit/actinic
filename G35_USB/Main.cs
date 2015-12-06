@@ -24,6 +24,7 @@
 //#define DEBUG_VU_PERFORMANCE
 //#define DEBUG_OVERLAY_MANAGEMENT
 //#define DEBUG_FORCE_DUMMYOUTPUT
+//#define DEBUG_FORCE_DUMMYAUDIOINPUT
 
 using System;
 using System.IO.Ports;
@@ -34,6 +35,8 @@ namespace G35_USB
 {
 	class MainClass
 	{
+
+		private static AbstractAudioInput ActiveAudioInputSystem;
 
 		private static AbstractOutput ActiveOutputSystem;
 
@@ -61,9 +64,6 @@ namespace G35_USB
 		// To avoid performance issues, prevent more than this number of queues existing
 
 		private static System.Threading.Thread G35_Light_Queue_Thread;
-
-		private static List<double> Audio_Volumes = new List<double> ();
-		private static System.Diagnostics.Process Audio_Capture_Process;
 
 		private const int Animation_Smoothing_Iterations_DEFAULT = 15;
 		private const double Animation_Smoothing_Percentage_DEFAULT = 0.7;
@@ -116,6 +116,9 @@ namespace G35_USB
 #if DEBUG_FORCE_DUMMYOUTPUT
 			Console.WriteLine ("DEBUGGING:  Compiled with 'DEBUG_FORCE_DUMMYOUTPUT' enabled");
 #endif
+			if (PrepareAudioCapture () == false) {
+				return;
+			}
 
 			int retriesSinceLastSuccess = 0;
 			while (true)
@@ -126,7 +129,7 @@ namespace G35_USB
 					return;
 				}
 				try {
-					if (InitializeSystem () == false)
+					if (PrepareLightingOutput () == false)
 						return;
 					retriesSinceLastSuccess = 0;
 					RunMenu ();
@@ -150,7 +153,7 @@ namespace G35_USB
 		/// <returns><c>true</c>, if system was initialized, <c>false</c> otherwise.</returns>
 		/// <param name="RunWithoutInteraction">If set to <c>true</c> run without interaction.</param>
 		/// <param name="SkipPreparingSystem">If set to <c>true</c> skip preparing the output system (clearing and starting queue, etc).</param>
-		private static bool InitializeSystem (bool RunWithoutInteraction = false, bool SkipPreparingSystem = false)
+		private static bool PrepareLightingOutput (bool RunWithoutInteraction = false, bool SkipPreparingSystem = false)
 		{
 			Console.WriteLine ("Connecting to output system...");
 
@@ -1504,17 +1507,17 @@ namespace G35_USB
 #if DEBUG_PERFORMANCE
 					Console.WriteLine ("{0} ms - updating audio snapshot", Queue_PerfStopwatch.ElapsedMilliseconds);
 #endif
-					// Grab a snapshot of the current audio volumes, locking the array to prevent modification
-					lock (Audio_Volumes) {
-						while (Audio_Volumes_Snapshot.Count < Audio_Volumes.Count) {
+					// Grab a snapshot of the current audio volumes
+					if (ActiveAudioInputSystem.Running) {
+						double[] Audio_Volumes = ActiveAudioInputSystem.GetSnapshot ();
+						while (Audio_Volumes_Snapshot.Count < Audio_Volumes.Length) {
 							Audio_Volumes_Snapshot.Add (0);
 						}
-						while (Audio_Volumes_Snapshot.Count > Audio_Volumes.Count) {
+						while (Audio_Volumes_Snapshot.Count > Audio_Volumes.Length) {
 							Audio_Volumes_Snapshot.RemoveAt (Audio_Volumes_Snapshot.Count - 1);
 						}
-						for (int i = 0; i < Audio_Volumes.Count; i++) {
+						for (int i = 0; i < Audio_Volumes.Length; i++) {
 							Audio_Volumes_Snapshot [i] = Audio_Volumes [i];
-							Audio_Volumes [i] = 0;
 						}
 					}
 					
@@ -1651,7 +1654,7 @@ namespace G35_USB
 
 							// RunWithoutInteraction:  Usually someone won't be providing input when this happens
 							// SkipPreparingSystem:  Queue and all that is already running
-							if (InitializeSystem (true, true) == false)
+							if (PrepareLightingOutput (true, true) == false)
 							{
 								throw new System.IO.IOException ("Could not reconnect to output system in background, giving up");
 							}
@@ -1890,7 +1893,7 @@ namespace G35_USB
 
 			if (QueueToModify.SelectedAnimation is AbstractReactiveAnimation) {
 				// If animation reacts to music, start up the VU system
-				Audio_Start_Capture ();
+				ActiveAudioInputSystem.StartAudioCapture ();
 			}
 
 			//Animation_Active = true;
@@ -1901,10 +1904,9 @@ namespace G35_USB
 			WaitForQueue (QueueToModify);
 			if (QueueToModify.SelectedAnimation is AudioBitmapAnimation)
 				(QueueToModify.SelectedAnimation as AudioBitmapAnimation).StopAudioSystem ();
-			if (QueueToModify.SelectedAnimation is AbstractReactiveAnimation || Audio_Capture_Process != null) {
+			if (QueueToModify.SelectedAnimation is AbstractReactiveAnimation || ActiveAudioInputSystem.Running) {
 				// If animation reacts to music, shut down the VU system
-				Audio_Stop_Capture ();
-				Audio_Clear_Captured_Volumes ();
+				ActiveAudioInputSystem.StopAudioCapture ();
 			}
 			QueueToModify.SelectedAnimation = null;
 		}
@@ -1913,102 +1915,87 @@ namespace G35_USB
 
 		#region VU Meter Management
 
-		private static void Audio_Clear_Captured_Volumes ()
-		{
-			lock (Audio_Volumes) {
-				if (Audio_Volumes.Count > 0) {
-					if (ReactiveSystem.Processing_Show_Analysis)
-						Console.WriteLine ();
-					Console.WriteLine ("(Audio volume processing queue cleared)");
-					Audio_Volumes.Clear ();
-				}
-			}
-		}
-
-		private static void Audio_Start_Capture ()
-		{
-			if (Audio_Capture_Process != null)
-				Audio_Stop_Capture ();
-			Audio_Capture_Process = new System.Diagnostics.Process ();
-			Audio_Capture_Process.StartInfo = new System.Diagnostics.ProcessStartInfo ("impulse-print");
-
-			Audio_Capture_Process.StartInfo.UseShellExecute = false;
-			//Note: added to fix error
-			
-			Audio_Capture_Process.StartInfo.CreateNoWindow = true;
-
-			// set up output redirection
-			Audio_Capture_Process.StartInfo.RedirectStandardInput = true;
-			// above prevents the process from grabbing Ctrl+C events
-			Audio_Capture_Process.StartInfo.RedirectStandardOutput = true;
-			Audio_Capture_Process.EnableRaisingEvents = true;
-			// see below for output handler
-			Audio_Capture_Process.OutputDataReceived += Audio_Capture_Process_DataReceived;
-			
-			
-			Audio_Capture_Process.Start ();
-
-			Audio_Capture_Process.PriorityClass = System.Diagnostics.ProcessPriorityClass.BelowNormal;
-			// Don't let the capture process take away CPU time from getting frames made and sent out
-
-			Audio_Capture_Process.BeginOutputReadLine ();
-
-		}
-
-		private static void Audio_Stop_Capture ()
-		{
-			if (Audio_Capture_Process != null)
-			if (Audio_Capture_Process.HasExited == false)
-				Audio_Capture_Process.Kill ();
-		}
-
-		private static void Audio_Capture_Process_DataReceived (object sender, System.Diagnostics.DataReceivedEventArgs e)
-		{
-			if (e.Data != null) {
-				const string AUDIO_DATA_HEADER = "audio_data:";
-				if (e.Data.StartsWith (AUDIO_DATA_HEADER))
-					Audio_Add_Volumes (ParseStringFloatArray (e.Data.Substring (AUDIO_DATA_HEADER.Length)));
-			}
-		}
-
-		private static void Audio_Add_Volumes (float[] Current_VU_Volumes)
-		{
-			if (G35_Lights_Queue.AnimationActive == false || !(G35_Lights_Queue.SelectedAnimation is AbstractReactiveAnimation))
-				return;
-			lock (Audio_Volumes) {
-				while (Audio_Volumes.Count < Current_VU_Volumes.Length) {
-					Audio_Volumes.Add (0);
-				}
-				while (Audio_Volumes.Count > Current_VU_Volumes.Length) {
-					Audio_Volumes.RemoveAt (Audio_Volumes.Count - 1);
-				}
-				for (int i = 0; i < Current_VU_Volumes.Length; i++) {
-					Audio_Volumes [i] = Math.Max (Audio_Volumes [i], Current_VU_Volumes [i]);
-				}
-			}
-		}
-
 		/// <summary>
-		/// Parses a string array of floats to a float[] array.
+		/// Initializes the audio input capture system.
 		/// </summary>
-		/// <returns>
-		/// A float array.
-		/// </returns>
-		/// <param name='PrintedArray'>
-		/// The string representation of the array.
-		/// </param>
-		private static float[] ParseStringFloatArray (string PrintedArray)
+		/// <returns><c>true</c>, if system was initialized, <c>false</c> otherwise.</returns>
+		/// <param name="RunWithoutInteraction">If set to <c>true</c> run without interaction.</param>
+		private static bool PrepareAudioCapture (bool RunWithoutInteraction = false)
 		{
-			if (String.IsNullOrEmpty (PrintedArray))
-				return null;
+			Console.WriteLine ("Connecting to audio capture system...");
 
-			string[] string_array = PrintedArray.Split(',');
-			float[] result = new float[string_array.Length];
-
-			for (int i = 0; i < string_array.Length; i++) {
-				float.TryParse (string_array [i], out result [i]);
+			#if DEBUG_FORCE_DUMMYAUDIOINPUT
+			Console.WriteLine ("DEBUGGING:  Forcing DummyAudioInput, not checking other options!");
+			InitializeAudioInputSystem (new DummyAudioOutput ());
+			#else
+			bool retryAgain = true;
+			bool success = false;
+			while (retryAgain && success == false) {
+				success = false;
+				foreach (AbstractAudioInput audio_input_system in ReflectiveEnumerator.GetFilteredEnumerableOfType
+				         <AbstractAudioInput, IAudioInputDummy> (false) ) {
+					if (InitializeAudioInputSystem (audio_input_system)) {
+						success = true;
+						break;
+					}
+				}
+				if (success == false) {
+					if (RunWithoutInteraction == false) {
+						Console.WriteLine ("Could not open connection to audio capture system, are needed files in place?\n" +
+						                   "(press 's' for simulation mode, 'r' to retry, any other key to exit)");
+						switch (Console.ReadKey ().Key) {
+							case ConsoleKey.S:
+							foreach (AbstractAudioInput audio_input_system in ReflectiveEnumerator.GetFilteredEnumerableOfType
+							         <AbstractAudioInput, IAudioInputDummy> (true) ) {
+								if (InitializeAudioInputSystem (audio_input_system)) {
+									success = true;
+									retryAgain = false;
+									Console.WriteLine ("\n[Note]  Running in simulation mode; no audio will be captured");
+									break;
+								}
+							}
+							break;
+							case ConsoleKey.R:
+							Console.WriteLine ("\nTrying again...");
+							break;
+							default:
+							retryAgain = false;
+							// Quit called, exit the application
+							return false;
+						}
+					} else {
+						// Can't prompt for feedback, just bail out
+						return false;
+					}
+				}
 			}
-			return result;
+			#endif
+			// Initialization successful!
+			return true;
+		}
+
+		private static bool InitializeAudioInputSystem (AbstractAudioInput DesiredAudioInputSystem)
+		{
+			if (DesiredAudioInputSystem == null)
+				throw new ArgumentNullException ("DesiredAudioInputSystem", "DesiredAudioInputSystem must be specified to initialize the system");
+
+			bool success = false;
+
+			ActiveAudioInputSystem = DesiredAudioInputSystem;
+			success = ActiveAudioInputSystem.InitializeSystem ();
+
+			string outputType = ActiveAudioInputSystem.GetType ().Name.Trim ();
+			if (outputType == "") {
+				outputType = "Unknown";
+			}
+
+			if (success) {
+				Console.WriteLine ("- Connected to '{0}' via '{1}'", outputType, ActiveAudioInputSystem.Identifier);
+			} else {
+				Console.WriteLine ("- Could not connect to '{0}'", outputType);
+			}
+
+			return success;
 		}
 
 		#endregion

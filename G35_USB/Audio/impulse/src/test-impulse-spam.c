@@ -20,11 +20,32 @@
  */
 
 
-#define IM_NOFFT 0
-#define IM_FFT 1
+#include "impulse.h"
+#include <stdio.h>
 
-double *im_getSnapshot(int fft);
+int main() {
 
-void im_start(void);
+	int i = 0;
+	long c = 0;
+	im_start();
 
-void im_stop(void);
+	int iterations, inner_iterations;
+	for (iterations = 0; iterations < 100; ++iterations) {
+		usleep(20*1000000 / 30);
+		for (inner_iterations = 0; inner_iterations < 100; ++inner_iterations) {
+			double *array = im_getSnapshot(IM_FFT);
+			printf("%08x: ", c++);
+			for (i = 0; i < 256; i+=32)
+				printf(" %.2f", array[i]);
+			printf("\n");
+			fflush(stdout);
+		}
+		usleep(20*1000000 / 30);
+		im_stop();
+		usleep(20*1000000 / 30);
+		im_start();
+	}
+	im_stop();
+
+	return 0;
+}

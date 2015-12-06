@@ -74,6 +74,10 @@
     <Compile Include="Utilities\ReflectiveEnumerator.cs" />
     <Compile Include="Utilities\LinearColorInterpolator.cs" />
     <Compile Include="OutputSystems\IOutputDummy.cs" />
+    <Compile Include="AudioInputSystems\IAudioInputDummy.cs" />
+    <Compile Include="AudioInputSystems\AbstractAudioInput.cs" />
+    <Compile Include="AudioInputSystems\ImpulseAudioInput.cs" />
+    <Compile Include="AudioInputSystems\DummyAudioInput.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -83,5 +87,6 @@
     <Folder Include="Animations\" />
     <Folder Include="OutputSystems\" />
     <Folder Include="Utilities\" />
+    <Folder Include="AudioInputSystems\" />
   </ItemGroup>
 </Project>
