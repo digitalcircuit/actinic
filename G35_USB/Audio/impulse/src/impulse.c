@@ -238,21 +238,22 @@ double *im_getSnapshot(int fft) {
 		}
 	} else {
 
+		if (transform_fftw_plan == NULL) {
+#ifdef DEBUG_PRINT
+			printf("DEBUG impulse: im_getSnaptshot generating plan...\n");
+#endif
+			// Search for an efficient plan, allow corrupting the input buffer (it'll get replaced every time)
+			transform_fftw_plan = fftw_plan_dft_r2c_1d(CHUNK / 2, transform_fftw_in, transform_fftw_out, FFTW_PATIENT | FFTW_DESTROY_INPUT);
+#ifdef DEBUG_PRINT
+			printf("DEBUG impulse: im_getSnaptshot plan generated\n");
+#endif
+		}
+		
 		if (snapshot != NULL) {
 			int i;
 			for (i = 0; i < CHUNK / 2; i++) {
 				transform_fftw_in[i] = (double) snapshot[i];
 			}
-		}
-
-		if (transform_fftw_plan == NULL) {
-#ifdef DEBUG_PRINT
-			printf("DEBUG impulse: im_getSnaptshot generating plan...\n");
-#endif
-			transform_fftw_plan = fftw_plan_dft_r2c_1d(CHUNK / 2, transform_fftw_in, transform_fftw_out, FFTW_PATIENT);
-#ifdef DEBUG_PRINT
-			printf("DEBUG impulse: im_getSnaptshot plan generated\n");
-#endif
 		}
 
 		fftw_execute(transform_fftw_plan);
