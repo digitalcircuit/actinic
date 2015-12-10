@@ -60,9 +60,6 @@ namespace G35_USB
 
 		private static Dictionary<string, LED_Queue> G35_Lights_Overlay_Queues = new Dictionary<string, LED_Queue>();
 
-		private const int G35_Lights_Maximum_Overlays = 5;
-		// To avoid performance issues, prevent more than this number of queues existing
-
 		private static System.Threading.Thread G35_Light_Queue_Thread;
 
 		private const int Animation_Smoothing_Iterations_DEFAULT = 15;
@@ -657,7 +654,7 @@ namespace G35_USB
 												switch (cmd_args [2].ToLowerInvariant ()) {
 												case "color":
 													lock (G35_Lights_Overlay_Queues) {
-														LED_Queue resulting_queue = GetQueueByName (overlay_name, true);
+														LED_Queue resulting_queue = GetQueueByName (overlay_name);
 														if (resulting_queue != null) {
 															// Mapping from usual 'color' command:  Numbers 5-6 -> 7-8
 															if (cmd_args.Length == 7 || cmd_args.Length == 8) {
@@ -703,7 +700,7 @@ namespace G35_USB
 													break;
 												case "brightness":
 													lock (G35_Lights_Overlay_Queues) {
-														LED_Queue resulting_queue = GetQueueByName (overlay_name, true);
+														LED_Queue resulting_queue = GetQueueByName (overlay_name);
 														if (resulting_queue != null) {
 															// Mapping from usual 'color' command:  Numbers 3 -> 5
 															if (cmd_args.Length == 5) {
@@ -741,7 +738,7 @@ namespace G35_USB
 													break;
 												case "identify":
 													lock (G35_Lights_Overlay_Queues) {
-														LED_Queue resulting_queue = GetQueueByName (overlay_name, true);
+														LED_Queue resulting_queue = GetQueueByName (overlay_name);
 														if (resulting_queue != null) {
 															// Mapping from usual 'identify' command:  Numbers 1 -> 3
 															HaltActivity (resulting_queue);
@@ -767,7 +764,7 @@ namespace G35_USB
 													break;
 												case "play":
 													lock (G35_Lights_Overlay_Queues) {
-														LED_Queue resulting_queue = GetQueueByName (overlay_name, true);
+														LED_Queue resulting_queue = GetQueueByName (overlay_name);
 														if (resulting_queue != null) {
 															// Mapping: 2 -> 3
 															if (cmd_args.Length > 3 && cmd_args [3] != null) {
@@ -898,7 +895,7 @@ namespace G35_USB
 												case "blending":
 													if (cmd_args.Length > 3 && cmd_args [3] != null) {
 														bool blending_changed = true;
-														LED_Queue resulting_queue = GetQueueByName (overlay_name, true);
+														LED_Queue resulting_queue = GetQueueByName (overlay_name);
 														if (resulting_queue != null) {
 															switch (cmd_args [3].ToLowerInvariant ()) {
 															case "combine":
@@ -1363,23 +1360,14 @@ namespace G35_USB
 			}
 		}
 
-		private static LED_Queue GetQueueByName (string QueueName, bool ShowWarningIfNull = false)
+		private static LED_Queue GetQueueByName (string QueueName)
 		{
 			lock (G35_Lights_Overlay_Queues) {
 				if (G35_Lights_Overlay_Queues.ContainsKey (QueueName) == false) {
-					if (G35_Lights_Overlay_Queues.Count < G35_Lights_Maximum_Overlays) {
 #if DEBUG_OVERLAY_MANAGEMENT
-						Console.WriteLine ("-- '{0}' does not exist; adding queue", QueueName);
+					Console.WriteLine ("-- '{0}' does not exist; adding queue", QueueName);
 #endif
-						G35_Lights_Overlay_Queues.Add (QueueName, new LED_Queue (LightSystem.LIGHT_COUNT, true));
-					} else {
-#if DEBUG_OVERLAY_MANAGEMENT
-						Console.WriteLine ("-- '{0}' does not exist; cannot create queue as too many already exist", QueueName);
-#endif
-						if (ShowWarningIfNull)
-							Console.WriteLine ("(Cannot create layer '{0}' as {1} queues already exist; delete others using 'overlay name_of_queue clear')", QueueName, G35_Lights_Overlay_Queues.Count);
-						return null;
-					}
+					G35_Lights_Overlay_Queues.Add (QueueName, new LED_Queue (LightSystem.LIGHT_COUNT, true));
 				} else {
 #if DEBUG_OVERLAY_MANAGEMENT
 					Console.WriteLine ("-- '{0}' already exists; reusing", QueueName);
