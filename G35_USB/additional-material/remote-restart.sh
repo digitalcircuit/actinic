@@ -18,6 +18,6 @@ fi
 
 if (whiptail --title "Restart G35 USB manager" --backtitle "G35 USB SSH remote management" --yesno "Restart G35 USB on the server?\nAny unsaved configuration or commands will be lost" 10 60 --yes-button "Restart" --no-button "Cancel" --defaultno); then
 	echo "* Restarting server instance of G35 USB..."
-	run_remote_cmd "~/system/lights/restart-g35_usb.sh" &
+	run_remote_cmd "~/system/lights/restart-g35_usb.sh"
 	echo "Restart done!"
 fi
