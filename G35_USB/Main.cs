@@ -1881,10 +1881,10 @@ namespace G35_USB
 
 			if (QueueToModify.SelectedAnimation is AbstractReactiveAnimation) {
 				// If animation reacts to music, start up the VU system
-				ActiveAudioInputSystem.StartAudioCapture ();
+				if (! ActiveAudioInputSystem.StartAudioCapture ()) {
+					Console.Error.WriteLine ("(Something went wrong while starting the audio capture system)");
+				}
 			}
-
-			//Animation_Active = true;
 		}
 
 		private static void Animation_Stop (LED_Queue QueueToModify)
@@ -1894,7 +1894,9 @@ namespace G35_USB
 				(QueueToModify.SelectedAnimation as AudioBitmapAnimation).StopAudioSystem ();
 			if (QueueToModify.SelectedAnimation is AbstractReactiveAnimation || ActiveAudioInputSystem.Running) {
 				// If animation reacts to music, shut down the VU system
-				ActiveAudioInputSystem.StopAudioCapture ();
+				if (! ActiveAudioInputSystem.StopAudioCapture ()) {
+					Console.Error.WriteLine ("(Something went wrong while stopping the audio capture system)");
+				}
 			}
 			QueueToModify.SelectedAnimation = null;
 		}

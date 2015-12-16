@@ -134,7 +134,7 @@ namespace G35_USB
 			int update_count = 0;
 			const int MAX_UPDATE_COUNT = 1000;
 #endif
-			while (AudioCaptureThread.IsAlive) {
+			while (AudioCaptureThread.IsAlive && SystemActive) {
 #if DEBUG_IMPULSE_PERFORMANCE
 				if (update_count > MAX_UPDATE_COUNT) {
 					update_count = 0;
@@ -168,8 +168,9 @@ namespace G35_USB
 
 		public override bool StopAudioCapture ()
 		{
-			if (AudioCaptureThread != null)
-				AudioCaptureThread.Abort ();
+			// Gracefully stop audio capture thread
+			SystemActive = false;
+			AudioCaptureThread.Join ();
 
 			IM_Stop ();
 			// Stop audio capture after ending the thread

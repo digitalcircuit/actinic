@@ -32,7 +32,7 @@ int main() {
 	while (1) {
 		usleep(1000000 / 30);
 		double *array = im_getSnapshot(IM_FFT);
-		printf("%08x: ", c++);
+		printf("%08lx: ", c++);
 		for (i = 0; i < 256; i+=32)
 			printf(" %.2f", array[i]);
 		printf("\n");

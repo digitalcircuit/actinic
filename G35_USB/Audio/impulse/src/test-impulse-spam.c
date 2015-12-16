@@ -31,18 +31,17 @@ int main() {
 
 	int iterations, inner_iterations;
 	for (iterations = 0; iterations < 100; ++iterations) {
-		usleep(20*1000000 / 30);
+		// Allow for the start-up delay of connecting to PulseAudio
+		usleep(1*1000000 / 30);
 		for (inner_iterations = 0; inner_iterations < 100; ++inner_iterations) {
 			double *array = im_getSnapshot(IM_FFT);
-			printf("%08x: ", c++);
+			printf("%08lx: ", c++);
 			for (i = 0; i < 256; i+=32)
 				printf(" %.2f", array[i]);
 			printf("\n");
 			fflush(stdout);
 		}
-		usleep(20*1000000 / 30);
 		im_stop();
-		usleep(20*1000000 / 30);
 		im_start();
 	}
 	im_stop();

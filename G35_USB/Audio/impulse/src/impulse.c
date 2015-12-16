@@ -28,6 +28,9 @@
 #include <fftw3.h>
 #include <math.h>
 
+// Lock and unlock while processing audio
+#include <semaphore.h>
+
 #define CHUNK 1024
 
 //#define DEBUG_PRINT
@@ -50,7 +53,7 @@ static pa_sample_spec sample_spec = {
 	.channels = 2
 };
 
-static pa_stream_flags_t flags = 0;
+static pa_stream_flags_t flags = PA_STREAM_NOFLAGS;
 
 static pa_channel_map channel_map;
 static int channel_map_set = 0;
@@ -60,6 +63,15 @@ static fftw_plan transform_fftw_plan = NULL;
 static double *transform_fftw_in = NULL;
 static fftw_complex *transform_fftw_out = NULL;
 
+// Keep track of the program's state to avoid conflicts
+static sem_t impulse_audio_lock;
+static int impulse_audio_lock_initialized = 0;
+
+typedef enum {IMPULSE_STOPPED, IMPULSE_CONNECTING, IMPULSE_DISCONNECTING, IMPULSE_ACTIVE} impulse_state_t;
+static impulse_state_t impulse_status = IMPULSE_STOPPED;
+
+
+
 // A shortcut for terminating the application
 static void quit(int ret) {
 	assert(mainloop_api);
@@ -68,9 +80,9 @@ static void quit(int ret) {
 
 static void get_source_info_callback( pa_context *c, const pa_source_info *i, int is_last, void *userdata ) {
 #ifdef DEBUG_PRINT
-	printf("DEBUG impulse: get_source_info_callback - called, is_last = %s, device = %s\n", is_last ? "true" : "false", device);
+	printf("DEBUG impulse: get_source_info_callback - called, is_last = %s, device = %s, state = %d\n", is_last ? "true" : "false", device, impulse_status);
 #endif
-	if (is_last || device != NULL)
+	if (is_last || device != NULL || impulse_status != IMPULSE_CONNECTING)
 		return;
 
 	assert(i);
@@ -79,14 +91,19 @@ static void get_source_info_callback( pa_context *c, const pa_source_info *i, in
 
 	pa_xfree (userdata);
 
-#ifdef DEBUG_PRINT
-	printf("DEBUG impulse: get_source_info_callback - asserted\n");
-#endif
 	if ( i->monitor_of_sink != PA_INVALID_INDEX ) {
 
 		if ((pa_stream_connect_record(stream, i->name, NULL, flags)) < 0) {
 			fprintf(stderr, "pa_stream_connect_record() failed: %s\n", pa_strerror(pa_context_errno(c)));
 			quit(1);
+		} else {
+#ifdef DEBUG_PRINT
+			printf("DEBUG impulse: get_source_info_callback - success\n");
+#endif
+			// Successfully connected, set system as ready
+			impulse_status = IMPULSE_ACTIVE;
+			// Allow changing system state or processing audio
+			sem_post (&impulse_audio_lock);
 		}
 	}
 }
@@ -165,6 +182,31 @@ void im_stop (void) {
 #ifdef DEBUG_PRINT
 	printf("DEBUG impulse: im_stop called\n");
 #endif
+
+	if (impulse_status == IMPULSE_STOPPED ||
+		impulse_status == IMPULSE_DISCONNECTING) {
+		// No need to do anything
+		return;
+	}
+	// Block changing system state and processing audio, otherwise null
+	// references may occur
+#ifdef DEBUG_PRINT
+	int lock_val = 0;
+	sem_getvalue(&impulse_audio_lock, &lock_val);
+	if (lock_val == 0) {
+		printf("DEBUG impulse: im_stop - waiting for lock...\n");
+	}
+#endif
+	sem_wait (&impulse_audio_lock);
+
+	if (impulse_status != IMPULSE_ACTIVE) {
+		fprintf(stderr, "Cannot close connection, system state = %d\n", impulse_status);
+		quit(1);
+	}
+
+	// Set system as shutting down
+	impulse_status = IMPULSE_DISCONNECTING;
+
 	// Stop the mainloop
 	if (mainloop)
 	{
@@ -219,6 +261,11 @@ void im_stop (void) {
 		transform_fftw_out = NULL;
 	}
 
+	// Set system as stopped
+	impulse_status = IMPULSE_STOPPED;
+	// Allow changing system state or processing audio
+	sem_post (&impulse_audio_lock);
+
 #ifdef DEBUG_PRINT
 	printf("DEBUG impulse: im_stop finished\n");
 #endif
@@ -227,6 +274,21 @@ void im_stop (void) {
 double *im_getSnapshot(int fft) {
 
 	static double magnitude[CHUNK / 4];
+
+	if (impulse_status != IMPULSE_ACTIVE) {
+		return magnitude;
+	}
+
+	// Block the system from changing state during audio processing, otherwise
+	// null references may occur
+#ifdef DEBUG_PRINT
+	int lock_val = 0;
+	sem_getvalue(&impulse_audio_lock, &lock_val);
+	if (lock_val == 0) {
+		printf("DEBUG impulse: im_getSnapshot - waiting for lock...\n");
+	}
+#endif
+	sem_wait (&impulse_audio_lock);
 
 	if ( ! fft ) {
 		int i;
@@ -240,12 +302,12 @@ double *im_getSnapshot(int fft) {
 
 		if (transform_fftw_plan == NULL) {
 #ifdef DEBUG_PRINT
-			printf("DEBUG impulse: im_getSnaptshot generating plan...\n");
+			printf("DEBUG impulse: im_getSnapshot generating plan...\n");
 #endif
 			// Search for an efficient plan, allow corrupting the input buffer (it'll get replaced every time)
 			transform_fftw_plan = fftw_plan_dft_r2c_1d(CHUNK / 2, transform_fftw_in, transform_fftw_out, FFTW_PATIENT | FFTW_DESTROY_INPUT);
 #ifdef DEBUG_PRINT
-			printf("DEBUG impulse: im_getSnaptshot plan generated\n");
+			printf("DEBUG impulse: im_getSnapshot plan generated\n");
 #endif
 		}
 		
@@ -267,11 +329,47 @@ double *im_getSnapshot(int fft) {
 		}
 	}
 
+	// Audio processing complete, release the lock
+	sem_post (&impulse_audio_lock);
+
 	return magnitude;
 }
 
 
 void im_start (void) {
+
+#ifdef DEBUG_PRINT
+	printf("DEBUG impulse: im_start called\n");
+#endif
+	if (impulse_audio_lock_initialized == 0) {
+		// Initialize the semaphore
+		sem_init(&impulse_audio_lock, 0, 1);
+		impulse_audio_lock_initialized = 1;
+	}
+
+	if (impulse_status == IMPULSE_ACTIVE ||
+		impulse_status == IMPULSE_CONNECTING) {
+		// No need to do anything
+		return;
+	}
+
+	// Block changing system state and processing audio, otherwise null
+	// references may occur
+#ifdef DEBUG_PRINT
+	int lock_val = 0;
+	sem_getvalue(&impulse_audio_lock, &lock_val);
+	if (lock_val == 0) {
+		printf("DEBUG impulse: im_start - waiting for lock...\n");
+	}
+#endif
+	sem_wait (&impulse_audio_lock);
+	if (impulse_status != IMPULSE_STOPPED) {
+		fprintf(stderr, "Cannot start connection, system state = %d\n", impulse_status);
+		quit(1);
+	}
+
+	// Set system as starting
+	impulse_status = IMPULSE_CONNECTING;
 
 	// Initialize the audio processing arrays
 	transform_fftw_in = (double*) malloc( sizeof( double ) * ( CHUNK / 2 ) );
@@ -288,6 +386,9 @@ void im_start (void) {
 
 	if ( ! (mainloop = pa_threaded_mainloop_new())) {
 		fprintf( stderr, "pa_mainloop_new() failed.\n" );
+		// Failed to initialize, release lock to allow trying again, set status to stopped
+		sem_post (&impulse_audio_lock);
+		impulse_status = IMPULSE_STOPPED;
 		return;
 	}
 
@@ -302,13 +403,16 @@ void im_start (void) {
 	// Create a new connection context
 	if ( ! (context = pa_context_new(mainloop_api, client_name))) {
 		fprintf(stderr, "pa_context_new() failed.\n");
+		// Failed to initialize, release lock to allow trying again, set status to stopped
+		sem_post (&impulse_audio_lock);
+		impulse_status = IMPULSE_STOPPED;
 		return;
 	}
 
 	pa_context_set_state_callback(context, context_state_callback, NULL);
 
 	// Connect the context
-	pa_context_connect(context, server, 0, NULL);
+	pa_context_connect(context, server, PA_CONTEXT_NOFLAGS, NULL);
 
 	// Pulseaudio thread
 	pa_threaded_mainloop_start(mainloop);

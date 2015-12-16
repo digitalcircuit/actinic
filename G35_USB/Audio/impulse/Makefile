@@ -30,14 +30,14 @@ impulse: init module.o impulse.o
 
 test: impulse.o
 	gcc -c src/test-impulse.c -o $(BUILD_DIR)/test/test-impulse.o
-	gcc -L$(BUILD_DIR)/test/\
+	gcc -pthread -L$(BUILD_DIR)/test/\
 		$(BUILD_DIR)/impulse/impulse.o $(BUILD_DIR)/test/test-impulse.o\
 		-o $(BUILD_DIR)/test/test-impulse -lm\
 		-lfftw3 -lpulse
 
 test-spam: impulse.o
 	gcc -c src/test-impulse-spam.c -o $(BUILD_DIR)/test-spam/test-impulse-spam.o
-	gcc -L$(BUILD_DIR)/test/\
+	gcc -pthread -L$(BUILD_DIR)/test/\
 		$(BUILD_DIR)/impulse/impulse.o $(BUILD_DIR)/test-spam/test-impulse-spam.o\
 		-o $(BUILD_DIR)/test-spam/test-impulse-spam -lm\
 		-lfftw3 -lpulse
@@ -49,7 +49,7 @@ impulse-lib: init impulse.o
 
 impulse-print: impulse.o
 	gcc -c src/impulse-print.c -o $(BUILD_DIR)/print/impulse-print.o
-	gcc -L$(BUILD_DIR)/print/\
+	gcc -pthread -L$(BUILD_DIR)/print/\
 		$(BUILD_DIR)/impulse/impulse.o $(BUILD_DIR)/print/impulse-print.o\
 		-o $(BUILD_DIR)/print/impulse-print -lm\
 		-lfftw3 -lpulse
