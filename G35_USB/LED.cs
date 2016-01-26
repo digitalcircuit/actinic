@@ -12,7 +12,7 @@ namespace G35_USB
 		public enum BlendingStyle
 		{
 			/// <summary>
-			/// Add colors together
+			/// Take the brightest components from each layer
 			/// </summary>
 			Combine,
 			/// <summary>
@@ -26,7 +26,11 @@ namespace G35_USB
 			/// <summary>
 			/// Only use this layer, completely replacing others
 			/// </summary>
-			Replace
+			Replace,
+			/// <summary>
+			/// Add the components of each layer
+			/// </summary>
+			Sum
 		}
 
 		public byte R {
@@ -196,6 +200,13 @@ namespace G35_USB
 					G = SelectedColor.G;
 					B = SelectedColor.B;
 					Brightness = SelectedColor.Brightness;
+				break;
+			case LED.BlendingStyle.Sum:
+				// Sum the colors together without exceeding the maximum
+				R = (byte)Math.Min (R + SelectedColor.R, LightSystem.Color_MAX);
+				G = (byte)Math.Min (G + SelectedColor.G, LightSystem.Color_MAX);
+				B = (byte)Math.Min (B + SelectedColor.B, LightSystem.Color_MAX);
+				Brightness = (byte)Math.Min (Brightness + SelectedColor.Brightness, LightSystem.Brightness_MAX);
 				break;
 			default:
 				throw new ArgumentException ("Unexpected blending mode {0}", BlendMode.ToString ());

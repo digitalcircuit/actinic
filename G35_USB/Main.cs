@@ -910,8 +910,9 @@ namespace G35_USB
 															case "replace":
 																resulting_queue.BlendMode = LED.BlendingStyle.Replace;
 																break;
-																// FIXME:  Add a new mode that unselectively replaces everything
-																//  Perhaps rename current to 'mask', and new should be 'replace'
+															case "sum":
+																resulting_queue.BlendMode = LED.BlendingStyle.Sum;
+																break;
 															default:
 																blending_changed = false;
 																Console.WriteLine ("> overlay {0} blending [combine/favor/mask/replace]", overlay_name);
