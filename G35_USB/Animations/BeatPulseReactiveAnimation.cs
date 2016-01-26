@@ -51,6 +51,16 @@ namespace G35_USB
 		/// </summary>
 		protected bool LowFrequencyDesaturatesColors = false;
 
+		/// <summary>
+		/// List of LEDs representing the hue-shifting backdrop layer
+		/// </summary>
+		protected List<LED> CurrentFrame_Backdrop = new List<LED> ();
+
+		/// <summary>
+		/// List of LEDs representing the upper layer that pulses according to the beat
+		/// </summary>
+		protected List<LED> CurrentFrame_Pulse = new List<LED> ();
+
 #region Desaturate Boost
 
 		/// <summary>
@@ -80,27 +90,46 @@ namespace G35_USB
 
 		public BeatPulseReactiveAnimation (int Light_Count):base(Light_Count)
 		{
-			PrepareFirstFrame ();
+			InitializeLayers ();
 		}
 		public BeatPulseReactiveAnimation (List<LED> PreviouslyShownFrame):base(PreviouslyShownFrame)
 		{
-			PrepareFirstFrame ();
+			InitializeLayers ();
 		}
 
-		private void PrepareFirstFrame ()
+		private void InitializeLayers ()
 		{
+			// Lower the brightness of all the LEDs in the base layer
 			for (int index = 0; index < CurrentFrame.Count; index++) {
 				CurrentFrame [index].Brightness = LightSystem.Color_DARK;
+			}
+
+			// Add empty LEDs to the standalone layers
+			for (int index = 0; index < Light_Count; index++) {
+				CurrentFrame_Backdrop.Add (new LED (0, 0, 0, 0));
+				CurrentFrame_Pulse.Add (new LED (0, 0, 0, 0));
 			}
 		}
 
 		public override List<LED> GetNextFrame ()
 		{
-			// Low frequency controls the brightness for all of the lights
-			CurrentFrame [LightSystem.LIGHT_INDEX_MIDDLE].Brightness = (byte)MathUtilities.ConvertRange (Audio_Low_Intensity, 0, 1, LightSystem.Color_DARK, LightSystem.Color_MAX);
-			CurrentFrame [LightSystem.LIGHT_INDEX_MIDDLE - 1].Brightness = CurrentFrame [LightSystem.LIGHT_INDEX_MIDDLE].Brightness;
-
-			LightProcessing.ShiftLightsBrightnessOutward (CurrentFrame, 2);
+			// Low frequency controls the brightness and desaturation for all of the lights
+			// > Brightness (scales from 0 to 1, dark to maximum)
+			byte beatBrightness = (byte)MathUtilities.ConvertRange (Audio_Low_Intensity,
+			                                                  0, 1,
+			                                                  LightSystem.Color_DARK, LightSystem.Color_MAX);
+			// > Desaturation (scales from floor to 1, least to most)
+			byte desaturationAdded = 0;
+			if (LowFrequencyDesaturatesColors)
+				desaturationAdded = (byte)MathUtilities.ConvertRange (Math.Max (Audio_Low_Intensity - DesaturateBoost_Low_Intensity_Floor, 0),
+				                                                      0, 1 - DesaturateBoost_Low_Intensity_Floor,
+				                                                      0, DesaturateBoost_Max_Desaturation);
+			// Brightness and hues to add to the backdrop
+			Color pulseColorAdditive = new Color (desaturationAdded, desaturationAdded, desaturationAdded, beatBrightness);
+			CurrentFrame_Pulse [LightSystem.LIGHT_INDEX_MIDDLE].SetColor (pulseColorAdditive);
+			CurrentFrame_Pulse [LightSystem.LIGHT_INDEX_MIDDLE - 1].SetColor (pulseColorAdditive);
+			// > Shift the pulse effect outwards
+			LightProcessing.ShiftLightsBrightnessOutward (CurrentFrame_Pulse, 2);
 
 			// Mid frequency controls how quickly the colors fade
 			ColorShift_Amount = Convert.ToByte (Math.Max (Math.Min ((Audio_Mid_Intensity * 16) + 5, LightSystem.Color_MAX), 0));
@@ -117,36 +146,23 @@ namespace G35_USB
 				Pause_Fading_Off_Count ++;
 			}
 
-			if (LowFrequencyDesaturatesColors) {
-				// Add anywhere from 0 - DesaturateBoost_Max_Desaturation to all colors based on a scale of Audio_Low_Intensity
-				byte DesaturationAdded = (byte)MathUtilities.ConvertRange (Math.Max (Audio_Low_Intensity - DesaturateBoost_Low_Intensity_Floor, 0), 0, 1 - DesaturateBoost_Low_Intensity_Floor, 0, DesaturateBoost_Max_Desaturation);
-				DesaturateBoost_ColorShift_Red = (byte)Math.Min (Held_ColorShift_Red + DesaturationAdded, LightSystem.Color_MAX);
-				DesaturateBoost_ColorShift_Green = (byte)Math.Min (Held_ColorShift_Green + DesaturationAdded, LightSystem.Color_MAX);
-				DesaturateBoost_ColorShift_Blue = (byte)Math.Min (Held_ColorShift_Blue + DesaturationAdded, LightSystem.Color_MAX);
-				// Console.WriteLine ("Desaturate: {0}", MathUtilities.GenerateMeterBar (DesaturationAdded, 0, DesaturateBoost_Max_Desaturation, 40, true));
-			} else {
-				// Disabled, so just directly copy the colors
-				DesaturateBoost_ColorShift_Red = Held_ColorShift_Red;
-				DesaturateBoost_ColorShift_Green = Held_ColorShift_Green;
-				DesaturateBoost_ColorShift_Blue = Held_ColorShift_Blue;
-			}
-
-			// Set the middle lights to the new colors (don't touch the brightness)
-			CurrentFrame [LightSystem.LIGHT_INDEX_MIDDLE].SetColor (DesaturateBoost_ColorShift_Red,
-			                                                        DesaturateBoost_ColorShift_Green,
-			                                                        DesaturateBoost_ColorShift_Blue,
-			                                                        false);
-			CurrentFrame [LightSystem.LIGHT_INDEX_MIDDLE - 1].SetColor (DesaturateBoost_ColorShift_Red,
-			                                                            DesaturateBoost_ColorShift_Green,
-			                                                            DesaturateBoost_ColorShift_Blue,
-			                                                            false);
+			// Backdrop color, with a default brightness of none
+			// The pulse layer provides the desired brightness
+			Color backdropColor = new Color (Held_ColorShift_Red, Held_ColorShift_Green, Held_ColorShift_Blue, 0);
+			// > Set the middle lights to the new colors
+			CurrentFrame_Backdrop [LightSystem.LIGHT_INDEX_MIDDLE].SetColor (backdropColor);
+			CurrentFrame_Backdrop [LightSystem.LIGHT_INDEX_MIDDLE - 1].SetColor (backdropColor);
 
 			// Ripple the colors outwards more quickly than brightness
-			// This creates a cool effect at higher intensities with the desaturation 'pushing' out different colors
-			// At lower intensities, color shifts slowly enough it doesn't have much of an effect.
-			LightProcessing.ShiftLightsOutward (CurrentFrame, 4);
+			LightProcessing.ShiftLightsOutward (CurrentFrame_Backdrop, 4);
+
+			// Reset the current frame with the backdrop
+			LightProcessing.MergeLayerDown (CurrentFrame_Backdrop, CurrentFrame, LED.BlendingStyle.Replace);
+			// Add the backdrop to the beat-pulse layer
+			LightProcessing.MergeLayerDown (CurrentFrame_Pulse, CurrentFrame, LED.BlendingStyle.Sum);
 
 			// Mirror the one half of the lights to the other side
+			// Note: change to handling each layer individually if any layers should not be mirrored
 			int i_source = 0;
 			for (int i = LightSystem.LIGHT_INDEX_MAX; i > (LightSystem.LIGHT_INDEX_MIDDLE); i--) {
 				i_source = (LightSystem.LIGHT_INDEX_MAX - i);
