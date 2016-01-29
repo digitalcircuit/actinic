@@ -37,19 +37,14 @@ namespace G35_USB
 
 		private static void InitializeColors ()
 		{
-			//LED_Colors.Add (new Color ("White", 255, 255, 255));
-			LED_Colors.Add (new Color ("Red", 255, 0, 0));
-			LED_Colors.Add (new Color ("Green", 0, 255, 0));
-			LED_Colors.Add (new Color ("Blue", 0, 0, 255));
-			LED_Colors.Add (new Color ("Yellow", 255, 255, 0));
-			LED_Colors.Add (new Color ("Cyan", 0, 255, 255));
-			LED_Colors.Add (new Color ("Purple", 255, 0, 255));
-			//LED_Colors.Add (new Color ("Orange", 255, 30, 0));
-			LED_Colors.Add (new Color ("Orange", 255, 100, 0));
-			//LED_Colors.Add (new Color ("LightBlue", 0, 128, 255));
-			LED_Colors.Add (new Color ("Pink", 255, 0, 128));
-			//LED_Colors.Add (new Color ("", 255, 0, 30));
-			//LED_Colors.Add (new Color ("", 0, 30, 255));
+			LED_Colors.Add (new Color (255, 0, 0)); // Red
+			LED_Colors.Add (new Color (0, 255, 0)); // Green
+			LED_Colors.Add (new Color (0, 0, 255)); // Blue
+			LED_Colors.Add (new Color (255, 255, 0)); // Yellow
+			LED_Colors.Add (new Color (0, 255, 255)); // Cyan
+			LED_Colors.Add (new Color (255, 0, 255)); // Purple
+			LED_Colors.Add (new Color (255, 100, 0)); // Orange
+			LED_Colors.Add (new Color (255, 0, 128)); // Pink
 		}
 		
 		public static Color GetRandomColor ()

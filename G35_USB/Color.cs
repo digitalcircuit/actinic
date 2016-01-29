@@ -19,15 +19,32 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using System.Collections.Generic;
 
 namespace G35_USB
 {
 	public class Color
 	{
-		public string Name {
-			get;
-			private set;
-		}
+		public static readonly Dictionary<string, Color> Named = new Dictionary<string, Color> {
+			// Primary and secondary
+			{"white", new Color (255, 255, 255)},
+			{"black", new Color (0, 0, 0)},
+			{"red", new Color (255, 0, 0)},
+			{"green", new Color (0, 255, 0)},
+			{"blue", new Color (0, 0, 255)},
+			{"yellow", new Color (255, 255, 0)},
+			{"cyan", new Color (0, 255, 255)},
+			{"purple", new Color (255, 0, 255)},
+			// Mixtures
+			{"azure", new Color (41, 146, 255)},
+			{"orange", new Color (255, 100, 0)},
+			{"pink", new Color (255, 0, 128)},
+			// Accent
+			{"ambient", new Color (255, 130, 20)}
+		};
+
+		//LED_Colors.Add (new Color (255, 0, 30));
+		//LED_Colors.Add (new Color (0, 30, 255));
 
 		public byte R {
 			get;
@@ -64,7 +81,6 @@ namespace G35_USB
 
 		public Color (byte Red, byte Green, byte Blue)
 		{
-			Name = "";
 			R = Red;
 			G = Green;
 			B = Blue;
@@ -73,25 +89,6 @@ namespace G35_USB
 
 		public Color (byte Red, byte Green, byte Blue, byte Intensity)
 		{
-			Name = "";
-			R = Red;
-			G = Green;
-			B = Blue;
-			Brightness = Intensity;
-		}
-
-		public Color (string ColorName, byte Red, byte Green, byte Blue)
-		{
-			Name = ColorName;
-			R = Red;
-			G = Green;
-			B = Blue;
-			Brightness = LightSystem.Brightness_MAX;
-		}
-
-		public Color (string ColorName, byte Red, byte Green, byte Blue, byte Intensity)
-		{
-			Name = ColorName;
 			R = Red;
 			G = Green;
 			B = Blue;
@@ -110,7 +107,7 @@ namespace G35_USB
 
 		public override string ToString ()
 		{
-			return string.Format ("[Color: Name={0}, R={1,-3}, G={2,-3}, B={3,-3}, Brightness={4,-3}]", Name, R, G, B, Brightness);
+			return string.Format ("[Color: R={0,-3}, G={1,-3}, B={2,-3}, Brightness={3,-3}]", R, G, B, Brightness);
 		}
 	}
 }

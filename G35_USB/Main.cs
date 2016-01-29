@@ -248,21 +248,28 @@ namespace G35_USB
 		/// </summary>
 		private static void RunMenu ()
 		{
-			string command = "help";
 			// First-time around, show the command help
+			string command = "help";
+			// Used for the 'identify' command
 			int[] identifyLightsToModify = {0, 1, LightSystem.LIGHT_INDEX_MIDDLE - 1, LightSystem.LIGHT_INDEX_MIDDLE, LightSystem.LIGHT_INDEX_MIDDLE + 1,
 				LightSystem.LIGHT_INDEX_MIDDLE + 2, LightSystem.LIGHT_COUNT - 2, LightSystem.LIGHT_COUNT - 1
 			};
-			// Used for the 'identify' command
-			int LED_num;
-			byte R, G, B, Brightness;
-			string[] commands;
+			// Used for range and color parsing
+			List<int> selected_lights;
+			Color selected_color;
+			byte Brightness;
+			// General
+			List<string> commands = new List<string> ();
+
+			// Main menu
 			while (command != "quit") {
 				if (command != "") {
 					if (command.Contains ("&&")) {
 						Command_ConflictsExpected = true;
-						commands = command.Replace ("@", "LITERAL_AT").Replace (" && ", "@").Split ('@');
-						for (int i = 0; i < commands.Length; i++) {
+						commands = new List<string> (command.Replace ("@", "LITERAL_AT")
+						                             .Replace (" && ", "@")
+						                             .Split ('@'));
+						for (int i = 0; i < commands.Count; i++) {
 							commands [i] = commands [i].Replace ("LITERAL_AT", "@").Trim ();
 						}
 					} else {
@@ -272,85 +279,84 @@ namespace G35_USB
 						} else {
 							Command_ConflictsExpected = false;
 						}
-						commands = new string[] { command };
+						commands.Clear ();
+						commands.Add (command);
 					}
 					foreach (string current_command in commands) {
 						if (current_command == "")
 							continue;
-						string[] cmd_args = current_command.Split (' ');
-						if (cmd_args != null & cmd_args.Length > 0) {
+						List<string> cmd_args = new List<string>(current_command.Split (' '));
+						// Note: cmd_args will be modified by any parameter parsers.  If original count is needed, save
+						// it here.
+						if (cmd_args != null & cmd_args.Count > 0) {
 							// TODO: Combine the regular and overlay commands into one unified set
 							switch (cmd_args [0].ToLowerInvariant ()) {
 							case "color":
-								if (cmd_args.Length == 5 || cmd_args.Length == 6) {
-									HaltActivity (false);
-									try {
-										R = Convert.ToByte (cmd_args [2]);
-										G = Convert.ToByte (cmd_args [3]);
-										B = Convert.ToByte (cmd_args [4]);
+								// Command selected, remove it from the arguments
+								cmd_args.RemoveAt (0);
 
-										if (cmd_args [1].ToLowerInvariant () == "all") {
-											if (cmd_args.Length != 6)
-												FillLights_Brightness (G35_Lights_Queue, LightSystem.Brightness_MAX, false, true);
-											FillLights_Color (G35_Lights_Queue, R, G, B);
+								if (cmd_args.Count == 1 && cmd_args [0].ToLowerInvariant () == "list") {
+									// List available colors
+									System.Text.StringBuilder color_list = new System.Text.StringBuilder ();
+									int colors_since_newline = 0;
+									foreach (string color_name in Color.Named.Keys) {
+										color_list.Append (color_name + ",\t");
+										if (colors_since_newline < 6) {
+											++colors_since_newline;
 										} else {
-											// First part can be a range of LEDs
-											if (cmd_args [1].Contains ("-")) {
-												int LED_start_num = (Convert.ToInt32 (cmd_args [1].Split ('-') [0]) - 1);
-												int LED_end_num = (Convert.ToInt32 (cmd_args [1].Split ('-') [1]) - 1);
-												if (LED_end_num <= LED_start_num) {
-													Console.WriteLine ("(Range of LEDs must start from lower to higher, e.g. '4-20')");
-													break;
-												}
-												for (LED_num = LED_start_num; LED_num <= LED_end_num; LED_num++) {
-													if (cmd_args.Length != 6)
-														G35_Lights_Queue.Lights [LED_num].Brightness = LightSystem.Brightness_MAX;
-													SetLight_Color (G35_Lights_Queue, LED_num, R, G, B);
-												}
-											} else {
-												LED_num = (Convert.ToInt32 (cmd_args [1]) - 1);
-												if (cmd_args.Length != 6)
-													G35_Lights_Queue.Lights [LED_num].Brightness = LightSystem.Brightness_MAX;
-												SetLight_Color (G35_Lights_Queue, LED_num, R, G, B);
-											}
+											colors_since_newline = 0;
+											color_list.Append ("\n  ");
 										}
-									} catch (System.FormatException) {
-										Console.WriteLine ("(invalid numbers entered; type 'color' for help)");
 									}
+									// Trim off the ', ' at the end
+									color_list = color_list.Remove (color_list.Length - 2, 2);
+									Console.WriteLine ("> Named colors:\n  {0}\n> Custom colors can be specified with [red] [green] [blue]", color_list.ToString ());
 								} else {
-									Console.WriteLine ("> color [LED # or 'all' or dash-separated range] [R from 0-255] [G from 0-255] [B from 0-255] [optional: keep brightness]");
+									// Get the selected range and color
+									if (G35_USB.Parsing.Parameter.GetRange (ref cmd_args, LightSystem.LIGHT_COUNT, out selected_lights, true) &&
+										G35_USB.Parsing.Parameter.GetColor (ref cmd_args, out selected_color, true)) {
+										// Stop any running animations
+										HaltActivity (false);
+										// If there's an argument at the end, don't touch brightness
+										bool keep_brightness = (cmd_args.Count > 0);
+
+										// For each selected light, set the color and brightness (if not preserved)
+										foreach (int light_index in selected_lights) {
+											G35_Lights_Queue.Lights [light_index].SetColor (selected_color.R,
+											                                                selected_color.G,
+											                                                selected_color.B,
+											                                                false);
+											if (! keep_brightness)
+												G35_Lights_Queue.Lights [light_index].Brightness = (selected_color.Brightness);
+										}
+										AddToAnimQueue (G35_Lights_Queue);
+									} else {
+										Console.WriteLine ("> color [range] [color] [optional: keep brightness]");
+									}
 								}
 								break;
 							case "brightness":
-								if (cmd_args.Length == 3) {
+								// Command selected, remove it from the arguments
+								cmd_args.RemoveAt (0);
+
+								// Get the selected range and color
+								if (G35_USB.Parsing.Parameter.GetRange (ref cmd_args, LightSystem.LIGHT_COUNT, out selected_lights, true)) {
+									// Stop any running animations
 									HaltActivity (false);
-									try {
-										Brightness = Convert.ToByte (cmd_args [2]);
-										if (cmd_args [1].ToLowerInvariant () == "all") {
-											FillLights_Brightness (G35_Lights_Queue, Brightness, true);
-										} else {
-											// First part can be a range of LEDs
-											if (cmd_args [1].Contains ("-")) {
-												int LED_start_num = (Convert.ToInt32 (cmd_args [1].Split ('-') [0]) - 1);
-												int LED_end_num = (Convert.ToInt32 (cmd_args [1].Split ('-') [1]) - 1);
-												if (LED_end_num <= LED_start_num) {
-													Console.WriteLine ("(Range of LEDs must start from lower to higher, e.g. '4-20')");
-													break;
-												}
-												for (LED_num = LED_start_num; LED_num <= LED_end_num; LED_num++) {
-													G35_Lights_Queue.Lights [LED_num].Brightness = Brightness;
-												}
-											} else {
-												LED_num = (Convert.ToInt32 (cmd_args [1]) - 1);
-												G35_Lights_Queue.Lights [LED_num].Brightness = Brightness;
-											}
-											AddToAnimQueue (G35_Lights_Queue);
+
+									// Parse brightness if specified
+									if (cmd_args.Count >= 1 && byte.TryParse (cmd_args [0], out Brightness)) {
+										// For each selected light, set the brightness
+										foreach (int light_index in selected_lights) {
+											G35_Lights_Queue.Lights [light_index].Brightness = Brightness;
 										}
-									} catch (System.FormatException) {
+										AddToAnimQueue (G35_Lights_Queue);
+									} else {
 										Console.WriteLine ("(invalid numbers entered; type 'brightness' for help)");
 									}
 								} else {
-									Console.WriteLine ("> brightness [LED # or 'all' or dash-separated range] [brightness from 0-255]");
+									Console.WriteLine ("> brightness [range] [brightness from '{0}' to '{1}']",
+									                   LightSystem.Brightness_MIN, LightSystem.Brightness_MAX);
 								}
 								break;
 							case "white":
@@ -384,13 +390,13 @@ namespace G35_USB
 								AddToAnimQueue (G35_Lights_Queue);
 								break;
 							case "anim":
-								if (cmd_args.Length > 1 && cmd_args [1] != null) {
+								if (cmd_args.Count > 1 && cmd_args [1] != null) {
 									switch (cmd_args [1].ToLowerInvariant ()) {
 									case "play":
-										if (cmd_args.Length > 2 && cmd_args [2] != null) {
+										if (cmd_args.Count > 2 && cmd_args [2] != null) {
 											switch (cmd_args [2].ToLowerInvariant ()) {
 											case "simple":
-												if (cmd_args.Length > 3 && cmd_args [3] != null) {
+												if (cmd_args.Count > 3 && cmd_args [3] != null) {
 													switch (cmd_args [3].ToLowerInvariant ()) {
 													case "fade":
 														HaltActivity (false);
@@ -399,7 +405,7 @@ namespace G35_USB
 														Animation_Play (G35_Lights_Queue, fade_animator);
 														break;
 													case "interval":
-														if (cmd_args.Length > 4 && cmd_args [4] != null) {
+														if (cmd_args.Count > 4 && cmd_args [4] != null) {
 															HaltActivity (false);
 															IntervalAnimation time_animator = new IntervalAnimation (G35_Lights_Queue.LightsLastProcessed);
 															switch (cmd_args [4].ToLowerInvariant ()) {
@@ -422,7 +428,7 @@ namespace G35_USB
 														}
 														break;
 													case "strobe":
-														if (cmd_args.Length > 4 && cmd_args [4] != null) {
+														if (cmd_args.Count > 4 && cmd_args [4] != null) {
 															HaltActivity (false);
 															SimpleStrobeAnimation strobe_animator = new SimpleStrobeAnimation (G35_Lights_Queue.LightsLastProcessed);
 															switch (cmd_args [4].ToLowerInvariant ()) {
@@ -469,14 +475,14 @@ namespace G35_USB
 												}
 												break;
 											case "file":
-												if (cmd_args.Length > 3 && cmd_args [3] != null) {
+												if (cmd_args.Count > 3 && cmd_args [3] != null) {
 													switch (cmd_args [3].ToLowerInvariant ()) {
 													case "basic":
-														if (cmd_args.Length > 4 && cmd_args [4] != null) {
+														if (cmd_args.Count > 4 && cmd_args [4] != null) {
 															string file_name = cmd_args [4];
-															if (cmd_args.Length > 5) {
+															if (cmd_args.Count > 5) {
 																// If there's spaces in the file-name, concatenate them together
-																for (int i = 5; i < cmd_args.Length; i++) {
+																for (int i = 5; i < cmd_args.Count; i++) {
 																	file_name += " " + cmd_args [i];
 																}
 															}
@@ -498,11 +504,11 @@ namespace G35_USB
 														}
 														break;
 													case "audio":
-														if (cmd_args.Length > 4 && cmd_args [4] != null) {
+														if (cmd_args.Count > 4 && cmd_args [4] != null) {
 															string file_name = cmd_args [4];
-															if (cmd_args.Length > 5) {
+															if (cmd_args.Count > 5) {
 																// If there's spaces in the file-name, concatenate them together
-																for (int i = 5; i < cmd_args.Length; i++) {
+																for (int i = 5; i < cmd_args.Count; i++) {
 																	file_name += " " + cmd_args [i];
 																}
 															}
@@ -540,7 +546,7 @@ namespace G35_USB
 										}
 										break;
 									case "seek":
-										if (cmd_args.Length > 2 && cmd_args [2] != null) {
+										if (cmd_args.Count > 2 && cmd_args [2] != null) {
 											if (G35_Lights_Queue.AnimationActive && G35_Lights_Queue.SelectedAnimation is AudioBitmapAnimation) {
 												double time_seek;
 												double.TryParse (cmd_args [2], out time_seek);
@@ -556,7 +562,7 @@ namespace G35_USB
 										Animation_Stop (G35_Lights_Queue);
 										break;
 									case "fade":
-										if (cmd_args.Length > 2 && cmd_args [2] != null) {
+										if (cmd_args.Count > 2 && cmd_args [2] != null) {
 											switch (cmd_args [2].ToLowerInvariant ()) {
 											case "enable":
 												Animation_Fading_Enabled = true;
@@ -575,7 +581,7 @@ namespace G35_USB
 										}
 										break;
 									case "style":
-										if (cmd_args.Length > 2 && cmd_args [2] != null) {
+										if (cmd_args.Count > 2 && cmd_args [2] != null) {
 											bool style_changed = true;
 											switch (cmd_args [2].ToLowerInvariant ()) {
 											case "bright":
@@ -617,7 +623,7 @@ namespace G35_USB
 								}
 								break;
 							case "overlay":
-								if (cmd_args.Length > 1 && cmd_args [1] != null) {
+								if (cmd_args.Count > 1 && cmd_args [1] != null) {
 									switch (cmd_args [1].ToLowerInvariant ()) {
 									case "list":
 										lock (G35_Lights_Overlay_Queues) {
@@ -644,7 +650,7 @@ namespace G35_USB
 										UpdateAllQueues ();
 										break;
 									default:
-										if (cmd_args.Length > 2 && cmd_args [2] != null) {
+										if (cmd_args.Count > 2 && cmd_args [2] != null) {
 											string overlay_name = cmd_args [1].ToLowerInvariant ();
 											switch (overlay_name) {
 											case G35_Lights_Queue_Name:
@@ -657,43 +663,30 @@ namespace G35_USB
 														LED_Queue resulting_queue = GetQueueByName (overlay_name);
 														if (resulting_queue != null) {
 															// Mapping from usual 'color' command:  Numbers 5-6 -> 7-8
-															if (cmd_args.Length == 7 || cmd_args.Length == 8) {
-																HaltActivity (resulting_queue);
-																try {
-																	R = Convert.ToByte (cmd_args [4]);
-																	G = Convert.ToByte (cmd_args [5]);
-																	B = Convert.ToByte (cmd_args [6]);
+															// Command selected, remove 'overlay layer_name command' from the arguments
+															cmd_args.RemoveRange (0, 3);
 
-																	if (cmd_args [3].ToLowerInvariant () == "all") {
-																		if (cmd_args.Length != 8)
-																			FillLights_Brightness (resulting_queue, LightSystem.Brightness_MAX, false, true);
-																		FillLights_Color (resulting_queue, R, G, B);
-																	} else {
-																		// First part can be a range of LEDs
-																		if (cmd_args [3].Contains ("-")) {
-																			int LED_start_num = (Convert.ToInt32 (cmd_args [3].Split ('-') [0]) - 1);
-																			int LED_end_num = (Convert.ToInt32 (cmd_args [3].Split ('-') [1]) - 1);
-																			if (LED_end_num <= LED_start_num) {
-																				Console.WriteLine ("(Range of LEDs must start from lower to higher, e.g. '4-20')");
-																				break;
-																			}
-																			for (LED_num = LED_start_num; LED_num <= LED_end_num; LED_num++) {
-																				if (cmd_args.Length != 8)
-																					resulting_queue.Lights [LED_num].Brightness = LightSystem.Brightness_MAX;
-																				SetLight_Color (resulting_queue, LED_num, R, G, B);
-																			}
-																		} else {
-																			LED_num = (Convert.ToInt32 (cmd_args [3]) - 1);
-																			if (cmd_args.Length != 8)
-																				resulting_queue.Lights [LED_num].Brightness = LightSystem.Brightness_MAX;
-																			SetLight_Color (resulting_queue, LED_num, R, G, B);
-																		}
-																	}
-																} catch (System.FormatException) {
-																	Console.WriteLine ("(invalid numbers entered; type 'overlay {0} color' for help)", overlay_name);
+															// Get the selected range and color
+															if (G35_USB.Parsing.Parameter.GetRange (ref cmd_args, LightSystem.LIGHT_COUNT, out selected_lights, true) &&
+															    G35_USB.Parsing.Parameter.GetColor (ref cmd_args, out selected_color, true)) {
+																// Stop any running animations on this queue
+																HaltActivity (resulting_queue);
+																// If there's an argument at the end, don't touch brightness
+																bool keep_brightness = (cmd_args.Count > 0);
+
+																// For each selected light, set the color and brightness (if not preserved)
+																foreach (int light_index in selected_lights) {
+																	resulting_queue.Lights [light_index].SetColor (selected_color.R,
+																	                                               selected_color.G,
+																	                                               selected_color.B,
+																	                                               false);
+																	if (! keep_brightness)
+																		resulting_queue.Lights [light_index].Brightness = (selected_color.Brightness);
 																}
+																AddToAnimQueue (resulting_queue);
 															} else {
-																Console.WriteLine ("> overlay {0} color [LED # or 'all' or dash-separated range] [R from 0-255] [G from 0-255] [B from 0-255] [optional: keep brightness]", overlay_name);
+																Console.WriteLine ("> overlay {0} color [range] [color] [optional: keep brightness]",
+																                   overlay_name);
 															}
 														}
 													}
@@ -702,36 +695,29 @@ namespace G35_USB
 													lock (G35_Lights_Overlay_Queues) {
 														LED_Queue resulting_queue = GetQueueByName (overlay_name);
 														if (resulting_queue != null) {
-															// Mapping from usual 'color' command:  Numbers 3 -> 5
-															if (cmd_args.Length == 5) {
+															// Mapping from usual 'brightness' command:  Numbers 3 -> 5
+															// Command selected, remove 'overlay layer_name command' from the arguments
+															cmd_args.RemoveRange (0, 3);
+
+															// Get the selected range and color
+															if (G35_USB.Parsing.Parameter.GetRange (ref cmd_args, LightSystem.LIGHT_COUNT, out selected_lights, true)) {
+																// Stop any running animations
 																HaltActivity (resulting_queue);
-																try {
-																	Brightness = Convert.ToByte (cmd_args [4]);
-																	if (cmd_args [3].ToLowerInvariant () == "all") {
-																		FillLights_Brightness (resulting_queue, Brightness, true);
-																	} else {
-																		// First part can be a range of LEDs
-																		if (cmd_args [3].Contains ("-")) {
-																			int LED_start_num = (Convert.ToInt32 (cmd_args [3].Split ('-') [0]) - 1);
-																			int LED_end_num = (Convert.ToInt32 (cmd_args [3].Split ('-') [1]) - 1);
-																			if (LED_end_num <= LED_start_num) {
-																				Console.WriteLine ("(Range of LEDs must start from lower to higher, e.g. '4-20')");
-																				break;
-																			}
-																			for (LED_num = LED_start_num; LED_num <= LED_end_num; LED_num++) {
-																				resulting_queue.Lights [LED_num].Brightness = Brightness;
-																			}
-																		} else {
-																			LED_num = (Convert.ToInt32 (cmd_args [3]) - 1);
-																			resulting_queue.Lights [LED_num].Brightness = Brightness;
-																		}
-																		AddToAnimQueue (resulting_queue);
+
+																// Parse brightness if specified
+																if (cmd_args.Count >= 1 && byte.TryParse (cmd_args [0], out Brightness)) {
+																	// For each selected light, set the brightness
+																	foreach (int light_index in selected_lights) {
+																		resulting_queue.Lights [light_index].Brightness = Brightness;
 																	}
-																} catch (System.FormatException) {
-																	Console.WriteLine ("(invalid numbers entered; type 'overlay {0} brightness' for help)", overlay_name);
+																	AddToAnimQueue (resulting_queue);
+																} else {
+																	Console.WriteLine ("(invalid numbers entered; type 'brightness' for help)");
 																}
 															} else {
-																Console.WriteLine ("> overlay {0} brightness [LED # or 'all' or dash-separated range] [brightness from 0-255]", overlay_name);
+																Console.WriteLine ("> overlay {2} brightness [range] [brightness from '{0}' to '{1}']",
+																                   LightSystem.Brightness_MIN, LightSystem.Brightness_MAX,
+																                   overlay_name);
 															}
 														}
 													}
@@ -767,13 +753,13 @@ namespace G35_USB
 														LED_Queue resulting_queue = GetQueueByName (overlay_name);
 														if (resulting_queue != null) {
 															// Mapping: 2 -> 3
-															if (cmd_args.Length > 3 && cmd_args [3] != null) {
+															if (cmd_args.Count > 3 && cmd_args [3] != null) {
 																switch (cmd_args [3].ToLowerInvariant ()) {
 																case "simple":
-																	if (cmd_args.Length > 4 && cmd_args [4] != null) {
+																	if (cmd_args.Count > 4 && cmd_args [4] != null) {
 																		switch (cmd_args [4].ToLowerInvariant ()) {
 																		case "strobe":
-																			if (cmd_args.Length > 5 && cmd_args [5] != null) {
+																			if (cmd_args.Count > 5 && cmd_args [5] != null) {
 																				HaltActivity (resulting_queue);
 																				SimpleStrobeAnimation strobe_animator = new SimpleStrobeAnimation (resulting_queue.LightsLastProcessed);
 																				switch (cmd_args [5].ToLowerInvariant ()) {
@@ -820,14 +806,14 @@ namespace G35_USB
 																	}
 																	break;
 																case "file":
-																	if (cmd_args.Length > 4 && cmd_args [4] != null) {
+																	if (cmd_args.Count > 4 && cmd_args [4] != null) {
 																		switch (cmd_args [4].ToLowerInvariant ()) {
 																		case "basic":
-																			if (cmd_args.Length > 5 && cmd_args [5] != null) {
+																			if (cmd_args.Count > 5 && cmd_args [5] != null) {
 																				string file_name = cmd_args [5];
-																				if (cmd_args.Length > 6) {
+																				if (cmd_args.Count > 6) {
 																					// If there's spaces in the file-name, concatenate them together
-																					for (int i = 6; i < cmd_args.Length; i++) {
+																					for (int i = 6; i < cmd_args.Count; i++) {
 																						file_name += " " + cmd_args [i];
 																					}
 																				}
@@ -849,11 +835,11 @@ namespace G35_USB
 																			}
 																			break;
 																		case "audio":
-																			if (cmd_args.Length > 5 && cmd_args [5] != null) {
+																			if (cmd_args.Count > 5 && cmd_args [5] != null) {
 																				string file_name = cmd_args [5];
-																				if (cmd_args.Length > 6) {
+																				if (cmd_args.Count > 6) {
 																					// If there's spaces in the file-name, concatenate them together
-																					for (int i = 6; i < cmd_args.Length; i++) {
+																					for (int i = 6; i < cmd_args.Count; i++) {
 																						file_name += " " + cmd_args [i];
 																					}
 																				}
@@ -893,7 +879,7 @@ namespace G35_USB
 													}
 													break;
 												case "blending":
-													if (cmd_args.Length > 3 && cmd_args [3] != null) {
+													if (cmd_args.Count > 3 && cmd_args [3] != null) {
 														bool blending_changed = true;
 														LED_Queue resulting_queue = GetQueueByName (overlay_name);
 														if (resulting_queue != null) {
@@ -967,7 +953,7 @@ namespace G35_USB
 								}
 								break;
 							case "shift_outwards":
-								if (cmd_args.Length == 2) {
+								if (cmd_args.Count == 2) {
 									HaltActivity (false);
 									int Shift_Amount = Convert.ToByte (cmd_args [1]);
 									LightProcessing.ShiftLightsOutward (G35_Lights_Queue.Lights, Shift_Amount);
@@ -977,12 +963,12 @@ namespace G35_USB
 								}
 								break;
 							case "vu":
-								if (cmd_args.Length > 1 && cmd_args [1] != null) {
+								if (cmd_args.Count > 1 && cmd_args [1] != null) {
 									switch (cmd_args [1].ToLowerInvariant ()) {
 									case "run":
 										// For the newer AbstractReactiveAnimation types
 										//  Automatically starts the system, resetting if an existing animation was running
-										if (cmd_args.Length == 3) {
+										if (cmd_args.Count == 3) {
 											// Prepare the animation
 											//  Animation_Play will automatically enable the VU system
 											switch (cmd_args [2]) {
@@ -1014,7 +1000,7 @@ namespace G35_USB
 										}
 										break;
 									case "legacy_mode":
-										if (cmd_args.Length == 3) {
+										if (cmd_args.Count == 3) {
 											if (G35_Lights_Queue.AnimationActive == false || !(G35_Lights_Queue.SelectedAnimation is LegacyReactiveAnimation)) {
 												Console.WriteLine ("(Starting legacy VU animation...)");
 
@@ -1094,10 +1080,10 @@ namespace G35_USB
 										}
 										break;
 									case "display":
-										if (cmd_args.Length > 2 && cmd_args [2] != null) {
+										if (cmd_args.Count > 2 && cmd_args [2] != null) {
 											switch (cmd_args [2].ToLowerInvariant ()) {
 											case "meter":
-												if (cmd_args.Length > 3 && cmd_args [3] != null) {
+												if (cmd_args.Count > 3 && cmd_args [3] != null) {
 													switch (cmd_args [3].ToLowerInvariant ()) {
 													case "show":
 														ReactiveSystem.Processing_Show_Analysis = true;
@@ -1116,7 +1102,7 @@ namespace G35_USB
 												}
 												break;
 											case "variable":
-												if (cmd_args.Length > 3 && cmd_args [3] != null) {
+												if (cmd_args.Count > 3 && cmd_args [3] != null) {
 													switch (cmd_args [3].ToLowerInvariant ()) {
 													case "show":
 														ReactiveSystem.Processing_Show_Variables = true;
@@ -1135,7 +1121,7 @@ namespace G35_USB
 												}
 												break;
 											case "freq":
-												if (cmd_args.Length > 3 && cmd_args [3] != null) {
+												if (cmd_args.Count > 3 && cmd_args [3] != null) {
 													switch (cmd_args [3].ToLowerInvariant ()) {
 													case "show":
 														ReactiveSystem.Processing_Show_Frequencies = true;
@@ -1154,7 +1140,7 @@ namespace G35_USB
 												}
 												break;
 											case "limit":
-												if (cmd_args.Length > 3 && cmd_args [3] != null) {
+												if (cmd_args.Count > 3 && cmd_args [3] != null) {
 													switch (cmd_args [3].ToLowerInvariant ()) {
 													case "enable":
 														ReactiveSystem.Processing_Limit_Display = true;
@@ -1187,28 +1173,28 @@ namespace G35_USB
 										Console.WriteLine ("(All VU display output hidden)");
 										break;
 									case "set_low":
-										if (cmd_args.Length == 3) {
+										if (cmd_args.Count == 3) {
 											ReactiveSystem.Audio_Volume_Low_Percentage = Math.Max (Convert.ToDouble (cmd_args [2]), 0);
 										} else {
 											Console.WriteLine ("> vu set_low [percentage of frequencies for low, current " + ReactiveSystem.Audio_Volume_Low_Percentage.ToString () + ", larger (up to 1) = skip more]");
 										}
 										break;
 									case "set_mid":
-										if (cmd_args.Length == 3) {
+										if (cmd_args.Count == 3) {
 											ReactiveSystem.Audio_Volume_Mid_Percentage = Math.Max (Convert.ToDouble (cmd_args [2]), 0);
 										} else {
 											Console.WriteLine ("> vu set_mid [percentage of frequencies for mid, current " + ReactiveSystem.Audio_Volume_Mid_Percentage.ToString () + ", larger (up to 1) = more]");
 										}
 										break;
 									case "set_high":
-										if (cmd_args.Length == 3) {
+										if (cmd_args.Count == 3) {
 											ReactiveSystem.Audio_Volume_High_Percentage = Math.Max (Convert.ToDouble (cmd_args [2]), 0);
 										} else {
 											Console.WriteLine ("> vu set_high [percentage of frequencies for high, current " + ReactiveSystem.Audio_Volume_High_Percentage.ToString () + ", smaller (from 0 to 1) = more]");
 										}
 										break;
 									case "set_frequency_start":
-										if (cmd_args.Length == 3) {
+										if (cmd_args.Count == 3) {
 											ReactiveSystem.Audio_Frequency_Scale_Start = Math.Max (Convert.ToDouble (cmd_args [2]), 0);
 										} else {
 											Console.WriteLine ("> vu set_frequency_start [starting value for the frequency scaling multiplier, current " + ReactiveSystem.Audio_Frequency_Scale_Start.ToString () + ", larger = shift bars more towards higher frequencies]");
@@ -1226,7 +1212,7 @@ namespace G35_USB
 								Console.Clear ();
 								break;
 							case "queue":
-								if (cmd_args.Length > 1 && cmd_args [1] != null) {
+								if (cmd_args.Count > 1 && cmd_args [1] != null) {
 									switch (cmd_args [1].ToLowerInvariant ()) {
 									case "start":
 										G35_Light_Start_Queue ();
