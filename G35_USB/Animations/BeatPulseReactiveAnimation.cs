@@ -73,19 +73,6 @@ namespace G35_USB
 		/// </summary>
 		private const byte DesaturateBoost_Max_Desaturation = 80;
 
-		/// <summary>
-		/// Red component of the desaturation-processed current shifting color
-		/// </summary>
-		private byte DesaturateBoost_ColorShift_Red;
-		/// <summary>
-		/// Green component of the desaturation-processed current shifting color
-		/// </summary>
-		private byte DesaturateBoost_ColorShift_Green;
-		/// <summary>
-		/// Blue component of the desaturation-processed current shifting color
-		/// </summary>
-		private byte DesaturateBoost_ColorShift_Blue;
-
 #endregion
 
 		public BeatPulseReactiveAnimation (int Light_Count):base(Light_Count)
