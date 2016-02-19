@@ -1,0 +1,18 @@
+sudo: false
+addons:
+  apt:
+    packages:
+    # General build process
+    - make
+    # For light system
+    - libmono-system-core4.0-cil
+    - libmono-system-drawing4.0-cil
+    # For Impulse audio library
+    - libpulse-dev
+    - libfftw3-dev
+
+language: csharp
+solution: G35_USB.sln
+
+script:
+  - make all
