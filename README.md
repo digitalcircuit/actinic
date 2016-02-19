@@ -1,4 +1,4 @@
-G35 USB
+G35 USB [![Build Status](https://travis-ci.org/digitalcircuit/g35-usb.svg?branch=master)](https://travis-ci.org/digitalcircuit/g35-usb)
 ===============
 
 *Note: Git history may be rewritten until everything is stable*

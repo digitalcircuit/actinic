@@ -75,6 +75,7 @@ build_and_copy_impulse ()
 	# Copy the resulting files
 	find "$IMPULSE_BUILD_DIR/" -path "*/impulse/*" -type f -name "$FILES_IMPULSE_MODULE" -exec cp '{}' "$OUTPUT_DIR/" ';'
 	cd "$CURRENT_DIR"
+	echo "Impulse library successfully built!"
 }
 
 check_impulse ()
