@@ -12,7 +12,7 @@ addons:
     - libfftw3-dev
 
 language: csharp
-solution: G35_USB.sln
+solution: Actinic.sln
 
 script:
   - make all

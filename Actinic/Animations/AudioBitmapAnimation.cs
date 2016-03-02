@@ -1,0 +1,216 @@
+//
+//  AudioBitmapAnimation.cs
+//
+//  Author:
+//       Shane Synan <digitalcircuit36939@gmail.com>
+//
+//  Copyright (c) 2014 - 2016
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+//#define DEBUG_MPLAYER
+
+using System;
+using System.IO;
+using System.Collections.Generic;
+using System.Diagnostics;
+
+namespace Actinic
+{
+	public class AudioBitmapAnimation:Actinic.AbstractAnimation, IAnimationOneshot
+	{
+		private const string Player_Program = "mplayer";
+		private const string Player_Arguments = "-slave -quiet -input nodefault-bindings -idle '{0}'";
+		// Don't read user config: -noconfig all
+		// Stay running at end of file: -idle
+		private const string CMD_SeekToTime = "seek {0} 2";
+		//seek 12.1 2
+		private const string CMD_RequestTime = "get_property time_pos";
+		private const string CMD_RequestTime_Response_Prefix = "ANS_time_pos=";
+		//ANS_time_pos=64.511275
+		private const string CMD_RequestTime_NotAvailableResponse_Prefix = "ANS_ERROR=";
+		//ANS_ERROR=PROPERTY_UNAVAILABLE
+		private const string CMD_RequestTime_ErrorResponse_Prefix = "Failed to get value of property 'time_pos'";
+		//Failed to get value of property 'time_pos'.
+
+		private Process AudioPlayer;
+		private double AudioPlayer_CurrentTime = 0;
+		private bool AudioPlayer_CurrentTime_Updated = false;
+		private List<LED_Set> AnimationFrames = new List<LED_Set> ();
+		private int animation_frame = 0;
+
+		public int AnimationFrame {
+			get { return animation_frame; }
+			set {
+				if (value < 0) {
+					animation_frame = 0;
+				} else if (value >= AnimationFrames.Count) {
+					animation_frame = AnimationFrames.Count - 1;
+				} else {
+					animation_frame = value;
+				}
+			}
+		}
+
+		public string ImageFilePath {
+			get;
+			private set;
+		}
+
+		public string AudioFilePath {
+			get;
+			private set;
+		}
+
+		public bool AnimationFinished {
+			get {
+#if DEBUG_MPLAYER
+				Console.WriteLine ("AnimationFinished = {0}", (AnimationFrame == (AnimationFrames.Count - 1)));
+#endif
+				return (AnimationFrame >= (AnimationFrames.Count - 2));
+				// Sometimes it gets stuck on the next to last frame :/
+			}
+		}
+
+		public AudioBitmapAnimation (int Light_Count, string AudioAnimationFilePath):base(Light_Count)
+		{
+			if (File.Exists (AudioAnimationFilePath) == false)
+				throw new System.IO.FileNotFoundException ("AudioAnimationFilePath must point to an image.", AudioAnimationFilePath);
+			ParseAnimationFile (AudioAnimationFilePath);
+
+			System.Drawing.Bitmap bitmapImage = new System.Drawing.Bitmap (ImageFilePath);
+			if (bitmapImage.Width < Light_Count)
+				throw new System.IO.InvalidDataException (String.Format ("The animation file's provided image [ImageFilePath = '{0}'] " +
+					"is not wide enough for the current number of lights.  " +
+					"Expected '{1}' width, but got '{2}' width.", ImageFilePath, Light_Count, bitmapImage.Width)
+				);
+			AnimationFrames = AnimationUtilities.ConvertImageToLEDArray (Light_Count, bitmapImage);
+			InitAudioSystem ();
+		}
+
+		private void ParseAnimationFile (string FilePath)
+		{
+			System.IO.StreamReader file_read = new StreamReader (FilePath);
+			ImageFilePath = file_read.ReadLine ();
+			AudioFilePath = file_read.ReadLine ();
+			file_read.Close ();
+
+			if (File.Exists (ImageFilePath) == false)
+				throw new System.IO.FileNotFoundException (string.Format ("The first line in the animation file must point to a valid image.  See line #1 in '{0}', points to '{1}'", FilePath, ImageFilePath));
+			if (File.Exists (AudioFilePath) == false)
+				throw new System.IO.FileNotFoundException (string.Format ("The second line in the animation file must point to a valid audio file.  See line #2 in '{0}', points to '{1}'", FilePath, AudioFilePath));
+		}
+
+		private void InitAudioSystem ()
+		{
+			StopAudioSystem ();
+			AudioPlayer = new Process ();
+			AudioPlayer.StartInfo.FileName = Player_Program;
+			AudioPlayer.StartInfo.Arguments = String.Format (Player_Arguments, AudioFilePath);
+			AudioPlayer.StartInfo.UseShellExecute = false;
+			AudioPlayer.StartInfo.CreateNoWindow = true;
+			AudioPlayer.StartInfo.RedirectStandardInput = true;
+			AudioPlayer.StartInfo.RedirectStandardOutput = true;
+			AudioPlayer.StartInfo.RedirectStandardError = true;
+			AudioPlayer.EnableRaisingEvents = true;
+			// see below for output handler
+			AudioPlayer.OutputDataReceived += new DataReceivedEventHandler (AudioPlayer_OutputCallback);
+			AudioPlayer.ErrorDataReceived += new DataReceivedEventHandler (AudioPlayer_ErrorCallback);
+
+			AudioPlayer.Start ();
+			AudioPlayer.BeginOutputReadLine ();
+		}
+
+		public void StopAudioSystem ()
+		{
+			if (AudioPlayer != null)
+				if (AudioPlayer.HasExited == false)
+					AudioPlayer.Kill ();
+		}
+
+		private void AudioPlayer_OutputCallback (object sender, System.Diagnostics.DataReceivedEventArgs e)
+		{
+			if (e.Data == "")
+				return;
+#if DEBUG_MPLAYER
+			Console.WriteLine ("MPlayer output: " + e.Data);
+#endif
+			if (e.Data.StartsWith (CMD_RequestTime_Response_Prefix)) {
+				AudioPlayer_CurrentTime = double.Parse (e.Data.Split ('=') [1]);
+				AudioPlayer_CurrentTime_Updated = true;
+			} else if (e.Data.StartsWith (CMD_RequestTime_NotAvailableResponse_Prefix)) {
+				animation_frame = AnimationFrames.Count - 1;
+			}
+		}
+
+		private void AudioPlayer_ErrorCallback (object sender, System.Diagnostics.DataReceivedEventArgs e)
+		{
+			if (e.Data == "")
+				return;
+#if DEBUG_MPLAYER
+			Console.WriteLine ("MPlayer error: " + e.Data);
+#endif
+			if (e.Data.StartsWith (CMD_RequestTime_ErrorResponse_Prefix)) {
+				animation_frame = AnimationFrames.Count - 1;
+			}
+		}
+
+		public void SeekToPosition (double Position)
+		{
+			if (AudioPlayer == null || AudioPlayer.HasExited == true)
+				throw new InvalidOperationException ("AudioPlayer not running, can not seek to a position.");
+			AudioPlayer.StandardInput.WriteLine (CMD_SeekToTime, Position);
+		}
+
+		private int getPlayingFrame ()
+		{
+			if (AudioPlayer == null || AudioPlayer.HasExited == true)
+				throw new InvalidOperationException ("AudioPlayer not running, can not determine current track position.");
+
+			AudioPlayer_CurrentTime_Updated = false;
+			AudioPlayer.StandardInput.WriteLine (CMD_RequestTime);
+
+//			while (AudioPlayer_CurrentTime_Updated == false) {
+//				// Just wait for it, it should be instantaneous
+//			}
+
+			int desiredFrame = (int)((AudioPlayer_CurrentTime * 1000) / 50);
+			if (desiredFrame < 0)
+				desiredFrame = 0;
+			if (desiredFrame >= AnimationFrames.Count)
+				desiredFrame = AnimationFrames.Count - 1;
+
+			return desiredFrame;
+		}
+
+		public override List<LED> GetNextFrame ()
+		{
+			animation_frame = getPlayingFrame ();
+			if (animation_frame > -1 && animation_frame < AnimationFrames.Count) {
+				if (AudioPlayer_CurrentTime_Updated == false && (animation_frame + 1) < AnimationFrames.Count) {
+					return AnimationFrames [animation_frame + 1].LED_Values;
+				} else {
+					return AnimationFrames [animation_frame].LED_Values;
+				}
+			} else {
+				throw new System.ArgumentOutOfRangeException ("animation_frame", animation_frame, "animation_frame must " +
+					"be within range of AnimationFrames, e.g. [0, " + AnimationFrames.Count.ToString () + "]"
+				);
+			}
+		}
+
+
+	}
+}
+

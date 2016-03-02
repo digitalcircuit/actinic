@@ -1,0 +1,399 @@
+#region Old VU Meters
+//
+//		private static void AudioMeter_Basic (double VU_Volume)
+//		{
+//			int LightsActive = (int)(VU_Volume * LightSystem.LIGHT_COUNT);
+//			for (int i = 0; i < LightsActive; i++) {
+//				Actinic_Lights[i].R = (byte)Math.Max (MathUtilities.ConvertRange (i, 0, LightsActive, 0, 255), 0);
+//				Actinic_Lights[i].G = (byte)Math.Max (MathUtilities.ConvertRange (LightsActive - i, 0, LightsActive, 0, 255), 0);
+//			}
+//			int Smooth_R = 0;
+//			int Smooth_G = 0;
+//			int Smooth_B = 0;
+//			for (int i = LightsActive; i < LightSystem.LIGHT_COUNT; i++) {
+//				if(VU_Smoothing_Enabled)
+//				{
+//					Smooth_R = Convert.ToByte(Actinic_Lights[i].R / VU_SmoothingMode_Divisor);
+//					Smooth_G = Convert.ToByte(Actinic_Lights[i].G / VU_SmoothingMode_Divisor);
+//				} //else Smooth_{x} already = 0, due to above
+//				Actinic_Lights[i].R = (byte)Smooth_R;
+//				Actinic_Lights[i].G = (byte)Smooth_G;
+//			}
+//			UpdateLights_Color ();
+//		}
+//
+//		private static void AudioMeter_Basic_Mirrored (double VU_Volume)
+//		{
+//			int LightsActive = (int)(VU_Volume * LightSystem.LIGHT_COUNT / 2);
+//			int SelectedLightCount = 0;
+//			for (int i = (LightSystem.LIGHT_COUNT / 2); i < ((LightSystem.LIGHT_COUNT / 2) + (LightsActive)); i++) {
+//				Actinic_Lights [i].R = (byte)Math.Max (MathUtilities.ConvertRange (SelectedLightCount, 0, LightsActive, 0, 255), 0);
+//				Actinic_Lights [i].G = (byte)Math.Max (MathUtilities.ConvertRange (LightsActive - SelectedLightCount, 0, LightsActive, 0, 255), 0);
+//				SelectedLightCount += 1;
+//			}
+//			int Smooth_R = 0;
+//			int Smooth_G = 0;
+//			int Smooth_B = 0;
+//			for (int i = ((LightSystem.LIGHT_COUNT / 2) + (LightsActive)); i < LightSystem.LIGHT_COUNT; i++) {
+//				if(VU_Smoothing_Enabled)
+//				{
+//					Smooth_R = Convert.ToByte(Actinic_Lights[i].R / VU_SmoothingMode_Divisor);
+//					Smooth_G = Convert.ToByte(Actinic_Lights[i].G / VU_SmoothingMode_Divisor);
+//				} //else Smooth_{x} already = 0, due to above
+//				Actinic_Lights[i].R = (byte)Smooth_R;
+//				Actinic_Lights[i].G = (byte)Smooth_G;
+//			}
+//			SelectedLightCount = 0;
+//			for (int i = ((LightSystem.LIGHT_COUNT / 2) - 1); i > (((LightSystem.LIGHT_COUNT / 2) - 1) - LightsActive); i--) {
+//				Actinic_Lights [i].R = (byte)Math.Max (MathUtilities.ConvertRange (SelectedLightCount, 0, LightsActive, 0, 255), 0);
+//				Actinic_Lights [i].G = (byte)Math.Max (MathUtilities.ConvertRange (LightsActive - SelectedLightCount, 0, LightsActive, 0, 255), 0);
+//				SelectedLightCount += 1;
+//			}
+//			Smooth_R = 0;
+//			Smooth_G = 0;
+//			Smooth_B = 0;
+//			for (int i = (((LightSystem.LIGHT_COUNT / 2) - 1) - LightsActive); i >= 0; i--) {
+//				if(VU_Smoothing_Enabled)
+//				{
+//					Smooth_R = Convert.ToByte(Actinic_Lights[i].R / VU_SmoothingMode_Divisor);
+//					Smooth_G = Convert.ToByte(Actinic_Lights[i].G / VU_SmoothingMode_Divisor);
+//				} //else Smooth_{x} already = 0, due to above
+//				Actinic_Lights[i].R = (byte)Smooth_R;
+//				Actinic_Lights[i].G = (byte)Smooth_G;
+//			}
+//			UpdateLights_Color ();
+//		}
+//
+//		private static void AudioMeter_Tri_Mirrored (double VU_Volume_Low, double VU_Volume_Mid, double VU_Volume_High)
+//		{
+//			int LightsActiveLow = Convert.ToInt32 (Math.Min (((VU_Volume_Low * LightSystem.LIGHT_COUNT / 4) * 0.7) + ((VU_Volume_Mid * LightSystem.LIGHT_COUNT / 4) * 0.3), (LightSystem.LIGHT_COUNT / 4)));
+//			int LowColorEmphasis = (int)(VU_Volume_Low * 255);
+//			int MidColorEmphasis = (int)((VU_Volume_Mid * 0.75) * 255);
+//			int LowMidBoost = (255 - Math.Max (LowColorEmphasis, MidColorEmphasis));
+//			LowColorEmphasis += LowMidBoost;
+//			MidColorEmphasis += LowMidBoost;
+//
+//			int SelectedLightCount = 0;
+//			for (int i = (LightSystem.LIGHT_COUNT / 2); i < ((LightSystem.LIGHT_COUNT / 2) + (LightsActiveLow)); i++) {
+//				Actinic_Lights [i].G = (byte)Math.Max (MidColorEmphasis, 0);
+//				Actinic_Lights [i].B = (byte)Math.Max (LowColorEmphasis, 0);
+//				//Actinic_Lights[i].B = (byte)Math.Max (255 - MidColorEmphasis, 0);
+//				SelectedLightCount += 1;
+//			}
+//			int Smooth_R = 0;
+//			int Smooth_G = 0;
+//			int Smooth_B = 0;
+//			for (int i = ((LightSystem.LIGHT_COUNT / 2) + (LightsActiveLow)); i < (((LightSystem.LIGHT_COUNT / 4) * 3) + 1); i++) {
+//				if (VU_Smoothing_Enabled) {
+//					Smooth_G = Convert.ToByte (Actinic_Lights [i].G / VU_SmoothingMode_Divisor);
+//					Smooth_B = Convert.ToByte (Actinic_Lights [i].B / VU_SmoothingMode_Divisor);
+//				} //else Smooth_{x} already = 0, due to above
+//				Actinic_Lights [i].G = (byte)Smooth_G;
+//				Actinic_Lights [i].B = (byte)Smooth_B;
+//			}
+//			SelectedLightCount = 0;
+//			for (int i = ((LightSystem.LIGHT_COUNT / 2) - 1); i > (((LightSystem.LIGHT_COUNT / 2) - 1) - LightsActiveLow); i--) {
+//				Actinic_Lights [i].G = (byte)Math.Max (MidColorEmphasis, 0);
+//				Actinic_Lights [i].B = (byte)Math.Max (LowColorEmphasis, 0);
+//				//Actinic_Lights[i].B = (byte)Math.Max (255 - MidColorEmphasis, 0);
+//				SelectedLightCount += 1;
+//			}
+//			Smooth_R = 0;
+//			Smooth_G = 0;
+//			Smooth_B = 0;
+//			for (int i = (((LightSystem.LIGHT_COUNT / 2) - 1) - LightsActiveLow); i >= (LightSystem.LIGHT_COUNT / 4); i--) {
+//				if (VU_Smoothing_Enabled) {
+//					Smooth_G = Convert.ToByte (Actinic_Lights [i].G / VU_SmoothingMode_Divisor);
+//					Smooth_B = Convert.ToByte (Actinic_Lights [i].B / VU_SmoothingMode_Divisor);
+//				} //else Smooth_{x} already = 0, due to above
+//				Actinic_Lights [i].G = (byte)Smooth_G;
+//				Actinic_Lights [i].B = (byte)Smooth_B;
+//			}
+//
+//
+//
+//			int LightsActiveHigh = Convert.ToInt32 (Math.Min (((VU_Volume_High * LightSystem.LIGHT_COUNT / 4) * 0.5) + ((VU_Volume_Mid * LightSystem.LIGHT_COUNT / 4) * 0.5), (LightSystem.LIGHT_COUNT / 4)));
+//			SelectedLightCount = 0;
+//			for (int i = 0; i < (LightsActiveHigh); i++) {
+//				Actinic_Lights [i].R = (byte)Math.Max (MathUtilities.ConvertRange (SelectedLightCount, 0, LightsActiveHigh, 0, 85) + 170, 0);
+//				Actinic_Lights [i].G = (byte)Math.Max (MathUtilities.ConvertRange (LightsActiveHigh - SelectedLightCount, 0, LightsActiveHigh, 0, 85), 0);
+//				SelectedLightCount += 1;
+//			}
+//			Smooth_R = 0;
+//			Smooth_G = 0;
+//			Smooth_B = 0;
+//			for (int i = (LightsActiveHigh); i < ((LightSystem.LIGHT_COUNT / 4) + 1); i++) {
+//				if (VU_Smoothing_Enabled) {
+//					Smooth_R = Convert.ToByte (Actinic_Lights [i].R / VU_SmoothingMode_Divisor);
+//					Smooth_G = Convert.ToByte (Actinic_Lights [i].G / VU_SmoothingMode_Divisor);
+//				} //else Smooth_{x} already = 0, due to above
+//				Actinic_Lights [i].R = (byte)Smooth_R;
+//				Actinic_Lights [i].G = (byte)Smooth_G;
+//			}
+//			SelectedLightCount = 0;
+//			for (int i = (LightSystem.LIGHT_COUNT - 1); i > ((LightSystem.LIGHT_COUNT - 1) - (LightsActiveHigh)); i--) {
+//				Actinic_Lights [i].R = (byte)Math.Max (MathUtilities.ConvertRange (SelectedLightCount, 0, LightsActiveHigh, 0, 85) + 170, 0);
+//				Actinic_Lights [i].G = (byte)Math.Max (MathUtilities.ConvertRange (LightsActiveHigh - SelectedLightCount, 0, LightsActiveHigh, 0, 85), 0);
+//				SelectedLightCount += 1;
+//			}
+//			Smooth_R = 0;
+//			Smooth_G = 0;
+//			Smooth_B = 0;
+//			for (int i = ((LightSystem.LIGHT_COUNT - 1) - (LightsActiveHigh)); i > (((LightSystem.LIGHT_COUNT / 4) * 3) - 1); i--) {
+//				if (VU_Smoothing_Enabled) {
+//					Smooth_R = Convert.ToByte (Actinic_Lights [i].R / VU_SmoothingMode_Divisor);
+//					Smooth_G = Convert.ToByte (Actinic_Lights [i].G / VU_SmoothingMode_Divisor);
+//				} //else Smooth_{x} already = 0, due to above
+//				Actinic_Lights [i].R = (byte)Smooth_R;
+//				Actinic_Lights [i].G = (byte)Smooth_G;
+//			}
+//			UpdateLights_Color ();
+//		}
+//
+//
+//		private static void AudioMeter_Tri_Mirrored_Simple (double VU_Volume_Low, double VU_Volume_Mid, double VU_Volume_High)
+//		{
+//			int MiddleCount = ((LightSystem.LIGHT_COUNT / 2) - 1);
+//
+//			//int LightsActiveLow = Convert.ToInt32 (Math.Min (((VU_Volume_Low * LightSystem.LIGHT_COUNT / 4) * 0.7) + ((VU_Volume_Mid * LightSystem.LIGHT_COUNT / 4) * 0.3), (LightSystem.LIGHT_COUNT / 4)));
+//			int LightsActiveLow = Convert.ToInt32 (Math.Min ((VU_Volume_Low * LightSystem.LIGHT_COUNT / 6), (LightSystem.LIGHT_COUNT / 6)));
+//
+//			int LowColorEmphasis = (int)(VU_Volume_Low * 255);
+//			int MidColorEmphasis = (int)((VU_Volume_Mid * 0.2) * 255);
+//			int LowMidBoost = (255 - Math.Max (LowColorEmphasis, MidColorEmphasis));
+//			LowColorEmphasis += LowMidBoost;
+//			MidColorEmphasis += LowMidBoost;
+//			MidColorEmphasis = Math.Min (MidColorEmphasis, 100);
+//
+//			int SelectedLightCount = 0;
+//			for (int i = MiddleCount; i < (MiddleCount + (LightsActiveLow)); i++) {
+//				Actinic_Lights_Unsmoothed [i].G = (byte)Math.Max (MidColorEmphasis, 0);
+//				Actinic_Lights_Unsmoothed [i].B = (byte)Math.Max (LowColorEmphasis, 0);
+//				//Actinic_Lights_Unsmoothed[i].B = (byte)Math.Max (255 - MidColorEmphasis, 0);
+//				SelectedLightCount += 1;
+//				Actinic_Lights_Unsmoothed [i].R = 0;
+//				//Above added to avoid residual red color from Mid section
+//			}
+//			for (int i = (MiddleCount + (LightsActiveLow)); i < (((LightSystem.LIGHT_COUNT / 6) * 4) + 1); i++) {
+//				Actinic_Lights_Unsmoothed [i].G = 0;
+//				Actinic_Lights_Unsmoothed [i].B = 0;
+//			}
+//			SelectedLightCount = 0;
+//			for (int i = (MiddleCount - 1); i > (((LightSystem.LIGHT_COUNT / 2) - 1) - LightsActiveLow); i--) {
+//				Actinic_Lights_Unsmoothed [i].G = (byte)Math.Max (MidColorEmphasis, 0);
+//				Actinic_Lights_Unsmoothed [i].B = (byte)Math.Max (LowColorEmphasis, 0);
+//				//Actinic_Lights_Unsmoothed[i].B = (byte)Math.Max (255 - MidColorEmphasis, 0);
+//				SelectedLightCount += 1;
+//				Actinic_Lights_Unsmoothed [i].R = 0;
+//				//Above added to avoid residual red color from Mid section
+//			}
+//			for (int i = ((MiddleCount - 1) - LightsActiveLow); i >= ((LightSystem.LIGHT_COUNT / 6) * 2); i--) {
+//				Actinic_Lights_Unsmoothed [i].R = 0;
+//				//Above added to avoid residual red color from Mid section
+//				Actinic_Lights_Unsmoothed [i].G = 0;
+//				Actinic_Lights_Unsmoothed [i].B = 0;
+//			}
+//
+//
+//			//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//
+//			int LightsActiveMid = Convert.ToInt32 (Math.Min ((VU_Volume_Mid * LightSystem.LIGHT_COUNT / 6), (LightSystem.LIGHT_COUNT / 6)));
+//
+//			MidColorEmphasis = (int)(VU_Volume_Mid * 255);
+//			int HighColorEmphasis = (int)((VU_Volume_High * 0.3) * 255);
+//			int MidHighBoost = (255 - Math.Max (MidColorEmphasis, HighColorEmphasis));
+//			MidColorEmphasis += MidHighBoost;
+//			HighColorEmphasis += MidHighBoost;
+//			HighColorEmphasis = Math.Min (HighColorEmphasis, 100);
+//
+//			SelectedLightCount = 0;
+//			for (int i = (MiddleCount + (LightsActiveLow)); i < (MiddleCount + (LightsActiveLow) + (LightsActiveMid)); i++) {
+//				Actinic_Lights_Unsmoothed [i].R = (byte)Math.Max (HighColorEmphasis, 0);
+//				Actinic_Lights_Unsmoothed [i].G = (byte)Math.Max (MidColorEmphasis, 0);
+//				SelectedLightCount += 1;
+//			}
+//			for (int i = (MiddleCount + (LightsActiveLow) + (LightsActiveMid)); i < (((LightSystem.LIGHT_COUNT / 6) * 5) + 1); i++) {
+//				Actinic_Lights_Unsmoothed [i].R = 0;
+//				Actinic_Lights_Unsmoothed [i].G = 0;
+//			}
+//			SelectedLightCount = 0;
+//			for (int i = ((MiddleCount - 1) - LightsActiveLow); i > ((MiddleCount - 1) - (LightsActiveLow + LightsActiveMid)); i--) {
+//				Actinic_Lights_Unsmoothed [i].R = (byte)Math.Max (HighColorEmphasis, 0);
+//				Actinic_Lights_Unsmoothed [i].G = (byte)Math.Max (MidColorEmphasis, 0);
+//				//Actinic_Lights_Unsmoothed[i].B = (byte)Math.Max (255 - MidColorEmphasis, 0);
+//				SelectedLightCount += 1;
+//			}
+//			for (int i = ((MiddleCount - 1) - (LightsActiveLow + LightsActiveMid)); i >= (LightSystem.LIGHT_COUNT / 6); i--) {
+//				Actinic_Lights_Unsmoothed [i].R = 0;
+//				Actinic_Lights_Unsmoothed [i].G = 0;
+//			}
+//
+//
+//
+//			//@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+//
+//			//Convert.ToInt32 (Math.Min (((VU_Volume_High * LightSystem.LIGHT_COUNT / 4) * 0.5) + ((VU_Volume_Mid * LightSystem.LIGHT_COUNT / 4) * 0.5), (LightSystem.LIGHT_COUNT / 4)));
+//			int LightsActiveHigh = Convert.ToInt32 (Math.Min ((VU_Volume_High * LightSystem.LIGHT_COUNT / 6), (LightSystem.LIGHT_COUNT / 6)));
+//			SelectedLightCount = 0;
+//			for (int i = 0; i < (LightsActiveHigh); i++) {
+//				Actinic_Lights_Unsmoothed [i].R = (byte)Math.Max (MathUtilities.ConvertRange (SelectedLightCount, 0, LightsActiveHigh, 0, 60) + 195, 0);
+//				Actinic_Lights_Unsmoothed [i].G = (byte)Math.Max (MathUtilities.ConvertRange (LightsActiveHigh - SelectedLightCount, 0, LightsActiveHigh, 0, 60), 0);
+//				SelectedLightCount += 1;
+//			}
+//			for (int i = (LightsActiveHigh); i < ((LightSystem.LIGHT_COUNT / 6) + 1); i++) {
+//				Actinic_Lights_Unsmoothed [i].R = 0;
+//				Actinic_Lights_Unsmoothed [i].G = 0;
+//			}
+//			SelectedLightCount = 0;
+//			for (int i = (LightSystem.LIGHT_COUNT - 1); i > ((LightSystem.LIGHT_COUNT - 1) - (LightsActiveHigh)); i--) {
+//				Actinic_Lights_Unsmoothed [i].R = (byte)Math.Max (MathUtilities.ConvertRange (SelectedLightCount, 0, LightsActiveHigh, 0, 85) + 170, 0);
+//				Actinic_Lights_Unsmoothed [i].G = (byte)Math.Max (MathUtilities.ConvertRange (LightsActiveHigh - SelectedLightCount, 0, LightsActiveHigh, 0, 85), 0);
+//				SelectedLightCount += 1;
+//			}
+//			for (int i = ((LightSystem.LIGHT_COUNT - 1) - (LightsActiveHigh)); i > (((LightSystem.LIGHT_COUNT / 6) * 5) - 1); i--) {
+//				Actinic_Lights_Unsmoothed [i].R = 0;
+//				Actinic_Lights_Unsmoothed [i].G = 0;
+//			}
+//
+//
+//			ApplySmoothing (VU_Smoothing_Percentage);
+//
+//			UpdateLights_Color ();
+//		}
+//
+//
+//		private static void AudioMeter_Chaser_Tri_Mirrored (double VU_Volume_Low, double VU_Volume_Mid, double VU_Volume_High)
+//		{
+//			//Shift Red and Green values outward from center
+//			int Smooth_R = 0;
+//			int Smooth_G = 0;
+//			int Smooth_B = 0;
+//
+//			for (int i = LightSystem.LIGHT_COUNT - 2; i > (LightSystem.LIGHT_COUNT / 2); i--) {
+//				Smooth_R = Actinic_Lights [i].R;
+//				Smooth_G = Actinic_Lights [i].G;
+//				Actinic_Lights [i + 1].R = (byte)Smooth_R;
+//				Actinic_Lights [i + 1].G = (byte)Smooth_G;
+//			}
+//			for (int i = 1; i < (LightSystem.LIGHT_COUNT / 2); i++) {
+//				Smooth_R = Actinic_Lights [i].R;
+//				Smooth_G = Actinic_Lights [i].G;
+//				Actinic_Lights [i - 1].R = (byte)Smooth_R;
+//				Actinic_Lights [i - 1].G = (byte)Smooth_G;
+//			}
+//
+//			int LightsActiveLow = Convert.ToInt32 (VU_Volume_Low * LightSystem.LIGHT_COUNT / 4);
+//			int LowColorEmphasis = Math.Min ((int)(VU_Volume_Low * 255 * 1.5), 255);
+//			//int LightsActiveLow = Convert.ToInt32 (Math.Min (((VU_Volume_Low * LightSystem.LIGHT_COUNT / 4) * 0.7) + ((VU_Volume_Mid * LightSystem.LIGHT_COUNT / 4) * 0.3), (LightSystem.LIGHT_COUNT / 4)));
+//
+//			int SelectedLightCount = 0;
+//			for (int i = (LightSystem.LIGHT_COUNT / 2); i < ((LightSystem.LIGHT_COUNT / 2) + (LightsActiveLow)); i++) {
+//				Actinic_Lights [i].B = (byte)Math.Max (LowColorEmphasis, 0);
+//				SelectedLightCount += 1;
+//			}
+//			Smooth_R = 0;
+//			Smooth_G = 0;
+//			Smooth_B = 0;
+//			for (int i = ((LightSystem.LIGHT_COUNT / 2) + (LightsActiveLow)); i < (((LightSystem.LIGHT_COUNT / 4) * 3) + 1); i++) {
+//				if (VU_Smoothing_Enabled) {
+//					Smooth_B = Convert.ToByte (Actinic_Lights [i].B / VU_SmoothingMode_Divisor);
+//				} //else Smooth_{x} already = 0, due to above
+//				Actinic_Lights [i].B = (byte)Smooth_B;
+//			}
+//			SelectedLightCount = 0;
+//			for (int i = ((LightSystem.LIGHT_COUNT / 2) - 1); i > (((LightSystem.LIGHT_COUNT / 2) - 1) - LightsActiveLow); i--) {
+//				Actinic_Lights [i].B = (byte)Math.Max (LowColorEmphasis, 0);
+//				SelectedLightCount += 1;
+//			}
+//			Smooth_R = 0;
+//			Smooth_G = 0;
+//			Smooth_B = 0;
+//			for (int i = (((LightSystem.LIGHT_COUNT / 2) - 1) - LightsActiveLow); i >= (LightSystem.LIGHT_COUNT / 4); i--) {
+//				if (VU_Smoothing_Enabled) {
+//					Smooth_B = Convert.ToByte (Actinic_Lights [i].B / VU_SmoothingMode_Divisor);
+//				} //else Smooth_{x} already = 0, due to above
+//				Actinic_Lights [i].B = (byte)Smooth_B;
+//			}
+//
+//
+//			int MidColorEmphasis = (int)Math.Min (((VU_Volume_Mid * 1.5) * 255), 255);
+//			int HighColorEmphasis = (int)Math.Min (((VU_Volume_High * 1.5) * 255), 255);
+//
+//			//int MidColorEmphasis = (int)((VU_Volume_Mid * 0.9) * 255);
+//			//int HighColorEmphasis = (int)((VU_Volume_High) * 255);
+//			//int MidHighBoost = (int)(((255) - Math.Max (MidColorEmphasis, HighColorEmphasis)));
+//			//MidColorEmphasis += MidHighBoost;
+//			//HighColorEmphasis += MidHighBoost;
+//
+//			Smooth_R = HighColorEmphasis;
+//			Smooth_G = MidColorEmphasis;
+//			Smooth_B = 0;
+//
+//			int LoopStoppingPoint = Math.Min (((((LightSystem.LIGHT_COUNT / 2) - 1) + (LightsActiveLow)) + (AUDIOMETER_CHASER_BeginCount + 1)), LightSystem.LIGHT_COUNT - 1);
+//			for (int i = ((LightSystem.LIGHT_COUNT / 2) + (LightsActiveLow)); i < LoopStoppingPoint; i++) {
+//				//				if (VU_SmoothingMode_Enabled) {
+//				//					Smooth_B = Convert.ToByte (Actinic_Lights [i].B / VU_SmoothingMode_Divisor);
+//				//				} //else Smooth_{x} already = 0, due to above
+//				Actinic_Lights [i].R = (byte)Smooth_R;
+//				Actinic_Lights [i].G = (byte)Smooth_G;
+//			}
+//
+//			LoopStoppingPoint = Math.Max (((((LightSystem.LIGHT_COUNT / 2) - 1) - LightsActiveLow) - (AUDIOMETER_CHASER_BeginCount - 1)), 0);
+//			for (int i = (((LightSystem.LIGHT_COUNT / 2) - 1) - LightsActiveLow); i >= LoopStoppingPoint; i--) {
+//				//				if (VU_SmoothingMode_Enabled) {
+//				//					Smooth_B = Convert.ToByte (Actinic_Lights [i].B / VU_SmoothingMode_Divisor);
+//				//				} //else Smooth_{x} already = 0, due to above
+//				Actinic_Lights [i].R = (byte)Smooth_R;
+//				Actinic_Lights [i].G = (byte)Smooth_G;
+//			}
+//
+//			UpdateLights_Color ();
+//		}
+//
+//		private static void AudioMeter_Chaser_Tri_Rainbow (double VU_Volume_Low, double VU_Volume_Mid, double VU_Volume_High)
+//		{
+//			ShiftLightsOutward (Actinic_Lights_Unsmoothed, VU_LightShift_Amount);
+//
+//			//byte LowColorEmphasis = (byte)Math.Min (((VU_Volume_Low * 1.5) * 255), 255);
+//			//byte MidColorEmphasis = (byte)Math.Min (((VU_Volume_Mid * 1.5) * 255), 255);
+//			//byte HighColorEmphasis = (byte)Math.Min (((VU_Volume_High * 1.5) * 255), 255);
+//
+//			double LowColor_Subtractor = (VU_Volume_Low * 0.3);
+//
+//			byte LowColorEmphasis = (byte)Math.Min (((VU_Volume_Low) * 255), 255);
+//			byte MidColorEmphasis = (byte)Math.Min (((Math.Max (VU_Volume_Mid - LowColor_Subtractor, 0)) * 255), 255);
+//			byte HighColorEmphasis = (byte)Math.Min (((Math.Max (VU_Volume_High - LowColor_Subtractor, 0)) * 255), 255);
+//
+//			LowColorEmphasis = Math.Max (LowColorEmphasis, (byte)18);
+//			MidColorEmphasis = Math.Max (MidColorEmphasis, (byte)18);
+//			HighColorEmphasis = Math.Max (HighColorEmphasis, (byte)18);
+//
+//			Actinic.Color ProcessedColor;
+//			if (VU_Accentuation_Enabled)
+//			{
+//				ProcessedColor = AccentuateColor (HighColorEmphasis, MidColorEmphasis, LowColorEmphasis, VU_Accentuation_Amount);
+//			} else {
+//				ProcessedColor = new Actinic.Color (HighColorEmphasis, MidColorEmphasis, LowColorEmphasis);
+//			}
+//
+//			int MiddleCount = ((LightSystem.LIGHT_COUNT / 2) - 1);
+//
+//			Actinic_Lights_Unsmoothed [MiddleCount].R = ProcessedColor.R;
+//			Actinic_Lights_Unsmoothed [MiddleCount].G = ProcessedColor.G;
+//			Actinic_Lights_Unsmoothed [MiddleCount].B = ProcessedColor.B;
+//			Actinic_Lights_Unsmoothed [MiddleCount - 1].R = ProcessedColor.R;
+//			Actinic_Lights_Unsmoothed [MiddleCount - 1].G = ProcessedColor.G;
+//			Actinic_Lights_Unsmoothed [MiddleCount - 1].B = ProcessedColor.B;
+//
+//			ApplySmoothing (VU_Smoothing_Percentage);
+//
+//			UpdateLights_Color ();
+//		}
+//
+//		private static void AudioMeter_ColorShift_All (double VU_Volume)
+//		{
+//			int ColorShift = MathUtilities.ConvertRange ((int)(VU_Volume * 100), 0, 100, 0, 255);
+//			FillLights_Color ((byte)(ColorShift), 0, (byte)(255 - ColorShift));
+//		}
+//
+#endregion

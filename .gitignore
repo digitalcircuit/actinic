@@ -20,7 +20,7 @@ App_Data/
 **/impulse/build
 
 # Personal configuration
-config-ssh-g35-usb.sh
+config-ssh-actinic.sh
 
 # Files not yet ready to be part of the repository
 Supporting Material/

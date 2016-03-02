@@ -1,9 +1,9 @@
-G35 USB [![Build Status](https://travis-ci.org/digitalcircuit/g35-usb.svg?branch=master)](https://travis-ci.org/digitalcircuit/g35-usb)
+Actinic [![Build Status](https://travis-ci.org/digitalcircuit/actinic.svg?branch=master)](https://travis-ci.org/digitalcircuit/actinic)
 ===============
 
 *Note: Git history may be rewritten until everything is stable*
 
-G35 USB interfaces with strands of LED lights to control them in various flashy or useful ways according to music, time of day, and multiple types of animations.  Currently supports an [Arduino-based LED controller firmware][arduino-firmware], but support can be easily added for other systems.
+Actinic interfaces with strands of LED lights to control them in various flashy or useful ways according to music, time of day, and multiple types of animations.  Currently supports an [Arduino-based LED controller firmware][arduino-firmware], but support can be easily added for other systems.
 
 ## Building
 
@@ -22,14 +22,14 @@ make libpulse-dev libfftw3-dev	# Tools to compile Impulse audio processing libra
 
 The project will automatically attempt to build the Impulse library upon compiling the solution in MonoDevelop.  Should anything go wrong, a file named `README-impulse-failed-to-build` will be put in the `bin/Debug` build directory.
 
-To manually compile, run [`prepare-audio-processing.sh`](https://github.com/digitalcircuit/g35-usb/blob/master/G35_USB/Audio/prepare-audio-processing.sh) included in the `G35_USB/Audio` folder.
+To manually compile, run [`prepare-audio-processing.sh`](https://github.com/digitalcircuit/actinic/blob/master/Actinic/Audio/prepare-audio-processing.sh) included in the `Actinic/Audio` folder.
 
 *If using the [Arduino LED controller][arduino-firmware], don't forget to change permissions on the USB device to allow access without root.*
 
 ## Usage
 
 * Connect and power on your lighting controller and lights (*for the [Arduino LED controller][arduino-firmware], plug it into power, then into a USB port*)
-* In the output directory, run `mono G35_USB.exe`
+* In the output directory, run `mono Actinic.exe`
 * *To be done - expand this list?*
 
 To list commands, type `help`.  For help on a particular command, type it without providing any parameters, e.g. `vu run`.
@@ -41,4 +41,4 @@ To list commands, type `help`.  For help on a particular command, type it withou
 * [ReflectiveEnumerator.cs](https://stackoverflow.com/questions/5411694/get-all-inherited-classes-of-an-abstract-class) by [Repo Man](https://stackoverflow.com/users/140126/repo-man)
 * *If you're missing, let me know, and I'll fix it as soon as I can!*
 
-[arduino-firmware]: https://github.com/digitalcircuit/G35Arduino_Controller
+[arduino-firmware]: https://github.com/digitalcircuit/ActinicArduino_Controller
