@@ -1,3 +1,7 @@
+# Ubuntu 14.04 (but also works on other releases)
+dist: trusty
+
+# Use the container-based infrastructure
 sudo: false
 addons:
   apt:
