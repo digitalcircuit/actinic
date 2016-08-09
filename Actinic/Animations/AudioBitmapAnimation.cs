@@ -47,6 +47,16 @@ namespace Actinic
 		private Process AudioPlayer;
 		private double AudioPlayer_CurrentTime = 0;
 		private bool AudioPlayer_CurrentTime_Updated = false;
+
+		/// <summary>
+		/// If true, the current time has been requested, otherwise no request is pending.
+		/// </summary>
+		private bool AudioPlayer_CurrentTime_Pending = false;
+
+		/// <summary>
+		/// If true, the current time is unavailable (e.g. error), otherwise false.
+		/// </summary>
+		private bool AudioPlayer_CurrentTime_Unavailable = false;
 		private List<LED_Set> AnimationFrames = new List<LED_Set> ();
 		private int animation_frame = 0;
 
@@ -76,10 +86,15 @@ namespace Actinic
 		public bool AnimationFinished {
 			get {
 #if DEBUG_MPLAYER
-				Console.WriteLine ("AnimationFinished = {0}", (AnimationFrame == (AnimationFrames.Count - 1)));
+				Console.WriteLine ("AnimationFinished = {0} (frame {1} of {2}, error: {3})",
+					(AnimationFrame >= (AnimationFrames.Count - 2) ||
+						(AnimationFrame > 0 && AudioPlayer_CurrentTime_Unavailable)),
+					AnimationFrame, AnimationFrames.Count, AudioPlayer_CurrentTime_Unavailable);
 #endif
-				return (AnimationFrame >= (AnimationFrames.Count - 2));
+				return (AnimationFrame >= (AnimationFrames.Count - 2) ||
+					(AnimationFrame > 0 && AudioPlayer_CurrentTime_Unavailable));
 				// Sometimes it gets stuck on the next to last frame :/
+				// Consider as finished if it's near the last frame, or past frame 1 and time is unavaible.
 			}
 		}
 
@@ -148,9 +163,12 @@ namespace Actinic
 #endif
 			if (e.Data.StartsWith (CMD_RequestTime_Response_Prefix)) {
 				AudioPlayer_CurrentTime = double.Parse (e.Data.Split ('=') [1]);
+				AudioPlayer_CurrentTime_Pending = false;
 				AudioPlayer_CurrentTime_Updated = true;
+				AudioPlayer_CurrentTime_Unavailable = false;
 			} else if (e.Data.StartsWith (CMD_RequestTime_NotAvailableResponse_Prefix)) {
-				animation_frame = AnimationFrames.Count - 1;
+				AudioPlayer_CurrentTime_Pending = false;
+				AudioPlayer_CurrentTime_Unavailable = true;
 			}
 		}
 
@@ -162,7 +180,8 @@ namespace Actinic
 			Console.WriteLine ("MPlayer error: " + e.Data);
 #endif
 			if (e.Data.StartsWith (CMD_RequestTime_ErrorResponse_Prefix)) {
-				animation_frame = AnimationFrames.Count - 1;
+				AudioPlayer_CurrentTime_Pending = false;
+				AudioPlayer_CurrentTime_Unavailable = true;
 			}
 		}
 
@@ -179,7 +198,11 @@ namespace Actinic
 				throw new InvalidOperationException ("AudioPlayer not running, can not determine current track position.");
 
 			AudioPlayer_CurrentTime_Updated = false;
-			AudioPlayer.StandardInput.WriteLine (CMD_RequestTime);
+			if (!AudioPlayer_CurrentTime_Pending) {
+				// Don't request multiple times
+				AudioPlayer_CurrentTime_Pending = true;
+				AudioPlayer.StandardInput.WriteLine (CMD_RequestTime);
+			}
 
 //			while (AudioPlayer_CurrentTime_Updated == false) {
 //				// Just wait for it, it should be instantaneous
