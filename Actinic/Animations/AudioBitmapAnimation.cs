@@ -31,9 +31,11 @@ namespace Actinic
 	public class AudioBitmapAnimation:Actinic.AbstractAnimation, IAnimationOneshot
 	{
 		private const string Player_Program = "mplayer";
-		private const string Player_Arguments = "-slave -quiet -input nodefault-bindings -idle '{0}'";
+		private const string Player_Arguments = "-slave -quiet -input nodefault-bindings -idle -ao alsa '{0}'";
 		// Don't read user config: -noconfig all
 		// Stay running at end of file: -idle
+		// Use ALSA over PulseAudio: -ao alsa
+		// (PulseAudio 1.8 seems to introduce delay with mplayer's command interface)
 		private const string CMD_SeekToTime = "seek {0} 2";
 		//seek 12.1 2
 		private const string CMD_RequestTime = "get_property time_pos";
