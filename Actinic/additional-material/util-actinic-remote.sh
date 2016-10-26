@@ -55,18 +55,29 @@ fi
 function run_remote_cmd () {
 	local EXPECTED_ARGS=1
 	if [ $# -lt $EXPECTED_ARGS ]; then
-		echo "Usage: `basename "$0"` [run_remote_cmd] {command to run}"
+		echo "Usage: `basename "$0"` [run_remote_cmd] {command to run}" >&2
 		return
 	fi
 
 	ssh "$ACTINIC_SSH_USER"@"$ACTINIC_SSH_SERVER" -p "$ACTINIC_SSH_PORT" "$*"
 }
 
+# Run an Actinic command on the remote server
+function run_actinic_cmd () {
+	local EXPECTED_ARGS=1
+	if [ $# -lt $EXPECTED_ARGS ]; then
+		echo "Usage: `basename "$0"` [run_actinic_cmd] {command to run}" >&2
+		return
+	fi
+
+	run_remote_cmd "~/system/lights/control-actinic.sh '$*'"
+}
+
 # Show a temporary notification on the remote server by invoking the remote script
 function notification_show_temporary () {
 	local EXPECTED_ARGS=7
 	if [ $# -ne $EXPECTED_ARGS ]; then
-		echo "Usage: `basename "$0"` [notification_show_temporary] {name of notification} {'all', hyphen-separated range of LEDs, or a single LED} {R} {G} {B} {brightness} {duration in seconds}"
+		echo "Usage: `basename "$0"` [notification_show_temporary] {name of notification} {'all', hyphen-separated range of LEDs, or a single LED} {R} {G} {B} {brightness} {duration in seconds}" >&2
 		return
 	fi
 	run_remote_cmd "~/system/lights/control-actinic-notify.sh 'notification_show_temporary' '$1' '$2' '$3' '$4' '$5' '$6' '$7'" &
