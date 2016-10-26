@@ -2,6 +2,9 @@
 # Indicates that Actinic utility module has been loaded
 CONFIG_ACTINIC_REMOTE_LOADED="true"
 
+_LOCAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Get directory of this file
+
 #______Setup______
 # Path to remote SSH configuration file
 SSH_ACTINIC_PATH="$_LOCAL_DIR/config-ssh-actinic.sh"
