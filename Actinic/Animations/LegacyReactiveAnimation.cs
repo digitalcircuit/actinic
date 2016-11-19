@@ -22,9 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Math;
 
-namespace Actinic
+namespace Actinic.Animations
 {
-	public class LegacyReactiveAnimation:Actinic.AbstractReactiveAnimation
+	public class LegacyReactiveAnimation:AbstractReactiveAnimation
 	{
 		#region Definitions
 

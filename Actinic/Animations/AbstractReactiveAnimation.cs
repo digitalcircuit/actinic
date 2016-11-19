@@ -22,9 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Math;
 
-namespace Actinic
+namespace Actinic.Animations
 {
-	public abstract class AbstractReactiveAnimation:Actinic.AbstractAnimation
+	public abstract class AbstractReactiveAnimation:AbstractAnimation
 	{
 
 		#region Audio Intensity and Frequency

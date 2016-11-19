@@ -22,9 +22,9 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
-namespace Actinic
+namespace Actinic.Animations
 {
-	public class BitmapAnimation:Actinic.AbstractAnimation
+	public class BitmapAnimation:AbstractAnimation
 	{
 
 		private List<LED_Set> AnimationFrames = new List<LED_Set> ();

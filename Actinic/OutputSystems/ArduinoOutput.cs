@@ -27,7 +27,7 @@ using System.IO.Ports;
 using System.Collections.Generic;
 using FoxSoft.Math;
 
-namespace Actinic
+namespace Actinic.Outputs
 {
 	public class ArduinoOutput:AbstractOutput
 	{

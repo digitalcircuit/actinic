@@ -20,7 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 
-namespace Actinic
+namespace Actinic.AudioInputs
 {
 	public class DummyAudioInput : AbstractAudioInput, IAudioInputDummy
 	{

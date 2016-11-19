@@ -21,9 +21,9 @@
 using System;
 using System.Collections.Generic;
 
-namespace Actinic
+namespace Actinic.Animations
 {
-	public class SimpleFadeAnimation:Actinic.AbstractAnimation
+	public class SimpleFadeAnimation:AbstractAnimation
 	{
 
 		protected byte Anim_ColorShift_Red = LightSystem.Color_MAX;

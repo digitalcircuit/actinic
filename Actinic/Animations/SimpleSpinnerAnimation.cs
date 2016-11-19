@@ -21,9 +21,9 @@
 using System;
 using System.Collections.Generic;
 
-namespace Actinic
+namespace Actinic.Animations
 {
-	public class SimpleSpinnerAnimation:Actinic.SimpleFadeAnimation
+	public class SimpleSpinnerAnimation:SimpleFadeAnimation
 	{
 
 //		private byte Anim_ColorShift_Red = Color_MAX;

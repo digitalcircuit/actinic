@@ -22,6 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Math;
 
+// Animation management
+using Actinic.Animations;
+
 namespace Actinic
 {
 	public class ReactiveSystem

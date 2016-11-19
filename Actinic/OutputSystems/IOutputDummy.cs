@@ -20,7 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 
-namespace Actinic
+namespace Actinic.Outputs
 {
 	/// <summary>
 	/// Indicates the output system does not actually do anything with real hardware.

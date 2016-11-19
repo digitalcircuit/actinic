@@ -26,9 +26,9 @@ using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace Actinic
+namespace Actinic.Animations
 {
-	public class AudioBitmapAnimation:Actinic.AbstractAnimation, IAnimationOneshot
+	public class AudioBitmapAnimation:AbstractAnimation, IAnimationOneshot
 	{
 		private const string Player_Program = "mplayer";
 		private const string Player_Arguments = "-slave -quiet -input nodefault-bindings -idle -ao alsa '{0}'";

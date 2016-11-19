@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Animation management
+using Actinic.Animations;
+
 namespace Actinic
 {
 	public class LED_Queue

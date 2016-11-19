@@ -22,9 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Math;
 
-namespace Actinic
+namespace Actinic.Animations
 {
-	public class SpinnerReactiveAnimation:Actinic.AbstractReactiveAnimation
+	public class SpinnerReactiveAnimation:AbstractReactiveAnimation
 	{
 
 		/// <summary>

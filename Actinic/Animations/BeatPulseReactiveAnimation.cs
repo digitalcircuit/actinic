@@ -22,9 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Math;
 
-namespace Actinic
+namespace Actinic.Animations
 {
-	public class BeatPulseReactiveAnimation:Actinic.AbstractReactiveAnimation
+	public class BeatPulseReactiveAnimation:AbstractReactiveAnimation
 	{
 
 		protected const double Pause_Fading_Intensity_Floor = 0.73; // Intensity * this

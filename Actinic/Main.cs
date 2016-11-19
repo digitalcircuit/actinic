@@ -31,6 +31,13 @@ using System.IO.Ports;
 using System.Collections.Generic;
 using FoxSoft.Math;
 
+// Animations
+using Actinic.Animations;
+// Input systems
+using Actinic.AudioInputs;
+// Output systems
+using Actinic.Outputs;
+
 namespace Actinic
 {
 	class MainClass

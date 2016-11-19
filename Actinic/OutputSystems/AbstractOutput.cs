@@ -21,7 +21,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Actinic
+namespace Actinic.Outputs
 {
 	public abstract class AbstractOutput : IComparable <AbstractOutput>
 	{

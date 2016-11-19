@@ -22,9 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Math;
 
-namespace Actinic
+namespace Actinic.Animations
 {
-	public class RaveMoodReactiveAnimation:Actinic.BeatPulseReactiveAnimation
+	public class RaveMoodReactiveAnimation:BeatPulseReactiveAnimation
 	{
 
 		/// <summary>

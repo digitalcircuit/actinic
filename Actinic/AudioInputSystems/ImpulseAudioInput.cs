@@ -25,7 +25,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace Actinic
+namespace Actinic.AudioInputs
 {
 	public class ImpulseAudioInput : AbstractAudioInput
 	{

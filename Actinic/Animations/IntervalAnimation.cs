@@ -21,9 +21,9 @@
 using System;
 using System.Collections.Generic;
 
-namespace Actinic
+namespace Actinic.Animations
 {
-	public class IntervalAnimation:Actinic.AbstractAnimation
+	public class IntervalAnimation:AbstractAnimation
 	{
 
 		private const int Animation_Update_Delay = 60 * 1000;

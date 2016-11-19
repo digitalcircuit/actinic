@@ -21,7 +21,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Actinic
+namespace Actinic.Animations
 {
 	public static class AnimationUtilities
 	{

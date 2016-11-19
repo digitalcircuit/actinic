@@ -21,7 +21,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Actinic
+namespace Actinic.AudioInputs
 {
 	public abstract class AbstractAudioInput : IComparable <AbstractAudioInput>
 	{
