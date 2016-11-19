@@ -1,9 +1,9 @@
-Things left to get this repository ready
+Things left to get a first release
 ===============
 
 ## Actinic
 
-* Stabilize repository and avoid making history-breaking changes
+* Proper generic timing/scaling according to LED count and update rate
 * Update README.md with full instructions (*building, modifying, hardware references, etc*)
 * Clean up style and formatting (*old code, inconsistencies, and other issues*)
 * Add sample music light-shows

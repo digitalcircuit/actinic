@@ -1,8 +1,6 @@
 Actinic [![Build Status](https://travis-ci.org/digitalcircuit/actinic.svg?branch=master)](https://travis-ci.org/digitalcircuit/actinic)
 ===============
 
-*Note: Git history may be rewritten until everything is stable*
-
 Actinic interfaces with strands of LED lights to control them in various flashy or useful ways according to music, time of day, and multiple types of animations.  Currently supports an [Arduino-based LED controller firmware][arduino-firmware], but support can be easily added for other systems.
 
 ## Building
