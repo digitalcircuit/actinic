@@ -124,25 +124,20 @@ namespace Actinic
 
 		public override bool InitializeSystem ()
 		{
-			// HACK: Linux-specific, find the first Arduino serial port
-			//  E.g. "/dev/ttyACM0"
-			string[] serial_ports = System.IO.Directory.GetFiles ("/dev", "ttyACM*");
-			if (serial_ports.Length == 0)
-			{
-				// Maybe we're on a Windows system?
-				//serial_ports = System.IO.Ports.SerialPort.GetPortNames ();
+			// Find all valid serial ports
+			string[] serial_ports = System.IO.Ports.SerialPort.GetPortNames ();
 
-				/* FIXME: Try/catch does not catch SerialPort.Open() exception.
-				 * See https://bugzilla.xamarin.com/show_bug.cgi?id=15514
-				 *   Unhandled Exception: System.IO.IOException: Bad file descriptor
-				 *     at System.IO.Ports.SerialPortStream.Dispose (Boolean disposing) [0x00000] in <filename unknown>:0
-				 * There is no way I know of to cleanly catch this.  For now, don't enable checking all serial ports
-				 */
+			// NOTE: On older versions of Mono (e.g. in Ubuntu 14.04), try/catch does not catch the SerialPort.Open()
+			// exception.  If this crashes, try commenting out the above line.
+			// See https://bugzilla.xamarin.com/show_bug.cgi?id=15514
+			//   Unhandled Exception: System.IO.IOException: Bad file descriptor
+			//     at System.IO.Ports.SerialPortStream.Dispose (Boolean disposing) [0x00000] in <filename unknown>:0
+			// You'll also need to manually get a shorter list of valid serial ports, e.g. finding all Arduinos with
+			// string[] serial_ports = System.IO.Directory.GetFiles ("/dev", "ttyACM*");
 
-				if (serial_ports.Length == 0) {
-					return false;
-					// None found
-				}
+			if (serial_ports.Length == 0) {
+				return false;
+				// None found
 			}
 
 			// The Arduino firmware responds with Protocol_Firmware_Version to indicate it's valid
