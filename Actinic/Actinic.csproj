@@ -80,6 +80,7 @@
     <Compile Include="AudioInputSystems\ImpulseAudioInput.cs" />
     <Compile Include="AudioInputSystems\DummyAudioInput.cs" />
     <Compile Include="Parsing\Parameter.cs" />
+    <Compile Include="Utilities\Randomizer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

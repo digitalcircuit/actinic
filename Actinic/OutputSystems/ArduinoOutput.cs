@@ -25,7 +25,7 @@
 using System;
 using System.IO.Ports;
 using System.Collections.Generic;
-using FoxSoft.Math;
+using FoxSoft.Utilities;
 
 namespace Actinic.Outputs
 {

@@ -20,7 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
-using FoxSoft.Math;
+using FoxSoft.Utilities;
 
 namespace Actinic.Animations
 {
@@ -118,7 +118,7 @@ namespace Actinic.Animations
 			double converted_Audio_Average_Intensity = MathUtilities.ConvertRange (Math.Max (Audio_Average_Intensity - Strobe_Flicker_Minimum_Intensity, 0), 0, 1 - Strobe_Flicker_Minimum_Intensity, 0, 1);
 			if (Single_Strobe_Off_Count > MathUtilities.ConvertRange (converted_Audio_Average_Intensity, 0, 1, Single_Strobe_Max_Delay, Single_Strobe_Min_Delay)) {
 				for (int attemptNumber = 0; attemptNumber < Single_Strobe_Max_Tries_For_Darkness; attemptNumber++) {
-					start_index = MathUtilities.RandomProvider.Next (0, LightSystem.LIGHT_INDEX_MAX);
+					start_index = Randomizer.RandomProvider.Next (0, LightSystem.LIGHT_INDEX_MAX);
 					if (LightProcessing.Is_LED_Dark_Brightness (CurrentFrame_Strobe, start_index, LightSystem.Color_DARK))
 						break;
 				}

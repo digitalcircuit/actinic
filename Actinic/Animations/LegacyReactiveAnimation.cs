@@ -20,7 +20,7 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
-using FoxSoft.Math;
+using FoxSoft.Utilities;
 
 namespace Actinic.Animations
 {
@@ -370,8 +370,8 @@ namespace Actinic.Animations
 						VU_Moving_Bar_Low_Position = Math.Max (VU_Moving_Bar_Low_Position - (Audio_Low_Intensity * VU_Moving_Bar_Max_Position_Change_Equally_Spaced), 0);
 					}
 				}
-				VU_Moving_Bar_Mid_Position = MathUtilities.WrapNumberAround (0, 49, VU_Moving_Bar_Low_Position + VU_Moving_Bar_Split_Distance);
-				VU_Moving_Bar_High_Position = MathUtilities.WrapNumberAround (0, 49, VU_Moving_Bar_Mid_Position + VU_Moving_Bar_Split_Distance);
+				VU_Moving_Bar_Mid_Position = MathUtilities.WrapAround (VU_Moving_Bar_Low_Position + VU_Moving_Bar_Split_Distance, 0, 49);
+				VU_Moving_Bar_High_Position = MathUtilities.WrapAround (VU_Moving_Bar_Mid_Position + VU_Moving_Bar_Split_Distance, 0, 49);
 			} else {
 				if (VU_Moving_Bar_Low_Position_Increasing == true & (VU_Moving_Bar_Low_Position >= LightSystem.LIGHT_INDEX_MAX)) {
 					VU_Moving_Bar_Low_Position = LightSystem.LIGHT_INDEX_MAX;
@@ -486,7 +486,7 @@ namespace Actinic.Animations
 			switch (Intensity_Rating) {
 			case Intensities.Max:
 				if (VU_Intensity_Last_Random_Choice < 0 | VU_Intensity_Last_Random_Choice > 1)
-					VU_Intensity_Last_Random_Choice = MathUtilities.RandomProvider.Next (0, 1);
+					VU_Intensity_Last_Random_Choice = Randomizer.RandomProvider.Next (0, 1);
 				switch (VU_Intensity_Last_Random_Choice) {
 				case 0:
 					AudioMeter_Extended_Solid_Color_Strobe (ColorStrobe.SingleRainbow);
@@ -503,7 +503,7 @@ namespace Actinic.Animations
 				break;
 			case Intensities.Heavy:
 				if (VU_Intensity_Last_Random_Choice < 0 | VU_Intensity_Last_Random_Choice > 2)
-					VU_Intensity_Last_Random_Choice = MathUtilities.RandomProvider.Next (0, 2);
+					VU_Intensity_Last_Random_Choice = Randomizer.RandomProvider.Next (0, 2);
 				switch (VU_Intensity_Last_Random_Choice) {
 				case 0:
 					AudioMeter_Extended_Solid_Color_Strobe (ColorStrobe.Rainbow);
@@ -523,7 +523,7 @@ namespace Actinic.Animations
 				break;
 			case Intensities.Medium:
 				if (VU_Intensity_Last_Random_Choice < 0 | VU_Intensity_Last_Random_Choice > 3)
-					VU_Intensity_Last_Random_Choice = MathUtilities.RandomProvider.Next (0, 3);
+					VU_Intensity_Last_Random_Choice = Randomizer.RandomProvider.Next (0, 3);
 				switch (VU_Intensity_Last_Random_Choice) {
 				case 0:
 					AudioMeter_Extended_Moving_Bars (true);
@@ -546,7 +546,7 @@ namespace Actinic.Animations
 				break;
 			case Intensities.Light:
 				if (VU_Intensity_Last_Random_Choice < 0 | VU_Intensity_Last_Random_Choice > 1)
-					VU_Intensity_Last_Random_Choice = MathUtilities.RandomProvider.Next (0, 1);
+					VU_Intensity_Last_Random_Choice = Randomizer.RandomProvider.Next (0, 1);
 				switch (VU_Intensity_Last_Random_Choice) {
 				case 0:
 					AudioMeter_Extended_Rainbow (false);
@@ -804,7 +804,7 @@ namespace Actinic.Animations
 
 			for (int i = 0; i < LightSystem.LIGHT_INDEX_MIDDLE; i++) {
 				if (LightProcessing.Is_LED_Dark_Color (CurrentFrame, i, LightSystem.Color_VERY_DARK)) {
-					if (MathUtilities.RandomProvider.NextDouble () < Audio_Average_Intensity * VU_Stationary_Bar_Flicker_Chance) {
+					if (Randomizer.RandomProvider.NextDouble () < Audio_Average_Intensity * VU_Stationary_Bar_Flicker_Chance) {
 						CurrentFrame [i].R = VU_Stationary_Bar_Flicker_Primary_Color;
 						CurrentFrame [i].G = VU_Stationary_Bar_Flicker_Primary_Color;
 						CurrentFrame [i].B = VU_Stationary_Bar_Flicker_Primary_Color;
@@ -856,21 +856,21 @@ namespace Actinic.Animations
 			byte other_color_boost = 0;
 			other_color_boost = (byte)MathUtilities.ConvertRange (Audio_High_Intensity * VU_Moving_Bar_Half_Max_Length, 0, VU_Moving_Bar_Half_Max_Length, 0, VU_Moving_Bar_Red_Other_Color_Boost);
 			for (int i = (Moving_Bar_High_Index - Moving_Bar_High_Size); i <= (Moving_Bar_High_Index + Moving_Bar_High_Size); i++) {
-				TrySetLight_Color_R (MathUtilities.WrapNumberAround (0, LightSystem.LIGHT_INDEX_MAX, i), 255);
-				TrySetLight_Color_G (MathUtilities.WrapNumberAround (0, LightSystem.LIGHT_INDEX_MAX, i), other_color_boost);
-				TrySetLight_Color_B (MathUtilities.WrapNumberAround (0, LightSystem.LIGHT_INDEX_MAX, i), other_color_boost);
+				TrySetLight_Color_R (MathUtilities.WrapAround (i, 0, LightSystem.LIGHT_INDEX_MAX), 255);
+				TrySetLight_Color_G (MathUtilities.WrapAround (i, 0, LightSystem.LIGHT_INDEX_MAX), other_color_boost);
+				TrySetLight_Color_B (MathUtilities.WrapAround (i, 0, LightSystem.LIGHT_INDEX_MAX), other_color_boost);
 			}
 			other_color_boost = (byte)MathUtilities.ConvertRange (Audio_Mid_Intensity * VU_Moving_Bar_Half_Max_Length, 0, VU_Moving_Bar_Half_Max_Length, 0, VU_Moving_Bar_Green_Other_Color_Boost);
 			for (int i = (Moving_Bar_Mid_Index - Moving_Bar_Mid_Size); i <= (Moving_Bar_Mid_Index + Moving_Bar_Mid_Size); i++) {
-				TrySetLight_Color_G (MathUtilities.WrapNumberAround (0, LightSystem.LIGHT_INDEX_MAX, i), 255);
-				TrySetLight_Color_R (MathUtilities.WrapNumberAround (0, LightSystem.LIGHT_INDEX_MAX, i), other_color_boost);
-				TrySetLight_Color_B (MathUtilities.WrapNumberAround (0, LightSystem.LIGHT_INDEX_MAX, i), other_color_boost);
+				TrySetLight_Color_G (MathUtilities.WrapAround (i, 0, LightSystem.LIGHT_INDEX_MAX), 255);
+				TrySetLight_Color_R (MathUtilities.WrapAround (i, 0, LightSystem.LIGHT_INDEX_MAX), other_color_boost);
+				TrySetLight_Color_B (MathUtilities.WrapAround (i, 0, LightSystem.LIGHT_INDEX_MAX), other_color_boost);
 			}
 			other_color_boost = (byte)MathUtilities.ConvertRange (Audio_Low_Intensity * VU_Moving_Bar_Half_Max_Length, 0, VU_Moving_Bar_Half_Max_Length, 0, VU_Moving_Bar_Blue_Other_Color_Boost);
 			for (int i = (Moving_Bar_Low_Index - Moving_Bar_Low_Size); i <= (Moving_Bar_Low_Index + Moving_Bar_Low_Size); i++) {
-				TrySetLight_Color_B (MathUtilities.WrapNumberAround (0, LightSystem.LIGHT_INDEX_MAX, i), 255);
-				TrySetLight_Color_R (MathUtilities.WrapNumberAround (0, LightSystem.LIGHT_INDEX_MAX, i), other_color_boost);
-				TrySetLight_Color_G (MathUtilities.WrapNumberAround (0, LightSystem.LIGHT_INDEX_MAX, i), other_color_boost);
+				TrySetLight_Color_B (MathUtilities.WrapAround (i, 0, LightSystem.LIGHT_INDEX_MAX), 255);
+				TrySetLight_Color_R (MathUtilities.WrapAround (i, 0, LightSystem.LIGHT_INDEX_MAX), other_color_boost);
+				TrySetLight_Color_G (MathUtilities.WrapAround (i, 0, LightSystem.LIGHT_INDEX_MAX), other_color_boost);
 			}
 
 			double CurrentLight_VU_Max = 0;
@@ -892,7 +892,7 @@ namespace Actinic.Animations
 
 			for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
 				if (LightProcessing.Is_LED_Dark_Color (CurrentFrame, i, LightSystem.Color_VERY_DARK)) {
-					if (MathUtilities.RandomProvider.NextDouble () < Audio_Average_Intensity * VU_Moving_Bar_Flicker_Chance) {
+					if (Randomizer.RandomProvider.NextDouble () < Audio_Average_Intensity * VU_Moving_Bar_Flicker_Chance) {
 						CurrentFrame [i].R = VU_Moving_Bar_Flicker_Color;
 						CurrentFrame [i].G = VU_Moving_Bar_Flicker_Color;
 						CurrentFrame [i].B = VU_Moving_Bar_Flicker_Color;
@@ -951,13 +951,13 @@ namespace Actinic.Animations
 					}
 					if (LightStrobeMode == ColorStrobe.Hueshift) {
 						if (LightProcessing.Is_LED_Dark_Brightness (CurrentFrame, i, LightSystem.Color_DARK)) {
-							if ((MathUtilities.RandomProvider.NextDouble () < Audio_Low_Intensity * VU_Solid_Color_Strobe_Hueshift_Flicker_Chance)) {
+							if ((Randomizer.RandomProvider.NextDouble () < Audio_Low_Intensity * VU_Solid_Color_Strobe_Hueshift_Flicker_Chance)) {
 								CurrentFrame [i].B = 255;
 								CurrentFrame [i].Brightness = 255;
-							} else if ((MathUtilities.RandomProvider.NextDouble () < Audio_Mid_Intensity * VU_Solid_Color_Strobe_Hueshift_Flicker_Chance)) {
+							} else if ((Randomizer.RandomProvider.NextDouble () < Audio_Mid_Intensity * VU_Solid_Color_Strobe_Hueshift_Flicker_Chance)) {
 								CurrentFrame [i].G = 255;
 								CurrentFrame [i].Brightness = 255;
-							} else if ((MathUtilities.RandomProvider.NextDouble () < Audio_High_Intensity * VU_Solid_Color_Strobe_Hueshift_Flicker_Chance)) {
+							} else if ((Randomizer.RandomProvider.NextDouble () < Audio_High_Intensity * VU_Solid_Color_Strobe_Hueshift_Flicker_Chance)) {
 								CurrentFrame [i].R = 255;
 								CurrentFrame [i].Brightness = 255;
 							} else {
@@ -967,7 +967,7 @@ namespace Actinic.Animations
 							CurrentFrame [i].Brightness = 0;
 						}
 					} else {
-						if ((MathUtilities.RandomProvider.NextDouble () < Audio_Average_Intensity * VU_Solid_Color_Strobe_Flicker_Chance) && LightProcessing.Is_LED_Dark_Brightness (CurrentFrame, i, LightSystem.Color_DARK)) {
+						if ((Randomizer.RandomProvider.NextDouble () < Audio_Average_Intensity * VU_Solid_Color_Strobe_Flicker_Chance) && LightProcessing.Is_LED_Dark_Brightness (CurrentFrame, i, LightSystem.Color_DARK)) {
 							CurrentFrame [i].R = LightSystem.Color_MAX;
 							CurrentFrame [i].G = LightSystem.Color_MAX;
 							CurrentFrame [i].B = LightSystem.Color_MAX;

@@ -29,7 +29,7 @@
 using System;
 using System.IO.Ports;
 using System.Collections.Generic;
-using FoxSoft.Math;
+using FoxSoft.Utilities;
 
 // Animations
 using Actinic.Animations;
