@@ -172,6 +172,11 @@ namespace Actinic.Outputs
 			USB_Serial.DataBits = 8;
 			USB_Serial.Handshake = Handshake.None;
 
+			// This is required on Windows for some Arduino boards.
+			// See https://stackoverflow.com/questions/26929153/c-sharp-serial-communcation-with-arduino#26929382
+			USB_Serial.DtrEnable = true;
+			USB_Serial.RtsEnable = true;
+
 			try {
 				USB_Serial.Open ();
 
