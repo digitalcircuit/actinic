@@ -1,7 +1,8 @@
-# Visual Studio cache and state
+# Build, cache, state, packages, and test results
+[Oo]bj/
 [Bb]in/
-obj/
-App_Data/
+packages/
+TestResults/
 
 *.sln.cache
 *.suo

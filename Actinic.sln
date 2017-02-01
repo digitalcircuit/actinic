@@ -3,12 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Actinic", "Actinic\Actinic.csproj", "{662328B8-5DAE-4AB0-9C8F-083DAFCA0431}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Actinic.Tests", "Actinic.Tests\Actinic.Tests.csproj", "{112C7E19-9983-4BAB-94FA-AC3363B0F4D1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{112C7E19-9983-4BAB-94FA-AC3363B0F4D1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{112C7E19-9983-4BAB-94FA-AC3363B0F4D1}.Debug|x86.Build.0 = Debug|Any CPU
+		{112C7E19-9983-4BAB-94FA-AC3363B0F4D1}.Release|x86.ActiveCfg = Release|Any CPU
+		{112C7E19-9983-4BAB-94FA-AC3363B0F4D1}.Release|x86.Build.0 = Release|Any CPU
 		{662328B8-5DAE-4AB0-9C8F-083DAFCA0431}.Debug|x86.ActiveCfg = Debug|x86
 		{662328B8-5DAE-4AB0-9C8F-083DAFCA0431}.Debug|x86.Build.0 = Debug|x86
 		{662328B8-5DAE-4AB0-9C8F-083DAFCA0431}.Release|x86.ActiveCfg = Release|x86

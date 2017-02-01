@@ -18,5 +18,12 @@ addons:
 language: csharp
 solution: Actinic.sln
 
+# Prepare the test framework, too
+install:
+  - nuget restore Actinic.sln
+  - nuget install NUnit.Runners -Version 2.6.4 -OutputDirectory testrunner
+
+# Run build, then tests
 script:
   - make all
+  - make tests

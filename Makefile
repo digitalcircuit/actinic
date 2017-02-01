@@ -25,6 +25,9 @@ lights: init
 audio: init
 	$(LIBIMPULSE_BUILD) $(XBUILD_CONFIG)
 
+tests:
+	mono ./testrunner/NUnit.Runners.*/tools/nunit-console.exe ./$(PROJECT_DIR).Tests/bin/Release/$(PROJECT_DIR).Tests.dll
+
 clean: clean-build clean-obj
 
 clean-build:
