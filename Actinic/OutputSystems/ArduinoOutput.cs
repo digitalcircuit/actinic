@@ -41,8 +41,9 @@ namespace Actinic.Outputs
 #region Protocol
 
 		private const string Protocol_Firmware_Identifier = "ActinicArduino_Controller:";
-		private const string Protocol_Firmware_Version = Protocol_Firmware_Identifier + "2.0";
+		private const string Protocol_Firmware_Version = Protocol_Firmware_Identifier + "2.1";
 		private const string Protocol_Firmware_Negotiation_Light_Count = "light_count:";
+		private const string Protocol_Firmware_Negotiation_Strand_Length = "strand_length:";
 		private const string Protocol_Firmware_Negotiation_Color_Max = "color_max:";
 		private const string Protocol_Firmware_Negotiation_Brightness_Max = "bright_max:";
 		private const string Protocol_Firmware_Negotiation_Average_Latency = "avg_latency:";
@@ -50,6 +51,11 @@ namespace Actinic.Outputs
 
 		private int Protocol_Light_Count;
 		// Note: The Actinic LED protocol only allows for up to 63 individually-addressable lights
+
+		/// <summary>
+		/// The lighted length of the strand in meters.
+		/// </summary>
+		private float Protocol_Strand_Length;
 
 		private int Protocol_Processing_Latency;
 		// ActinicArduino Controller tends to take 47-49 ms to update all lights
@@ -232,6 +238,10 @@ namespace Actinic.Outputs
 							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Light_Count.Length),
 							               out Protocol_Light_Count);
 						}
+						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Strand_Length)) {
+							float.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Strand_Length.Length),
+								out Protocol_Strand_Length);
+						}
 						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Color_Max)) {
 							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Color_Max.Length),
 							               out Protocol_Color_MAX);
@@ -246,7 +256,11 @@ namespace Actinic.Outputs
 						}
 					}
 
-					if ((Protocol_Light_Count < 1) || (Protocol_Processing_Latency < 1) || (Protocol_Color_MAX < 1) || (Protocol_Brightness_MAX < 1)) {
+					if ((Protocol_Light_Count < 1)
+						|| (Protocol_Strand_Length <= 0)
+						|| (Protocol_Processing_Latency < 1)
+						|| (Protocol_Color_MAX < 1)
+						|| (Protocol_Brightness_MAX < 1)) {
 						// Something's wrong with the connection or the Arduino firmware's configuration
 						// Just treat this as a non-existent device, but print a warning
 						Console.Error.WriteLine ("Arduino on '{0}' provided invalid configuration, ignoring device", Arduino_TTY);
