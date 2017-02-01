@@ -2,8 +2,7 @@
 dist: trusty
 
 # Use the container-based infrastructure
-# FIXME: Revert back to false whenever the packages are whitelisted!
-sudo: required
+sudo: false
 addons:
   apt:
     packages:
