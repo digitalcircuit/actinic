@@ -2159,10 +2159,12 @@ namespace Actinic
 			}
 
 			if (success) {
-				Console.WriteLine ("- Connected to '{0}' via '{1}'", outputType, ActiveOutputSystem.Identifier);
-
 				// Don't allow a shorter animation time than the output system processing can manage
-				Light_Animation_Latency = Math.Max (ActiveOutputSystem.ProcessingLatency + 1, Light_Animation_Target_Latency);
+				Light_Animation_Latency = (int)Math.Round (Math.Max (ActiveOutputSystem.ProcessingLatency + 1,
+					Light_Animation_Target_Latency));
+
+				Console.WriteLine ("- Connected to '{0}' via '{1}', update rate {2} ms",
+					outputType, ActiveOutputSystem.Identifier, Light_Animation_Latency);
 
 				// Update number of lights, (re-)initalize the light queues
 				LightSystem.SetLightCount (ActiveOutputSystem.LightCount);
