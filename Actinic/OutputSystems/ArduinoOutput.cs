@@ -41,7 +41,7 @@ namespace Actinic.Outputs
 #region Protocol
 
 		private const string Protocol_Firmware_Identifier = "ActinicArduino_Controller:";
-		private const string Protocol_Firmware_Version = Protocol_Firmware_Identifier + "2.1";
+		private const string Protocol_Firmware_Version = Protocol_Firmware_Identifier + "2.2";
 		private const string Protocol_Firmware_Negotiation_Light_Count = "light_count:";
 		private const string Protocol_Firmware_Negotiation_Strand_Length = "strand_length:";
 		private const string Protocol_Firmware_Negotiation_Color_Max = "color_max:";
@@ -57,7 +57,7 @@ namespace Actinic.Outputs
 		/// </summary>
 		private float Protocol_Strand_Length;
 
-		private int Protocol_Processing_Latency;
+		private float Protocol_Processing_Latency;
 		// ActinicArduino Controller tends to take 47-49 ms to update all lights
 
 		private int Protocol_Color_MAX;
@@ -95,9 +95,9 @@ namespace Actinic.Outputs
 			}
 		}
 
-		public override int ProcessingLatency {
+		public override float ProcessingLatency {
 			get {
-				return (int)Protocol_Processing_Latency;
+				return Protocol_Processing_Latency;
 				// An average of sampled values (see #define DEBUG_USB_PERFORMANCE)
 				//  Adjusting this affects the minimum VU animation speed
 				//  Before Arduino adjustments, 49 ms, now, 47 ms
@@ -251,7 +251,7 @@ namespace Actinic.Outputs
 							               out Protocol_Brightness_MAX);
 						}
 						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Average_Latency)) {
-							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Average_Latency.Length),
+							float.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Average_Latency.Length),
 							              out Protocol_Processing_Latency);
 						}
 					}

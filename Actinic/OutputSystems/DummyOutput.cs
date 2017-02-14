@@ -47,7 +47,7 @@ namespace Actinic.Outputs
 			}
 		}
 
-		public override int ProcessingLatency {
+		public override float ProcessingLatency {
 			get {
 				return 0;
 				// Not much latency in returning a boolean value...

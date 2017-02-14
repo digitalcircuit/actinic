@@ -55,7 +55,7 @@ namespace Actinic.Outputs
 		/// Length of time for an Update command to succeed (may be an average)
 		/// </summary>
 		/// <value>Delay in milliseconds</value>
-		public abstract int ProcessingLatency {
+		public abstract float ProcessingLatency {
 			get;
 		}
 
