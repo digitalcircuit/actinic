@@ -39,12 +39,12 @@ namespace Actinic.Animations
 		}
 
 
-		public SimpleFadeAnimation (int Light_Count):base(Light_Count)
+		public SimpleFadeAnimation (int Light_Count) : base (Light_Count)
 		{
 			// No need to enable RequestSmoothCrossfade as it's assumed no previous frame is available
 		}
 
-		public SimpleFadeAnimation (List<LED> PreviouslyShownFrame):base(PreviouslyShownFrame)
+		public SimpleFadeAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			RequestSmoothCrossfade = true;
 			// By default, this will immediately override the existing colors.  Set to true to smoothly transition.
@@ -67,7 +67,7 @@ namespace Actinic.Animations
 		protected void Anim_Update_ColorShift ()
 		{
 			switch (Anim_LastColorShift_Mode) {
-				case ColorShift_Mode.ShiftingRed:
+			case ColorShift_Mode.ShiftingRed:
 				Anim_ColorShift_Red = (byte)Math.Max (Anim_ColorShift_Red - Styled_ColorShiftAmount, LightSystem.Color_MIN);
 				Anim_ColorShift_Green = (byte)Math.Min (Anim_ColorShift_Green + Styled_ColorShiftAmount, LightSystem.Color_MAX);
 				if (Anim_ColorShift_Red == LightSystem.Color_MIN & Anim_ColorShift_Green == LightSystem.Color_MAX) {
@@ -76,7 +76,7 @@ namespace Actinic.Animations
 					Anim_ColorShift_Green = LightSystem.Color_MAX;
 				}
 				break;
-				case ColorShift_Mode.ShiftingGreen:
+			case ColorShift_Mode.ShiftingGreen:
 				Anim_ColorShift_Green = (byte)Math.Max (Anim_ColorShift_Green - Styled_ColorShiftAmount, LightSystem.Color_MIN);
 				Anim_ColorShift_Blue = (byte)Math.Min (Anim_ColorShift_Blue + Styled_ColorShiftAmount, LightSystem.Color_MAX);
 				if (Anim_ColorShift_Green == LightSystem.Color_MIN & Anim_ColorShift_Blue == LightSystem.Color_MAX) {
@@ -85,7 +85,7 @@ namespace Actinic.Animations
 					Anim_ColorShift_Blue = LightSystem.Color_MAX;
 				}
 				break;
-				case ColorShift_Mode.ShiftingBlue:
+			case ColorShift_Mode.ShiftingBlue:
 				Anim_ColorShift_Blue = (byte)Math.Max (Anim_ColorShift_Blue - Styled_ColorShiftAmount, LightSystem.Color_MIN);
 				Anim_ColorShift_Red = (byte)Math.Min (Anim_ColorShift_Red + Styled_ColorShiftAmount, LightSystem.Color_MAX);
 				if (Anim_ColorShift_Blue == LightSystem.Color_MIN & Anim_ColorShift_Red == LightSystem.Color_MAX) {
@@ -94,7 +94,7 @@ namespace Actinic.Animations
 					Anim_ColorShift_Red = LightSystem.Color_MAX;
 				}
 				break;
-				default:
+			default:
 				break;
 			}
 		}

@@ -54,7 +54,7 @@ namespace Actinic
 			if (InterpolatedColors.Count == 0)
 				return Color.FromArgb (0, 0, 0);
 			if (InterpolatedColors.Count == 1)
-				return InterpolatedColors[0];
+				return InterpolatedColors [0];
 
 			KeyValuePair<int, Color> kvp_previous = new KeyValuePair<int,Color> (-1, Color.FromArgb (0, 0, 0));
 			foreach (KeyValuePair<int, Color> kvp in InterpolatedColors) {
@@ -63,10 +63,11 @@ namespace Actinic
 					Color a = kvp_previous.Value;
 					Color b = kvp.Value;
 					Color c = Color.FromArgb (
-						interpolate (a.R, b.R, p),
-						interpolate (a.G, b.G, p),
-						interpolate (a.B, b.B, p),
-						interpolate (a.Brightness, b.Brightness, p));
+						          interpolate (a.R, b.R, p),
+						          interpolate (a.G, b.G, p),
+						          interpolate (a.B, b.B, p),
+						          interpolate (a.Brightness, b.Brightness, p)
+					          );
 					return c;
 				} else if (kvp.Key == v) {
 					return kvp.Value;

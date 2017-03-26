@@ -88,22 +88,22 @@ namespace Actinic.Animations
 			}
 		}
 
-		public SimpleStrobeAnimation (int Light_Count):base(Light_Count)
+		public SimpleStrobeAnimation (int Light_Count) : base (Light_Count)
 		{
 			InitBaseSystem (Light_Count, StrobeMode.White);
 		}
 
-		public SimpleStrobeAnimation (int Light_Count, StrobeMode DesiredStrobeMode):base(Light_Count)
+		public SimpleStrobeAnimation (int Light_Count, StrobeMode DesiredStrobeMode) : base (Light_Count)
 		{
 			InitBaseSystem (Light_Count, DesiredStrobeMode);
 		}
 
-		public SimpleStrobeAnimation (List<LED> PreviouslyShownFrame):base(PreviouslyShownFrame)
+		public SimpleStrobeAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			InitBaseSystem (PreviouslyShownFrame.Count, StrobeMode.White);
 		}
 
-		public SimpleStrobeAnimation (List<LED> PreviouslyShownFrame, StrobeMode DesiredStrobeMode):base(PreviouslyShownFrame)
+		public SimpleStrobeAnimation (List<LED> PreviouslyShownFrame, StrobeMode DesiredStrobeMode) : base (PreviouslyShownFrame)
 		{
 			InitBaseSystem (PreviouslyShownFrame.Count, DesiredStrobeMode);
 		}

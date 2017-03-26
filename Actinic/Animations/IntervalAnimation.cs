@@ -31,43 +31,45 @@ namespace Actinic.Animations
 		//60 * 1000; // Typical usage, update once a minute
 
 		// Time is represented by minutes in a day, starting from 0 at 12 am to 24*60 at midnight
-		private LinearColorInterpolator TimeColorGradient = new LinearColorInterpolator (
-			new KeyValuePair<int, Color>[] {
-			new KeyValuePair<int, Color> (0, new Color (0, 0, 255, 30)),
-			new KeyValuePair<int, Color> (4 * 60, new Color (0, 0, 255, 30)),
-			new KeyValuePair<int, Color> (6 * 60, new Color (100, 0, 255, 80)),
-			new KeyValuePair<int, Color> (7 * 60, new Color (100, 100, 255, 80)),
-			new KeyValuePair<int, Color> (8 * 60, new Color (255, 150, 100)),
-			new KeyValuePair<int, Color> (9 * 60, new Color (255, 255, 255)),
-			new KeyValuePair<int, Color> (11 * 60, new Color (255, 255, 255)),
-			new KeyValuePair<int, Color> (12 * 60, new Color (255, 100, 50)),
-			new KeyValuePair<int, Color> ((5 + 12) * 60, new Color (255, 100, 30)),
-			new KeyValuePair<int, Color> ((8 + 12) * 60, new Color (255, 50, 30)),
-			new KeyValuePair<int, Color> ((9 + 12) * 60, new Color (255, 50, 0)),
-			new KeyValuePair<int, Color> ((10 + 12) * 60, new Color (255, 30, 0)),
-			new KeyValuePair<int, Color> ((10 + 12) * 60 + 1, new Color (255, 30, 2, 150)),
-			new KeyValuePair<int, Color> ((11 + 12) * 60, new Color (255, 0, 255, 50)),
-			new KeyValuePair<int, Color> ((12 + 12) * 60, new Color (0, 0, 255, 30))}
+		private LinearColorInterpolator TimeColorGradient =
+			new LinearColorInterpolator (
+				new KeyValuePair<int, Color>[] {
+					new KeyValuePair<int, Color> (0, new Color (0, 0, 255, 30)),
+					new KeyValuePair<int, Color> (4 * 60, new Color (0, 0, 255, 30)),
+					new KeyValuePair<int, Color> (6 * 60, new Color (100, 0, 255, 80)),
+					new KeyValuePair<int, Color> (7 * 60, new Color (100, 100, 255, 80)),
+					new KeyValuePair<int, Color> (8 * 60, new Color (255, 150, 100)),
+					new KeyValuePair<int, Color> (9 * 60, new Color (255, 255, 255)),
+					new KeyValuePair<int, Color> (11 * 60, new Color (255, 255, 255)),
+					new KeyValuePair<int, Color> (12 * 60, new Color (255, 100, 50)),
+					new KeyValuePair<int, Color> ((5 + 12) * 60, new Color (255, 100, 30)),
+					new KeyValuePair<int, Color> ((8 + 12) * 60, new Color (255, 50, 30)),
+					new KeyValuePair<int, Color> ((9 + 12) * 60, new Color (255, 50, 0)),
+					new KeyValuePair<int, Color> ((10 + 12) * 60, new Color (255, 30, 0)),
+					new KeyValuePair<int, Color> ((10 + 12) * 60 + 1, new Color (255, 30, 2, 150)),
+					new KeyValuePair<int, Color> ((11 + 12) * 60, new Color (255, 0, 255, 50)),
+					new KeyValuePair<int, Color> ((12 + 12) * 60, new Color (0, 0, 255, 30))
+				}
 			);
 
 		// Original full-brightness TimeColorGradient, red at night
-//		private LinearColorInterpolator TimeColorGradient = new LinearColorInterpolator (
-//			new KeyValuePair<int, Color>[] {
-//			new KeyValuePair<int, Color> (0, new Color (255, 0, 0)),
-//			new KeyValuePair<int, Color> (4 * 60, new Color (255, 0, 0)),
-//			new KeyValuePair<int, Color> (6 * 60, new Color (100, 0, 255)),
-//			new KeyValuePair<int, Color> (7 * 60, new Color (100, 100, 255)),
-//			new KeyValuePair<int, Color> (8 * 60, new Color (255, 150, 100)),
-//			new KeyValuePair<int, Color> (9 * 60, new Color (255, 255, 255)),
-//			new KeyValuePair<int, Color> (11 * 60, new Color (255, 255, 255)),
-//			new KeyValuePair<int, Color> (12 * 60, new Color (255, 100, 50)),
-//			new KeyValuePair<int, Color> ((5 + 12) * 60, new Color (255, 100, 30)),
-//			new KeyValuePair<int, Color> ((8 + 12) * 60, new Color (255, 50, 30)),
-//			new KeyValuePair<int, Color> ((9 + 12) * 60, new Color (255, 50, 0)),
-//			new KeyValuePair<int, Color> ((10 + 12) * 60, new Color (255, 30, 0)),
-//			new KeyValuePair<int, Color> ((11 + 12) * 60, new Color (255, 0, 0)),
-//			new KeyValuePair<int, Color> ((12 + 12) * 60, new Color (255, 0, 0))}
-//		);
+		//		private LinearColorInterpolator TimeColorGradient = new LinearColorInterpolator (
+		//			new KeyValuePair<int, Color>[] {
+		//			new KeyValuePair<int, Color> (0, new Color (255, 0, 0)),
+		//			new KeyValuePair<int, Color> (4 * 60, new Color (255, 0, 0)),
+		//			new KeyValuePair<int, Color> (6 * 60, new Color (100, 0, 255)),
+		//			new KeyValuePair<int, Color> (7 * 60, new Color (100, 100, 255)),
+		//			new KeyValuePair<int, Color> (8 * 60, new Color (255, 150, 100)),
+		//			new KeyValuePair<int, Color> (9 * 60, new Color (255, 255, 255)),
+		//			new KeyValuePair<int, Color> (11 * 60, new Color (255, 255, 255)),
+		//			new KeyValuePair<int, Color> (12 * 60, new Color (255, 100, 50)),
+		//			new KeyValuePair<int, Color> ((5 + 12) * 60, new Color (255, 100, 30)),
+		//			new KeyValuePair<int, Color> ((8 + 12) * 60, new Color (255, 50, 30)),
+		//			new KeyValuePair<int, Color> ((9 + 12) * 60, new Color (255, 50, 0)),
+		//			new KeyValuePair<int, Color> ((10 + 12) * 60, new Color (255, 30, 0)),
+		//			new KeyValuePair<int, Color> ((11 + 12) * 60, new Color (255, 0, 0)),
+		//			new KeyValuePair<int, Color> ((12 + 12) * 60, new Color (255, 0, 0))}
+		//		);
 
 		private Actinic.Color TimeColor = new Color (0, 0, 0);
 		private byte TimeColor_Brightness;
@@ -90,14 +92,14 @@ namespace Actinic.Animations
 			}
 		}
 
-		public IntervalAnimation (int Light_Count):base(Light_Count)
+		public IntervalAnimation (int Light_Count) : base (Light_Count)
 		{
 			RequestedAnimationDelay = Animation_Update_Delay;
 			EnableSmoothing = false;
 			UpdateColorsFromTime ();
 		}
 
-		public IntervalAnimation (List<LED> PreviouslyShownFrame):base(PreviouslyShownFrame)
+		public IntervalAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			RequestedAnimationDelay = Animation_Update_Delay;
 			EnableSmoothing = false;

@@ -32,11 +32,12 @@ namespace Actinic.Animations
 		/// </summary>
 		protected List<LED> CalculuatedHues = new List<LED> ();
 
-		public SpinnerReactiveAnimation (int Light_Count):base(Light_Count)
+		public SpinnerReactiveAnimation (int Light_Count) : base (Light_Count)
 		{
 			InitializeLayers ();
 		}
-		public SpinnerReactiveAnimation (List<LED> PreviouslyShownFrame):base(PreviouslyShownFrame)
+
+		public SpinnerReactiveAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			InitializeLayers ();
 		}
@@ -63,7 +64,7 @@ namespace Actinic.Animations
 			int copy_color_index = (int)MathUtilities.ConvertRange (Audio_Average_Intensity, 0, 1, 0, CalculuatedHues.Count);
 			for (int index = 0; index < CurrentFrame.Count; index++) {
 				CurrentFrame [index] = CalculuatedHues [copy_color_index];
-				copy_color_index ++;
+				copy_color_index++;
 				if (copy_color_index >= CalculuatedHues.Count) {
 					copy_color_index = 0;
 				}

@@ -94,10 +94,12 @@ namespace Actinic.AudioInputs
 		/// </summary>
 		/// <returns>The sort order, positive preceding, negative following, zero equals.</returns>
 		/// <param name="obj">The AbstractAudioInput to compare to this instance.</param>
-		public int CompareTo (AbstractAudioInput otherAudioInput) {
-			if (otherAudioInput == null) return 1;
+		public int CompareTo (AbstractAudioInput otherAudioInput)
+		{
+			if (otherAudioInput == null)
+				return 1;
 
-			return this.Priority.CompareTo(otherAudioInput.Priority);
+			return this.Priority.CompareTo (otherAudioInput.Priority);
 		}
 	}
 }

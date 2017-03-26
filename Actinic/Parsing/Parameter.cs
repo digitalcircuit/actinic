@@ -44,9 +44,10 @@ namespace Actinic.Parsing
 				throw new ArgumentException ("Provided arguments must not be null", "Arguments");
 
 			// Help message with two spaces of indentation
-			const string HELP_Examples = "  Use combinations of" +
+			const string HELP_Examples =
+				"  Use combinations of" +
 				" [all], [index], [start]-[end], [start]-[end]:[increment]" +
-					"\n  Example: 1,5,10-20,30-40:2,40-50:5";
+				"\n  Example: 1,5,10-20,30-40:2,40-50:5";
 
 			// Which lights are selected?
 			SelectedLights = new List<int> ();
@@ -58,7 +59,7 @@ namespace Actinic.Parsing
 			}
 
 			// Get the first item from arguments, split on separator, then remove it from the list
-			string[] selections = Arguments[0].Split (',');
+			string[] selections = Arguments [0].Split (',');
 			Arguments.RemoveAt (0);
 
 			// For each potential choice...
@@ -76,7 +77,7 @@ namespace Actinic.Parsing
 					// Can't get any more lights than 'all', so break out of the loop now
 					break;
 				} else if (selection.Contains ("-")) {
-									// Selection is a range, time to parse
+					// Selection is a range, time to parse
 					string range_selection = selection;
 					int range_start, range_end, range_step = 1;
 
@@ -86,20 +87,24 @@ namespace Actinic.Parsing
 						// First portion is the range as normal
 						range_selection = selection_steps [0];
 						// Second portion is the step value
-						if (int.TryParse (selection_steps[1], out range_step)) {
+						if (int.TryParse (selection_steps [1], out range_step)) {
 							if (!(range_step >= 1 && range_step <= MaximumLights)) {
 								// Not a valid step amount (within light count), bail out
 								if (ExplainErrors)
-									Console.Error.WriteLine ("> Range increment '{3}' is out of range, must be from '{1}' to '{2}'\n{0}",
-									                         HELP_Examples, 1, MaximumLights, range_step);
+									Console.Error.WriteLine (
+										"> Range increment '{3}' is out of range, must be from '{1}' to '{2}'\n{0}",
+										HELP_Examples, 1, MaximumLights, range_step
+									);
 								return false;
 							}
 							// If valid, the step amount is already stored, no further action required
 						} else {
 							// Not an integer, bail out
 							if (ExplainErrors)
-								Console.Error.WriteLine ("> Range increment must be a whole number from '{1}' to '{2}'\n{0}",
-								                         HELP_Examples, 1, MaximumLights);
+								Console.Error.WriteLine (
+									"> Range increment must be a whole number from '{1}' to '{2}'\n{0}",
+									HELP_Examples, 1, MaximumLights
+								);
 							return false;
 						}
 					}
@@ -108,38 +113,46 @@ namespace Actinic.Parsing
 					string[] selection_boundaries = range_selection.Split ('-');
 
 					// Starting index
-					if (int.TryParse (selection_boundaries[0], out range_start)) {
+					if (int.TryParse (selection_boundaries [0], out range_start)) {
 						if (!(range_start >= 1 && range_start <= MaximumLights)) {
 							// Not a valid start position (within light count), bail out
 							if (ExplainErrors)
-								Console.Error.WriteLine ("> Range start '{3}' is out of range, must be from '{1}' to '{2}'\n{0}",
-								                         HELP_Examples, 1, MaximumLights, range_start);
+								Console.Error.WriteLine (
+									"> Range start '{3}' is out of range, must be from '{1}' to '{2}'\n{0}",
+									HELP_Examples, 1, MaximumLights, range_start
+								);
 							return false;
 						}
 						// If valid, the range start is already stored, no further action required
 					} else {
 						// Not an integer, bail out
 						if (ExplainErrors)
-							Console.Error.WriteLine ("> Range start must be a whole number from '{1}' to '{2}'\n{0}",
-							                         HELP_Examples, 1, MaximumLights);
+							Console.Error.WriteLine (
+								"> Range start must be a whole number from '{1}' to '{2}'\n{0}",
+								HELP_Examples, 1, MaximumLights
+							);
 						return false;
 					}
 
 					// Ending index
-					if (int.TryParse (selection_boundaries[1], out range_end)) {
+					if (int.TryParse (selection_boundaries [1], out range_end)) {
 						if (!(range_end >= range_start && range_end <= MaximumLights)) {
 							// Not a valid start position (higher than start, within light count), bail out
 							if (ExplainErrors)
-								Console.Error.WriteLine ("> Range end '{3}' is out of range, must be from '{1}' (range start) to '{2}'\n {0}",
-								                         HELP_Examples, range_start, MaximumLights, range_end);
+								Console.Error.WriteLine (
+									"> Range end '{3}' is out of range, must be from '{1}' (range start) to '{2}'\n {0}",
+									HELP_Examples, range_start, MaximumLights, range_end
+								);
 							return false;
 						}
 						// If valid, the range start is already stored, no further action required
 					} else {
 						// Not an integer, bail out
 						if (ExplainErrors)
-							Console.Error.WriteLine ("> Range end must be a whole number from '{1}' to '{2}'\n{0}",
-							                         HELP_Examples, 1, MaximumLights);
+							Console.Error.WriteLine (
+								"> Range end must be a whole number from '{1}' to '{2}'\n{0}",
+								HELP_Examples, 1, MaximumLights
+							);
 						return false;
 					}
 
@@ -154,8 +167,8 @@ namespace Actinic.Parsing
 					// Inside enumerable, x will range from range_start to stop, and before multiplying must be
 					// subtracted to convert the range into a 0 to end scale.
 					// See:  https://msdn.microsoft.com/en-us/library/system.linq.enumerable.range.aspx
-					SelectedLights.AddRange (Enumerable.Range(range_start, ((range_end - range_start) / range_step) + 1)
-					                         .Select(x => range_start + (x - range_start) * range_step));
+					SelectedLights.AddRange (Enumerable.Range (range_start, ((range_end - range_start) / range_step) + 1)
+					                         .Select (x => range_start + (x - range_start) * range_step));
 				} else {
 					// Selection is a single light, try it directly
 					int single_light;
@@ -163,20 +176,24 @@ namespace Actinic.Parsing
 						if (single_light >= 1 && single_light <= MaximumLights) {
 							// Convert from one- to zero-based index, add light only if not already selected
 							--single_light;
-							if (! SelectedLights.Contains (single_light))
+							if (!SelectedLights.Contains (single_light))
 								SelectedLights.Add (single_light);
 						} else {
 							// Not a valid index (within light count), bail out
 							if (ExplainErrors)
-								Console.Error.WriteLine ("> Light index '{3}' is out of range, must be from '{1}' to '{2}'\n {0}",
-								                         HELP_Examples, 1, MaximumLights, single_light);
+								Console.Error.WriteLine (
+									"> Light index '{3}' is out of range, must be from '{1}' to '{2}'\n {0}",
+									HELP_Examples, 1, MaximumLights, single_light
+								);
 							return false;
 						}
 					} else {
 						// Not an integer, bail out
 						if (ExplainErrors)
-							Console.Error.WriteLine ("> Light index must be a whole number from '{1}' to '{2}'\n{0}",
-							                         HELP_Examples, 1, MaximumLights);
+							Console.Error.WriteLine (
+								"> Light index must be a whole number from '{1}' to '{2}'\n{0}",
+								HELP_Examples, 1, MaximumLights
+							);
 						return false;
 					}
 				}
@@ -203,10 +220,11 @@ namespace Actinic.Parsing
 				throw new ArgumentException ("Provided arguments must not be null", "Arguments");
 
 			// Help message with two spaces of indentation
-			const string HELP_Examples = "  Use" +
+			const string HELP_Examples =
+				"  Use" +
 				" [color name], [red] [green] [blue], or [red] [green] [blue] [brightness]" +
-					"\n  Type 'color list' for a list of named colors" +
-					"\n  Examples: white, black, blue, 0 255 0, 0 128 255 100";
+				"\n  Type 'color list' for a list of named colors" +
+				"\n  Examples: white, black, blue, 0 255 0, 0 128 255 100";
 
 			// Choose an unusual color for failure cases (blue screen of death)
 			SelectedColor = new Color (0, 0, 255);
@@ -229,8 +247,8 @@ namespace Actinic.Parsing
 				// It's not a named color.  Maybe it's a multi-argument RGB value?
 				byte selected_r, selected_g, selected_b, selected_brightness;
 				if (byte.TryParse (Arguments [0], out selected_r) &&
-					byte.TryParse (Arguments [1], out selected_g) &&
-					byte.TryParse (Arguments [2], out selected_b) &&
+				    byte.TryParse (Arguments [1], out selected_g) &&
+				    byte.TryParse (Arguments [2], out selected_b) &&
 				    selected_r >= LightSystem.Color_MIN && selected_r <= LightSystem.Color_MAX &&
 				    selected_g >= LightSystem.Color_MIN && selected_g <= LightSystem.Color_MAX &&
 				    selected_b >= LightSystem.Color_MIN && selected_b <= LightSystem.Color_MAX) {
@@ -258,14 +276,18 @@ namespace Actinic.Parsing
 				} else {
 					// Something went wrong parsing the colors, return unsuccessful
 					if (ExplainErrors)
-						Console.Error.WriteLine ("> Color value is out of range, must be from '{1}' to '{2}'\n{0}",
-						                         HELP_Examples, LightSystem.Color_MIN, LightSystem.Color_MAX);
+						Console.Error.WriteLine (
+							"> Color value is out of range, must be from '{1}' to '{2}'\n{0}",
+							HELP_Examples, LightSystem.Color_MIN, LightSystem.Color_MAX
+						);
 					return false;
 				}
 			} else {
 				// All attempts to make sense have failed, return unsuccessful
 				if (ExplainErrors)
-					Console.Error.WriteLine ("> Unknown color\n{0}", HELP_Examples);
+					Console.Error.WriteLine (
+						"> Unknown color\n{0}", HELP_Examples
+					);
 				return false;
 			}
 		}

@@ -33,7 +33,9 @@ namespace Actinic
 {
 	public static class ReflectiveEnumerator
 	{
-		static ReflectiveEnumerator() { }
+		static ReflectiveEnumerator ()
+		{
+		}
 
 		/// <summary>
 		/// Gets an enumerator to and instantiates all objects of a certain type.
@@ -41,16 +43,15 @@ namespace Actinic
 		/// <returns>The enumerable of all subclasses matching given type.</returns>
 		/// <param name="constructorArgs">Constructor arguments.</param>
 		/// <typeparam name="T">The type of classes to search.</typeparam>
-		public static IEnumerable<T> GetEnumerableOfType<T>(params object[] constructorArgs) where T : class, IComparable<T>
+		public static IEnumerable<T> GetEnumerableOfType<T> (params object[] constructorArgs) where T : class, IComparable<T>
 		{
-			List<T> objects = new List<T>();
+			List<T> objects = new List<T> ();
 			foreach (Type type in
 			         Assembly.GetAssembly(typeof(T)).GetTypes()
-			         .Where(myType => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T))))
-			{
-				objects.Add((T)Activator.CreateInstance(type, constructorArgs));
+			         .Where(myType => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)))) {
+				objects.Add ((T)Activator.CreateInstance (type, constructorArgs));
 			}
-			objects.Sort();
+			objects.Sort ();
 			return objects;
 		}
 
@@ -61,19 +62,18 @@ namespace Actinic
 		/// <param name="InclusiveSearch">If set to <c>true</c> perform an inclusive search, otherwise exclusive.</param>
 		/// <param name="constructorArgs">Constructor arguments.</param>
 		/// <typeparam name="T">The type of classes to search.</typeparam>
-		public static IEnumerable<T> GetFilteredEnumerableOfType<T, U>(bool InclusiveSearch, params object[] constructorArgs)
+		public static IEnumerable<T> GetFilteredEnumerableOfType<T, U> (bool InclusiveSearch, params object[] constructorArgs)
 			where T : class, IComparable<T>
 			where U : class
 		{
-			List<T> objects = new List<T>();
+			List<T> objects = new List<T> ();
 			foreach (Type type in
 			         Assembly.GetAssembly(typeof(T)).GetTypes()
 			         .Where(myType => myType.IsClass && !myType.IsAbstract && myType.IsSubclassOf(typeof(T)) &&
-			       ((InclusiveSearch && typeof (U).IsAssignableFrom (myType)) || (!InclusiveSearch && !(typeof (U).IsAssignableFrom (myType)))) ))
-			{
-				objects.Add((T)Activator.CreateInstance(type, constructorArgs));
+			       ((InclusiveSearch && typeof (U).IsAssignableFrom (myType)) || (!InclusiveSearch && !(typeof (U).IsAssignableFrom (myType)))) )) {
+				objects.Add ((T)Activator.CreateInstance (type, constructorArgs));
 			}
-			objects.Sort();
+			objects.Sort ();
 			return objects;
 		}
 

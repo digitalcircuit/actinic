@@ -56,7 +56,8 @@ namespace Actinic.Animations
 		private byte CustomColorShift_Blue = LightSystem.Color_MIN;
 
 		private const double VU_ColorShift_Brightness_Multiplier = 1.2;
-		private const int VU_Extended_MaxUpdateCount = 6 + 4;  //Previously 6 * 4
+		private const int VU_Extended_MaxUpdateCount = 6 + 4;
+		//Previously 6 * 4
 
 		#region VU Meter: Auto Management
 
@@ -64,13 +65,17 @@ namespace Actinic.Animations
 		private const double VU_Intensity_Threshold_MAX = 0.95;
 		private const double VU_Intensity_Threshold_HEAVY = 0.73;
 		private const double VU_Intensity_Threshold_MEDIUM = 0.4;
-		private int VU_Intensity_Hysterisis_THRESHOLD = 5; //Must be different at least this many consecutive times in a row
+		private int VU_Intensity_Hysterisis_THRESHOLD = 5;
+		//Must be different at least this many consecutive times in a row
 		private int VU_Intensity_Hysterisis = 0;
 		private bool VU_Intensity_Hysterisis_HasReachedZero = true;
 		private int VU_Intensity_Last_Random_Choice = 0;
-		private const double VU_Auto_Force_Change_Max_Delay = 500; // * 50 ms
-		private const double VU_Auto_Force_Change_Min_Delay = 150; // * 50 ms
-		private double VU_Auto_Force_Change_Count = 0; // when this number greater than above, will change color and reset to zero
+		private const double VU_Auto_Force_Change_Max_Delay = 500;
+		// * 50 ms
+		private const double VU_Auto_Force_Change_Min_Delay = 150;
+		// * 50 ms
+		private double VU_Auto_Force_Change_Count = 0;
+		// when this number greater than above, will change color and reset to zero
 
 		private enum Intensities
 		{
@@ -84,6 +89,7 @@ namespace Actinic.Animations
 
 
 		#region VU Meter: Hueshift
+
 		private const double VU_Hueshift_Color_Multiplier = 550;
 		//Originally 400, then 600, now 550 with new frequency processing code
 		private const byte VU_Hueshift_Flicker_Color = LightSystem.Color_MAX;
@@ -93,37 +99,51 @@ namespace Actinic.Animations
 		//Originally 0.07 copied from Moving Bars
 		//Originally LightSystem.LIGHT_COUNT / 2.7 copied from Moving Bars, but too long to avoid saturating the lights
 		// Since the bars grow outwards from the middle, length / 2 * mirrored = desired value
+
 		#endregion
 
 		#region VU Meter: Hueshift Beat
 
-		private const double VU_Hueshift_Beat_Pause_Fading_Intensity_Floor = 0.73; // Intensity * this
+		private const double VU_Hueshift_Beat_Pause_Fading_Intensity_Floor = 0.73;
+		// Intensity * this
 
-		private const double VU_Hueshift_Beat_Pause_Fading_Max_Delay = 16; // * 50 ms
-		private const double VU_Hueshift_Beat_Pause_Fading_Min_Delay = 0; // * 50 ms
-		private double VU_Hueshift_Beat_Pause_Fading_Off_Count = 0; // when this number greater than above, will update and reset to zero
+		private const double VU_Hueshift_Beat_Pause_Fading_Max_Delay = 16;
+		// * 50 ms
+		private const double VU_Hueshift_Beat_Pause_Fading_Min_Delay = 0;
+		// * 50 ms
+		private double VU_Hueshift_Beat_Pause_Fading_Off_Count = 0;
+		// when this number greater than above, will update and reset to zero
 
 		#endregion
 
 		#region VU Meter: Rainbow Solid
+
 		// Rainbow_Solid_Color_Change
-		private const double VU_Rainbow_Solid_Color_Change_Max_Delay = 100; // * 50 ms
-		private const double VU_Rainbow_Solid_Color_Change_Min_Delay = 2; // * 50 ms
-		private double VU_Rainbow_Solid_Color_Change_Count = 0; // when this number greater than above, will change color and reset to zero
+		private const double VU_Rainbow_Solid_Color_Change_Max_Delay = 100;
+		// * 50 ms
+		private const double VU_Rainbow_Solid_Color_Change_Min_Delay = 2;
+		// * 50 ms
+		private double VU_Rainbow_Solid_Color_Change_Count = 0;
+		// when this number greater than above, will change color and reset to zero
 		//Original: Decrease = 0.99, Increase = 1.4
 		private const double VU_ShiftSpeed_Multiplier = 7;
 		private double VU_ShiftSpeed = 1;
+
 		#endregion
 
 		#region VU Meter: Solid Strobe
+
 		private const double VU_Solid_Color_Strobe_Flicker_Chance = 0.035;
 		private const double VU_Solid_Color_Strobe_Hueshift_Flicker_Chance = VU_Solid_Color_Strobe_Flicker_Chance / 1.5;
 
 		//private const double VU_Solid_Color_Single_Strobe_Flicker_Chance = VU_Solid_Color_Strobe_Flicker_Chance * 9;
 		private const double VU_Solid_Color_Single_Strobe_Smoothing_Decrease = 0.3;
-		private const double VU_Solid_Color_Single_Strobe_Max_Delay = 20; // * 50 ms
-		private const double VU_Solid_Color_Single_Strobe_Min_Delay = 0; // * 50 ms
-		private double VU_Solid_Color_Single_Strobe_Off_Count = 0; // when this number greater than above, will strobe and reset to zero
+		private const double VU_Solid_Color_Single_Strobe_Max_Delay = 20;
+		// * 50 ms
+		private const double VU_Solid_Color_Single_Strobe_Min_Delay = 0;
+		// * 50 ms
+		private double VU_Solid_Color_Single_Strobe_Off_Count = 0;
+		// when this number greater than above, will strobe and reset to zero
 		private enum ColorStrobe
 		{
 			White,
@@ -138,9 +158,11 @@ namespace Actinic.Animations
 		private Actinic.Color VU_RandomColor = new Actinic.Color (0, 0, 0);
 
 		#region VU Meter: Moving Bars
+
 		private double VU_Moving_Bar_Max_Length = (LightSystem.LIGHT_COUNT / 2.7);
 		//Above was originally LightSystem.LIGHT_COUNT / 2.2, but wrap-around was added for lights, making it too long
-		private int VU_Moving_Bar_Half_Max_Length = -1;  // See InitializeLayersAndVariables ()
+		private int VU_Moving_Bar_Half_Max_Length = -1;
+		// See InitializeLayersAndVariables ()
 		// Since the bars grow outwards from the middle, length / 2 * mirrored = desired value
 		private const double VU_Moving_Bar_Max_Position_Change = 1.3;
 		//Above was originally 1.5, but it seemed too fast
@@ -160,6 +182,7 @@ namespace Actinic.Animations
 		private bool VU_Moving_Bar_Mid_Position_Increasing = true;
 		private bool VU_Moving_Bar_High_Position_Increasing = true;
 		private int VU_Moving_Bar_Split_Distance = (LightSystem.LIGHT_COUNT / 3);
+
 		#endregion
 
 		#region VU Meter: Stationary Bars
@@ -180,11 +203,12 @@ namespace Actinic.Animations
 		#endregion
 
 
-		public LegacyReactiveAnimation (int Light_Count):base(Light_Count)
+		public LegacyReactiveAnimation (int Light_Count) : base (Light_Count)
 		{
 			InitializeLayersAndVariables ();
 		}
-		public LegacyReactiveAnimation (List<LED> PreviouslyShownFrame):base(PreviouslyShownFrame)
+
+		public LegacyReactiveAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			InitializeLayersAndVariables ();
 		}
@@ -319,7 +343,7 @@ namespace Actinic.Animations
 				VU_RandomColor = RandomColorGenerator.GetRandomColor ();
 				VU_ShiftSpeed = Audio_Average_Intensity * VU_ShiftSpeed_Multiplier;
 			} else {
-				VU_Rainbow_Solid_Color_Change_Count ++;
+				VU_Rainbow_Solid_Color_Change_Count++;
 			}
 //			if (ReactiveSystem.Processing_Show_Analysis) {
 //				Console.WriteLine ("Intensity delta ceiling: " + Math.Round (MathUtilities.ConvertRange (VU_Average_Intensity, 0, 1, VU_Rainbow_Solid_Color_Change_Max_Delay, VU_Rainbow_Solid_Color_Change_Min_Delay), 3).ToString ().PadRight (5) + "  Shift speed: " + Math.Round (VU_ShiftSpeed, 3).ToString ().PadRight (5).ToString () + "  Current color: " + VU_RandomColor.Name);
@@ -479,7 +503,7 @@ namespace Actinic.Animations
 				// Note: I don't -think- Smoothing needs to be reset after each
 				//ResetSmoothing ();
 			} else {
-				VU_Auto_Force_Change_Count ++;
+				VU_Auto_Force_Change_Count++;
 			}
 
 
@@ -648,9 +672,9 @@ namespace Actinic.Animations
 			int i_source = 0;
 			for (int i = LightSystem.LIGHT_INDEX_MAX; i > (LightSystem.LIGHT_INDEX_MIDDLE); i--) {
 				i_source = (LightSystem.LIGHT_INDEX_MAX - i);
-				CurrentFrame [i].R = CurrentFrame[i_source].R;
-				CurrentFrame [i].G = CurrentFrame[i_source].G;
-				CurrentFrame [i].B = CurrentFrame[i_source].B;
+				CurrentFrame [i].R = CurrentFrame [i_source].R;
+				CurrentFrame [i].G = CurrentFrame [i_source].G;
+				CurrentFrame [i].B = CurrentFrame [i_source].B;
 				CurrentFrame [i].Brightness = CurrentFrame [i_source].Brightness;
 			}
 		}
@@ -709,7 +733,7 @@ namespace Actinic.Animations
 			//Console.WriteLine ("DEBUG:  Unupdated count: {0}, requirement: {1}", VU_Hueshift_Beat_Pause_Fading_Off_Count, MathUtilities.ConvertRange (Math.Max(VU_Volume_Mid_Intensity - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, 0), 0, 1 - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, VU_Hueshift_Beat_Pause_Fading_Min_Delay, VU_Hueshift_Beat_Pause_Fading_Max_Delay));
 
 			// Mid frequency also controls whether or not the color fade freezes
-			if (VU_Hueshift_Beat_Pause_Fading_Off_Count >= MathUtilities.ConvertRange (Math.Max(Audio_Mid_Intensity - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, 0), 0, 1 - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, VU_Hueshift_Beat_Pause_Fading_Min_Delay, VU_Hueshift_Beat_Pause_Fading_Max_Delay)) {
+			if (VU_Hueshift_Beat_Pause_Fading_Off_Count >= MathUtilities.ConvertRange (Math.Max (Audio_Mid_Intensity - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, 0), 0, 1 - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, VU_Hueshift_Beat_Pause_Fading_Min_Delay, VU_Hueshift_Beat_Pause_Fading_Max_Delay)) {
 				VU_Hueshift_Beat_Pause_Fading_Off_Count = 0;
 				for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
 					Actinic_Lights_Unprocessed [i].R = ColorShift_Red;
@@ -717,7 +741,7 @@ namespace Actinic.Animations
 					Actinic_Lights_Unprocessed [i].B = ColorShift_Blue;
 				}
 			} else {
-				VU_Hueshift_Beat_Pause_Fading_Off_Count ++;
+				VU_Hueshift_Beat_Pause_Fading_Off_Count++;
 			}
 
 			for (int i = 0; i < (LightSystem.LIGHT_COUNT / 2); i++) {
@@ -999,7 +1023,7 @@ namespace Actinic.Animations
 						CurrentFrame [i].Brightness = 255;
 					}
 				} else {
-					VU_Solid_Color_Single_Strobe_Off_Count ++;
+					VU_Solid_Color_Single_Strobe_Off_Count++;
 					for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
 						CurrentFrame [i].Brightness = 0;
 					}

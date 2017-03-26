@@ -47,13 +47,15 @@ namespace Actinic.Animations
 		/// <summary>
 		/// Highest number of qualifying frames before a strobe will happen
 		/// </summary>
-		private const double Single_Strobe_Max_Delay = 10; // * 50 ms
+		private const double Single_Strobe_Max_Delay = 10;
 		/// <summary>
-		/// Lowest number of qualifying frames before a strobe will happen
+		/// Lowest number of qualifying frames before a strobe will happen.
+		/// Delay is * 50 ms.
 		/// </summary>
-		private const double Single_Strobe_Min_Delay = 0; // * 50 ms
+		private const double Single_Strobe_Min_Delay = 0;
 		/// <summary>
-		/// When this number is greater than the above, call for LEDs to strobe, then reset to zero
+		/// When this number is greater than the above, call for LEDs to strobe,
+		/// then reset to zero.  Delay is * 50 ms.
 		/// </summary>
 		private double Single_Strobe_Off_Count = 0;
 
@@ -77,11 +79,12 @@ namespace Actinic.Animations
 		/// </summary>
 		protected List<LED> CurrentFrame_Combined = new List<LED> ();
 
-		public RaveMoodReactiveAnimation (int Light_Count):base(Light_Count)
+		public RaveMoodReactiveAnimation (int Light_Count) : base (Light_Count)
 		{
 			InitializeLayers ();
 		}
-		public RaveMoodReactiveAnimation (List<LED> PreviouslyShownFrame):base(PreviouslyShownFrame)
+
+		public RaveMoodReactiveAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			InitializeLayers ();
 		}
@@ -106,10 +109,12 @@ namespace Actinic.Animations
 				if (CurrentFrame_Strobe [i].Brightness > (LightSystem.Brightness_MAX - Single_Strobe_Linger_Cycles)) {
 					CurrentFrame_Strobe [i].Brightness -= 1;
 				} else {
-					CurrentFrame_Strobe [i].SetColor (LightSystem.Color_MIN,
-					                                  LightSystem.Color_MIN,
-					                                  LightSystem.Color_MIN,
-					                                  LightSystem.Brightness_MIN);
+					CurrentFrame_Strobe [i].SetColor (
+						LightSystem.Color_MIN,
+						LightSystem.Color_MIN,
+						LightSystem.Color_MIN,
+						LightSystem.Brightness_MIN
+					);
 				}
 			}
 
@@ -124,15 +129,17 @@ namespace Actinic.Animations
 				}
 				strobe_width = (int)(MathUtilities.ConvertRange (converted_Audio_Average_Intensity, 0, 1, Strobe_Size_Minimum, Strobe_Size_Maximum) / 2);
 				for (int strobe_index = Math.Max (start_index - strobe_width, 0); strobe_index < Math.Min ((start_index + strobe_width), LightSystem.LIGHT_INDEX_MAX); strobe_index++) {
-					CurrentFrame_Strobe [strobe_index].SetColor (LightSystem.Color_MAX,
-					                                            LightSystem.Color_MAX,
-					                                            LightSystem.Color_MAX,
-					                                            LightSystem.Brightness_MAX);
+					CurrentFrame_Strobe [strobe_index].SetColor (
+						LightSystem.Color_MAX,
+						LightSystem.Color_MAX,
+						LightSystem.Color_MAX,
+						LightSystem.Brightness_MAX
+					);
 				}
 				//Console.WriteLine ("### off_count: {0}, conv_intensity: {1}, strobe_width: {2}", Single_Strobe_Off_Count, Math.Round (converted_Audio_Average_Intensity, 4), (strobe_width * 2));
 				Single_Strobe_Off_Count = 0;
 			} else if (converted_Audio_Average_Intensity > 0) {
-				Single_Strobe_Off_Count ++;
+				Single_Strobe_Off_Count++;
 			}
 
 			// Update the lower layer as in the BeatPulse animation

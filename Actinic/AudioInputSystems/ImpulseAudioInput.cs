@@ -30,13 +30,14 @@ namespace Actinic.AudioInputs
 	public class ImpulseAudioInput : AbstractAudioInput
 	{
 		#region Impulse Library Interop
-		[DllImport ("impulse", EntryPoint="im_getSnapshot")]
+
+		[DllImport ("impulse", EntryPoint = "im_getSnapshot")]
 		private static extern IntPtr IM_GetSnapshot (int fft);
 
-		[DllImport ("impulse", EntryPoint="im_start")]
+		[DllImport ("impulse", EntryPoint = "im_start")]
 		private static extern void IM_Start ();
 
-		[DllImport ("impulse", EntryPoint="im_stop")]
+		[DllImport ("impulse", EntryPoint = "im_stop")]
 		private static extern void IM_Stop ();
 
 		private const int Impulse_VOLUME_COUNT = 256;
@@ -44,6 +45,7 @@ namespace Actinic.AudioInputs
 
 		private const int Impulse_ENABLE_FFT = 1;
 		private const int Impulse_DISABLE_FFT = 0;
+
 		#endregion
 
 		/// <summary>
@@ -57,9 +59,9 @@ namespace Actinic.AudioInputs
 		private System.Threading.Thread AudioCaptureThread;
 		private double[] AudioVolumesBuffered = new double[Impulse_VOLUME_COUNT];
 
-#if DEBUG_IMPULSE_PERFORMANCE
+		#if DEBUG_IMPULSE_PERFORMANCE
 		private System.Diagnostics.Stopwatch Impulse_PerfStopwatch = new System.Diagnostics.Stopwatch ();
-#endif
+		#endif
 
 		public override bool Running {
 			get {
@@ -129,7 +131,8 @@ namespace Actinic.AudioInputs
 		/// <summary>
 		/// Runs the audio capture.
 		/// </summary>
-		private void RunAudioCapture () {
+		private void RunAudioCapture ()
+		{
 #if DEBUG_IMPULSE_PERFORMANCE
 			int update_count = 0;
 			const int MAX_UPDATE_COUNT = 1000;

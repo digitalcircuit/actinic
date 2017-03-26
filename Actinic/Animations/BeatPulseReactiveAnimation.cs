@@ -27,11 +27,15 @@ namespace Actinic.Animations
 	public class BeatPulseReactiveAnimation:AbstractReactiveAnimation
 	{
 
-		protected const double Pause_Fading_Intensity_Floor = 0.73; // Intensity * this
+		protected const double Pause_Fading_Intensity_Floor = 0.73;
+		// Intensity * this
 
-		protected const double Pause_Fading_Max_Delay = 16; // * 50 ms
-		protected const double Pause_Fading_Min_Delay = 0; // * 50 ms
-		protected double Pause_Fading_Off_Count = 0; // when this number greater than above, will update and reset to zero
+		protected const double Pause_Fading_Max_Delay = 16;
+		// * 50 ms
+		protected const double Pause_Fading_Min_Delay = 0;
+		// * 50 ms
+		protected double Pause_Fading_Off_Count = 0;
+		// when this number greater than above, will update and reset to zero
 
 		/// <summary>
 		/// Red component of the unprocessed current shifting color
@@ -61,7 +65,7 @@ namespace Actinic.Animations
 		/// </summary>
 		protected List<LED> CurrentFrame_Pulse = new List<LED> ();
 
-#region Desaturate Boost
+		#region Desaturate Boost
 
 		/// <summary>
 		/// Cut-off above which low-frequency intensity will desaturate the colors
@@ -73,13 +77,14 @@ namespace Actinic.Animations
 		/// </summary>
 		private const byte DesaturateBoost_Max_Desaturation = 80;
 
-#endregion
+		#endregion
 
-		public BeatPulseReactiveAnimation (int Light_Count):base(Light_Count)
+		public BeatPulseReactiveAnimation (int Light_Count) : base (Light_Count)
 		{
 			InitializeLayers ();
 		}
-		public BeatPulseReactiveAnimation (List<LED> PreviouslyShownFrame):base(PreviouslyShownFrame)
+
+		public BeatPulseReactiveAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			InitializeLayers ();
 		}
@@ -102,15 +107,19 @@ namespace Actinic.Animations
 		{
 			// Low frequency controls the brightness and desaturation for all of the lights
 			// > Brightness (scales from 0 to 1, dark to maximum)
-			byte beatBrightness = (byte)MathUtilities.ConvertRange (Audio_Low_Intensity,
-			                                                  0, 1,
-			                                                  LightSystem.Color_DARK, LightSystem.Color_MAX);
+			byte beatBrightness = (byte)MathUtilities.ConvertRange (
+				                      Audio_Low_Intensity,
+				                      0, 1,
+				                      LightSystem.Color_DARK, LightSystem.Color_MAX
+			                      );
 			// > Desaturation (scales from floor to 1, least to most)
 			byte desaturationAdded = 0;
 			if (LowFrequencyDesaturatesColors)
-				desaturationAdded = (byte)MathUtilities.ConvertRange (Math.Max (Audio_Low_Intensity - DesaturateBoost_Low_Intensity_Floor, 0),
-				                                                      0, 1 - DesaturateBoost_Low_Intensity_Floor,
-				                                                      0, DesaturateBoost_Max_Desaturation);
+				desaturationAdded = (byte)MathUtilities.ConvertRange (
+					Math.Max (Audio_Low_Intensity - DesaturateBoost_Low_Intensity_Floor, 0),
+					0, 1 - DesaturateBoost_Low_Intensity_Floor,
+					0, DesaturateBoost_Max_Desaturation
+				);
 			// Brightness and hues to add to the backdrop
 			Color pulseColorAdditive = new Color (desaturationAdded, desaturationAdded, desaturationAdded, beatBrightness);
 			CurrentFrame_Pulse [LightSystem.LIGHT_INDEX_MIDDLE].SetColor (pulseColorAdditive);
@@ -123,14 +132,14 @@ namespace Actinic.Animations
 			AnimationUpdateColorShift ();
 
 			// Mid frequency also controls whether or not the color fade freezes
-			if (Pause_Fading_Off_Count >= MathUtilities.ConvertRange (Math.Max(Audio_Mid_Intensity - Pause_Fading_Intensity_Floor, 0), 0, 1 - Pause_Fading_Intensity_Floor, Pause_Fading_Min_Delay, Pause_Fading_Max_Delay)) {
+			if (Pause_Fading_Off_Count >= MathUtilities.ConvertRange (Math.Max (Audio_Mid_Intensity - Pause_Fading_Intensity_Floor, 0), 0, 1 - Pause_Fading_Intensity_Floor, Pause_Fading_Min_Delay, Pause_Fading_Max_Delay)) {
 				Pause_Fading_Off_Count = 0;
 
 				Held_ColorShift_Red = ColorShift_Red;
 				Held_ColorShift_Green = ColorShift_Green;
 				Held_ColorShift_Blue = ColorShift_Blue;
 			} else {
-				Pause_Fading_Off_Count ++;
+				Pause_Fading_Off_Count++;
 			}
 
 			// Backdrop color, with a default brightness of none

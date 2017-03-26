@@ -29,6 +29,7 @@ namespace Actinic
 		public List<LED> LED_Values = new List<LED> ();
 
 		private LED.BlendingStyle blending_mode = LED.BlendingStyle.Combine;
+
 		/// <summary>
 		/// When merged down, this defines how the layer should be handled, default of Combine.
 		/// </summary>

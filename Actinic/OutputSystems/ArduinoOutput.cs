@@ -38,7 +38,7 @@ namespace Actinic.Outputs
 		private const int Arduino_Priority = 36943;
 		// Feel free to change this as desired
 
-#region Protocol
+		#region Protocol
 
 		private const string Protocol_Firmware_Identifier = "ActinicArduino_Controller:";
 		private const string Protocol_Firmware_Version = Protocol_Firmware_Identifier + "2.2";
@@ -75,7 +75,7 @@ namespace Actinic.Outputs
 		// Arduino firmware expects one of the above to choose the mode of operation
 		//  Brightness = I, Color = H (don't ask me, that's what the unmodified version did), All = A (the mode I added)
 
-#endregion
+		#endregion
 
 		public override bool Initialized {
 			get {
@@ -186,7 +186,7 @@ namespace Actinic.Outputs
 			try {
 				USB_Serial.Open ();
 
-				System.Text.StringBuilder receiveBuffer = new System.Text.StringBuilder();
+				System.Text.StringBuilder receiveBuffer = new System.Text.StringBuilder ();
 				string result = "";
 				const int bufSize = 20;
 
@@ -196,10 +196,10 @@ namespace Actinic.Outputs
 					if (USB_Serial.BytesToRead > 0) {
 						Byte[] dataBuffer = new Byte[bufSize];
 
-						USB_Serial.Read(dataBuffer, 0, bufSize);
-						string s = System.Text.ASCIIEncoding.ASCII.GetString(dataBuffer);
+						USB_Serial.Read (dataBuffer, 0, bufSize);
+						string s = System.Text.ASCIIEncoding.ASCII.GetString (dataBuffer);
 
-						receiveBuffer.Append(s);
+						receiveBuffer.Append (s);
 					}
 					result = receiveBuffer.ToString ();
 
@@ -218,7 +218,7 @@ namespace Actinic.Outputs
 					}
 
 					// Break down here, for otherwise it only exits the switch
-					if(ConnectionStatus == ConnectionState.ProtocolFound)
+					if (ConnectionStatus == ConnectionState.ProtocolFound)
 						break;
 				}
 
@@ -234,33 +234,33 @@ namespace Actinic.Outputs
 					foreach (string protocol_entry in negotiation_results) {
 						if (protocol_entry.Trim () == "")
 							continue;
-						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Light_Count)) {
+						if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Light_Count)) {
 							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Light_Count.Length),
-							               out Protocol_Light_Count);
+								out Protocol_Light_Count);
 						}
-						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Strand_Length)) {
+						if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Strand_Length)) {
 							float.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Strand_Length.Length),
 								out Protocol_Strand_Length);
 						}
-						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Color_Max)) {
+						if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Color_Max)) {
 							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Color_Max.Length),
-							               out Protocol_Color_MAX);
+								out Protocol_Color_MAX);
 						}
-						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Brightness_Max)) {
+						if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Brightness_Max)) {
 							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Brightness_Max.Length),
-							               out Protocol_Brightness_MAX);
+								out Protocol_Brightness_MAX);
 						}
-						if(protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Average_Latency)) {
+						if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Average_Latency)) {
 							float.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Average_Latency.Length),
-							              out Protocol_Processing_Latency);
+								out Protocol_Processing_Latency);
 						}
 					}
 
 					if ((Protocol_Light_Count < 1)
-						|| (Protocol_Strand_Length <= 0)
-						|| (Protocol_Processing_Latency < 1)
-						|| (Protocol_Color_MAX < 1)
-						|| (Protocol_Brightness_MAX < 1)) {
+					    || (Protocol_Strand_Length <= 0)
+					    || (Protocol_Processing_Latency < 1)
+					    || (Protocol_Color_MAX < 1)
+					    || (Protocol_Brightness_MAX < 1)) {
 						// Something's wrong with the connection or the Arduino firmware's configuration
 						// Just treat this as a non-existent device, but print a warning
 						Console.Error.WriteLine ("Arduino on '{0}' provided invalid configuration, ignoring device", Arduino_TTY);
@@ -268,7 +268,7 @@ namespace Actinic.Outputs
 						return false;
 					} else {
 						// Wait to connect DataReceived until now so others don't nom the protocol negotiation data
-						USB_Serial.DataReceived += new SerialDataReceivedEventHandler(DataReceivedHandler);
+						USB_Serial.DataReceived += new SerialDataReceivedEventHandler (DataReceivedHandler);
 						// All is good, mark system as ready
 						ConnectionStatus = ConnectionState.Ready;
 						return true;
@@ -375,7 +375,7 @@ namespace Actinic.Outputs
 		}
 
 
-		private void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e)
+		private void DataReceivedHandler (object sender, SerialDataReceivedEventArgs e)
 		{
 //			// Usage example:
 //			SerialPort sp = (SerialPort)sender;

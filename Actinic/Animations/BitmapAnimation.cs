@@ -48,15 +48,17 @@ namespace Actinic.Animations
 			private set;
 		}
 
-		public BitmapAnimation (int Light_Count, string BitmapImageFilePath):base(Light_Count)
+		public BitmapAnimation (int Light_Count, string BitmapImageFilePath) : base (Light_Count)
 		{
 			if (File.Exists (BitmapImageFilePath) == false)
 				throw new System.IO.FileNotFoundException ("BitmapImageFilePath must point to an image.", BitmapImageFilePath);
 			System.Drawing.Bitmap bitmapImage = new System.Drawing.Bitmap (BitmapImageFilePath);
 			if (bitmapImage.Width < Light_Count)
-				throw new System.IO.InvalidDataException (String.Format ("The provided image [BitmapImageFilePath = '{0}'] " +
+				throw new System.IO.InvalidDataException (String.Format (
+					"The provided image [BitmapImageFilePath = '{0}'] " +
 					"is not wide enough for the current number of lights.  " +
-					"Expected '{1}' width, but got '{2}' width.", BitmapImageFilePath, Light_Count, bitmapImage.Width)
+					"Expected '{1}' width, but got '{2}' width.",
+					BitmapImageFilePath, Light_Count, bitmapImage.Width)
 				);
 			AnimationFrames = AnimationUtilities.ConvertImageToLEDArray (Light_Count, bitmapImage);
 		}
@@ -69,12 +71,15 @@ namespace Actinic.Animations
 				if (animation_frame >= AnimationFrames.Count - 1) {
 					animation_frame = 0;
 				} else {
-					animation_frame ++;
+					animation_frame++;
 				}
 				//Console.WriteLine ("Frame: {0} | {1}, {2}, {3}", actual_frame, AnimationFrames [actual_frame].LED_Values[24].R, AnimationFrames [actual_frame].LED_Values[24].G, AnimationFrames [actual_frame].LED_Values[24].B);
 				return AnimationFrames [actual_frame].LED_Values;
 			} else {
-				throw new System.ArgumentOutOfRangeException ("animation_frame", animation_frame, "animation_frame must " +
+				throw new System.ArgumentOutOfRangeException (
+					"animation_frame",
+					animation_frame,
+					"animation_frame must " +
 					"be within range of AnimationFrames, e.g. [0, " + AnimationFrames.Count.ToString () + "]"
 				);
 			}

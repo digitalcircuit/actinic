@@ -58,6 +58,7 @@ namespace Actinic.Animations
 
 
 		private Style animation_style = Style.Moderate;
+
 		/// <summary>
 		/// Intensity or energy of of the animation, controlled via styles.
 		/// </summary>

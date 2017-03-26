@@ -107,6 +107,7 @@ namespace Actinic
 		}
 
 		private LED.BlendingStyle blending_mode = LED.BlendingStyle.Combine;
+
 		/// <summary>
 		/// When merged down, this defines how the layer should be handled, default of Combine.
 		/// </summary>
@@ -226,7 +227,7 @@ namespace Actinic
 			if (QueueEmpty || UseLastFrame == false) {
 				PushToQueue (Lights);
 			} else if (UseLastFrame) {
-				PushToQueue (OutputQueue.ToArray ()[OutputQueue.Count - 1]);
+				PushToQueue (OutputQueue.ToArray () [OutputQueue.Count - 1]);
 			}
 		}
 

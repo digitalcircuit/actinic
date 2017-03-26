@@ -156,13 +156,18 @@ namespace Actinic
 		public void BlendColor (Actinic.Color SelectedColor, bool Subtractive, double Opacity)
 		{
 			if (Opacity < 0 || Opacity > 1)
-				throw new ArgumentOutOfRangeException ("Opacity", "Opacity must be a value between 0 and 1.");
+				throw new ArgumentOutOfRangeException (
+					"Opacity",
+					"Opacity must be a value between 0 and 1."
+				);
 
 			// Reduce the intensity of the new color
-			Actinic.Color opacifiedColor = new Actinic.Color ((byte)(SelectedColor.R * Opacity),
-			                                                  (byte)(SelectedColor.G * Opacity),
-			                                                  (byte)(SelectedColor.B * Opacity),
-			                                                  (byte)(SelectedColor.Brightness * Opacity));
+			Actinic.Color opacifiedColor = new Actinic.Color (
+				                               (byte)(SelectedColor.R * Opacity),
+				                               (byte)(SelectedColor.G * Opacity),
+				                               (byte)(SelectedColor.B * Opacity),
+				                               (byte)(SelectedColor.Brightness * Opacity)
+			                               );
 			if (Subtractive) {
 				// Reduce these colors from the current
 				R = (byte)Math.Max (R - opacifiedColor.R, 0);
@@ -183,7 +188,8 @@ namespace Actinic
 		/// </summary>
 		/// <param name="SelectedColor">Selected color.</param>
 		/// <param name="BlendMode">Mode for blending colors together.</param>
-		public void BlendColor (Actinic.Color SelectedColor, Actinic.LED.BlendingStyle BlendMode) {
+		public void BlendColor (Actinic.Color SelectedColor, Actinic.LED.BlendingStyle BlendMode)
+		{
 			switch (BlendMode) {
 			case LED.BlendingStyle.Combine:
 				// Take the brightest colors
@@ -197,10 +203,10 @@ namespace Actinic
 					// Overwrite the original with the new layer
 					// Brightness controls the amount overriden
 					double override_amount = MathUtilities.ConvertRange ((double)SelectedColor.Brightness, (double)LightSystem.Brightness_MIN, (double)LightSystem.Brightness_MAX, 0, 1);
-					R = ((byte)Math.Min(((SelectedColor.R * override_amount) + (R * (1 - override_amount))), LightSystem.Color_MAX));
-					G = ((byte)Math.Min(((SelectedColor.G * override_amount) + (G * (1 - override_amount))), LightSystem.Color_MAX));
-					B = ((byte)Math.Min(((SelectedColor.B * override_amount) + (B * (1 - override_amount))), LightSystem.Color_MAX));
-					Brightness = ((byte)Math.Min(((SelectedColor.Brightness * override_amount) + (Brightness * (1 - override_amount))), LightSystem.Color_MAX));
+					R = ((byte)Math.Min (((SelectedColor.R * override_amount) + (R * (1 - override_amount))), LightSystem.Color_MAX));
+					G = ((byte)Math.Min (((SelectedColor.G * override_amount) + (G * (1 - override_amount))), LightSystem.Color_MAX));
+					B = ((byte)Math.Min (((SelectedColor.B * override_amount) + (B * (1 - override_amount))), LightSystem.Color_MAX));
+					Brightness = ((byte)Math.Min (((SelectedColor.Brightness * override_amount) + (Brightness * (1 - override_amount))), LightSystem.Color_MAX));
 				}
 				break;
 			case LED.BlendingStyle.Mask:
@@ -214,12 +220,12 @@ namespace Actinic
 				}
 				break;
 			case LED.BlendingStyle.Replace:
-					// Override even with empty LEDs
-					// Don't directly set (use .Clone() or value-by-value), for by-reference improperly overrides the LED values when multiple 'replace' mode layers exist
-					R = SelectedColor.R;
-					G = SelectedColor.G;
-					B = SelectedColor.B;
-					Brightness = SelectedColor.Brightness;
+				// Override even with empty LEDs
+				// Don't directly set (use .Clone() or value-by-value), for by-reference improperly overrides the LED values when multiple 'replace' mode layers exist
+				R = SelectedColor.R;
+				G = SelectedColor.G;
+				B = SelectedColor.B;
+				Brightness = SelectedColor.Brightness;
 				break;
 			case LED.BlendingStyle.Sum:
 				// Sum the colors together without exceeding the maximum

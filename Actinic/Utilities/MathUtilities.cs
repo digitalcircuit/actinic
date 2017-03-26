@@ -28,6 +28,7 @@ namespace FoxSoft.Utilities
 	public static class MathUtilities
 	{
 		#region Generic Processing
+
 		/// <summary>
 		/// Converts an input from one range of values to another.
 		/// </summary>
@@ -157,7 +158,7 @@ namespace FoxSoft.Utilities
 		/// <param name="BarWidth">Width of the generated meter bar.</param>
 		/// <param name="ShowNumber">If set to <c>true</c> include the number as part of the meter bar.</param>
 		public static string GenerateMeterBar (double Number, double NumberMin, double NumberMax,
-			int BarWidth, bool ShowNumber)
+		                                       int BarWidth, bool ShowNumber)
 		{
 			int measuredBarWidth = (BarWidth - 1);
 			// 1 is exact, added 1 more for negative situations
@@ -181,11 +182,11 @@ namespace FoxSoft.Utilities
 				if (Number < 0) {
 					result = new String (' ',
 						(int)ConvertRange (Number, NumberMin, 0, 0, measuredBarWidth)).PadRight (measuredBarWidth, '=')
-						+ "#" + new String (' ', measuredBarWidth) + "|";
+					+ "#" + new String (' ', measuredBarWidth) + "|";
 				} else {
 					result = new String (' ', measuredBarWidth) + "#" + new String ('=',
 						(int)ConvertRange (Number, 0, NumberMax, 0, measuredBarWidth)).PadRight (measuredBarWidth, ' ')
-						+ "|";
+					+ "|";
 				}
 			} else {
 				result = new String ('=',

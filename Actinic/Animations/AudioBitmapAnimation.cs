@@ -94,13 +94,13 @@ namespace Actinic.Animations
 					AnimationFrame, AnimationFrames.Count, AudioPlayer_CurrentTime_Unavailable);
 #endif
 				return (AnimationFrame >= (AnimationFrames.Count - 2) ||
-					(AnimationFrame > 0 && AudioPlayer_CurrentTime_Unavailable));
+				(AnimationFrame > 0 && AudioPlayer_CurrentTime_Unavailable));
 				// Sometimes it gets stuck on the next to last frame :/
 				// Consider as finished if it's near the last frame, or past frame 1 and time is unavaible.
 			}
 		}
 
-		public AudioBitmapAnimation (int Light_Count, string AudioAnimationFilePath):base(Light_Count)
+		public AudioBitmapAnimation (int Light_Count, string AudioAnimationFilePath) : base (Light_Count)
 		{
 			if (File.Exists (AudioAnimationFilePath) == false)
 				throw new System.IO.FileNotFoundException ("AudioAnimationFilePath must point to an image.", AudioAnimationFilePath);
@@ -108,9 +108,11 @@ namespace Actinic.Animations
 
 			System.Drawing.Bitmap bitmapImage = new System.Drawing.Bitmap (ImageFilePath);
 			if (bitmapImage.Width < Light_Count)
-				throw new System.IO.InvalidDataException (String.Format ("The animation file's provided image [ImageFilePath = '{0}'] " +
+				throw new System.IO.InvalidDataException (String.Format (
+					"The animation file's provided image [ImageFilePath = '{0}'] " +
 					"is not wide enough for the current number of lights.  " +
-					"Expected '{1}' width, but got '{2}' width.", ImageFilePath, Light_Count, bitmapImage.Width)
+					"Expected '{1}' width, but got '{2}' width.",
+					ImageFilePath, Light_Count, bitmapImage.Width)
 				);
 			AnimationFrames = AnimationUtilities.ConvertImageToLEDArray (Light_Count, bitmapImage);
 			InitAudioSystem ();
@@ -151,9 +153,8 @@ namespace Actinic.Animations
 
 		public void StopAudioSystem ()
 		{
-			if (AudioPlayer != null)
-				if (AudioPlayer.HasExited == false)
-					AudioPlayer.Kill ();
+			if (AudioPlayer != null && AudioPlayer.HasExited == false)
+				AudioPlayer.Kill ();
 		}
 
 		private void AudioPlayer_OutputCallback (object sender, System.Diagnostics.DataReceivedEventArgs e)
@@ -229,7 +230,10 @@ namespace Actinic.Animations
 					return AnimationFrames [animation_frame].LED_Values;
 				}
 			} else {
-				throw new System.ArgumentOutOfRangeException ("animation_frame", animation_frame, "animation_frame must " +
+				throw new System.ArgumentOutOfRangeException (
+					"animation_frame",
+					animation_frame,
+					"animation_frame must " +
 					"be within range of AnimationFrames, e.g. [0, " + AnimationFrames.Count.ToString () + "]"
 				);
 			}

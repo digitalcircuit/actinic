@@ -27,20 +27,20 @@ namespace Actinic
 	{
 		public static readonly Dictionary<string, Color> Named = new Dictionary<string, Color> {
 			// Primary and secondary
-			{"white", new Color (255, 255, 255)},
-			{"black", new Color (0, 0, 0)},
-			{"red", new Color (255, 0, 0)},
-			{"green", new Color (0, 255, 0)},
-			{"blue", new Color (0, 0, 255)},
-			{"yellow", new Color (255, 255, 0)},
-			{"cyan", new Color (0, 255, 255)},
-			{"purple", new Color (255, 0, 255)},
+			{ "white", new Color (255, 255, 255) },
+			{ "black", new Color (0, 0, 0) },
+			{ "red", new Color (255, 0, 0) },
+			{ "green", new Color (0, 255, 0) },
+			{ "blue", new Color (0, 0, 255) },
+			{ "yellow", new Color (255, 255, 0) },
+			{ "cyan", new Color (0, 255, 255) },
+			{ "purple", new Color (255, 0, 255) },
 			// Mixtures
-			{"azure", new Color (41, 146, 255)},
-			{"orange", new Color (255, 100, 0)},
-			{"pink", new Color (255, 0, 128)},
+			{ "azure", new Color (41, 146, 255) },
+			{ "orange", new Color (255, 100, 0) },
+			{ "pink", new Color (255, 0, 128) },
 			// Accent
-			{"ambient", new Color (255, 130, 20)}
+			{ "ambient", new Color (255, 130, 20) }
 		};
 
 		//LED_Colors.Add (new Color (255, 0, 30));
@@ -67,8 +67,9 @@ namespace Actinic
 		}
 
 		/// <summary>
-		/// Gets a value indicating whether this <see cref="Actinic.Color"/> has any effect on output, i.e. color
-		/// is not all black with no brightness.
+		/// Gets a value indicating whether this <see cref="Actinic.Color"/> has
+		/// any effect on output, i.e. color is not all black with no
+		/// brightness.
 		/// </summary>
 		/// <value><c>true</c> if color has no effect; otherwise, <c>false</c>.</value>
 		public bool HasNoEffect {

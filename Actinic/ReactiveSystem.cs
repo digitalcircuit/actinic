@@ -45,9 +45,12 @@ namespace Actinic
 		}
 
 		private static double audio_Frequency_Scale_Start = 0.000000000001;
-		// Originally 0.0001, then 0.00001 - hard to choose, just try what looks best with 'vu set_frequency_start'
+		// Originally 0.0001, then 0.00001 - hard to choose, just try what
+		// looks best with 'vu set_frequency_start'.
+
 		/// <summary>
-		/// Starting value for the frequency scaling multiplier, larger shifts bars more towards higher frequencies
+		/// Starting value for the frequency scaling multiplier, larger shifts
+		/// bars more towards higher frequencies.
 		/// </summary>
 		/// <value>Decimal below 1</value>
 		public static double Audio_Frequency_Scale_Start {
@@ -61,7 +64,8 @@ namespace Actinic
 		}
 
 		/// <summary>
-		/// [Experimental] Prefer a linear method for grouping frequencies rather than exponential
+		/// [Experimental] Prefer a linear method for grouping frequencies
+		/// rather than exponential.
 		/// </summary>
 		/// <value>If <c>true</c>, using linear grouping of frequencies; otherwise, frequencies are handled in an exponential manner.</value>
 		public static bool Audio_Frequency_Scale_Linear {
@@ -72,8 +76,10 @@ namespace Actinic
 
 		// Usually you won't need to trim the start of frequency percentage
 		private static double audio_Volume_Low_Percentage = 0;
+
 		/// <summary>
-		/// Percentage of frequencies bundled together as 'low', larger (up to 1) ignores more of the lowest
+		/// Percentage of frequencies bundled together as 'low', larger
+		/// (up to 1) ignores more of the lowest.
 		/// </summary>
 		/// <value>Decimal from the range of 0 to 1</value>
 		public static double Audio_Volume_Low_Percentage {
@@ -86,8 +92,10 @@ namespace Actinic
 		}
 
 		private static double audio_Volume_Mid_Percentage = 0.005;
+
 		/// <summary>
-		/// Percentage of frequencies bundled together as 'mid', larger (up to 1) collects more
+		/// Percentage of frequencies bundled together as 'mid', larger
+		/// (up to 1) collects more.
 		/// </summary>
 		/// <value>Decimal from the range of 0 to 1</value>
 		public static double Audio_Volume_Mid_Percentage {
@@ -100,8 +108,10 @@ namespace Actinic
 		}
 
 		private static double audio_Volume_High_Percentage = 0.92;
+
 		/// <summary>
-		/// Percentage of frequencies bundled together as 'high', larger (up to 1) collects more
+		/// Percentage of frequencies bundled together as 'high', larger
+		/// (up to 1) collects more.
 		/// </summary>
 		/// <value>Decimal from the range of 0 to 1</value>
 		public static double Audio_Volume_High_Percentage {
@@ -118,9 +128,10 @@ namespace Actinic
 
 
 		/// <summary>
-		/// Brute-force the frequency-step multiplier, used to determine how to bundle higher-frequencies together
+		/// Brute-force the frequency-step multiplier, used to determine how to
+		/// bundle higher-frequencies together.
 		/// </summary>
-		/// <param name="Current_VU_Volumes">Unprocessed audio volume snapshot.</param>
+		/// <param name="Current_Audio_Volumes">Unprocessed audio volume snapshot.</param>
 		/// <param name="MirrorMode">If set to <c>true</c>, number of VU meters are cut in half to allow for mirroring of lights.</param>
 		public static void Processing_CalculateFrequencyStepMultiplier (List<double> Current_Audio_Volumes, bool MirrorMode)
 		{
@@ -156,7 +167,8 @@ namespace Actinic
 		}
 
 		/// <summary>
-		/// Reset the frequency-step multiplier to account for the current lights, e.g. if the number of lights change
+		/// Reset the frequency-step multiplier to account for the current
+		/// lights, e.g. if the number of lights change.
 		/// </summary>
 		public static void Processing_ClearFrequencyStepMultiplier ()
 		{
@@ -168,30 +180,33 @@ namespace Actinic
 		#region Display
 
 		/// <summary>
-		/// If <c>true</c>, show a break-down of audio frequencies and the current animation variables
+		/// If <c>true</c>, show a break-down of audio frequencies and the
+		/// current animation variables.
 		/// </summary>
 		public static bool Processing_Show_Analysis = false;
 		/// <summary>
-		/// If <c>true</c>, show bars representing audio intensities
+		/// If <c>true</c>, show bars representing audio intensities.
 		/// </summary>
 		public static bool Processing_Show_Variables = false;
 		/// <summary>
-		/// If <c>true</c>, show bars representing audio frequencies
+		/// If <c>true</c>, show bars representing audio frequencies.
 		/// </summary>
 		public static bool Processing_Show_Frequencies = false;
 
 		/// <summary>
-		/// If <c>true</c>, any printed output is limited; otherwise, use the full width of the console
+		/// If <c>true</c>, any printed output is limited; otherwise, use the
+		/// full width of the console.
 		/// </summary>
 		public static bool Processing_Limit_Display = true;
 
 		/// <summary>
-		/// Width of display when limiting the size
+		/// Width of display when limiting the size.
 		/// </summary>
 		private const int Processing_Limited_Display_Width = 80;
 
 		/// <summary>
-		/// If requested, prints information about audio processing to the console
+		/// If requested, prints information about audio processing to the
+		/// console.
 		/// </summary>
 		/// <param name="CurrentAnimation">Current abstract animation to retrieve audio information from.</param>
 		public static void PrintAudioInformationToConsole (AbstractReactiveAnimation CurrentAnimation)
@@ -245,11 +260,12 @@ namespace Actinic
 			if (calculatedBarWidth < 10)
 				return;
 			// Divided by the number of meter bars displayed
-			Console.WriteLine (MathUtilities.GenerateMeterBar (CurrentAnimation.Audio_Realtime_Intensity, 0, 1, calculatedBarWidth, true) + " " +
-			                   MathUtilities.GenerateMeterBar (CurrentAnimation.Audio_Delta_Intensity, -1, 1, calculatedBarWidth, true) + " " +
-			                   MathUtilities.GenerateMeterBar (MathUtilities.ConvertRange (CurrentAnimation.Audio_Frequency_Distribution_Percentage, 0, 1, -1, 1), -1, 1, calculatedBarWidth, true) + " " +
-			                   MathUtilities.GenerateMeterBar (CurrentAnimation.Audio_Delta_Frequency_Distribution_Percentage, -1, 1, calculatedBarWidth, true)
-			                   );
+			Console.WriteLine (
+				MathUtilities.GenerateMeterBar (CurrentAnimation.Audio_Realtime_Intensity, 0, 1, calculatedBarWidth, true) + " " +
+				MathUtilities.GenerateMeterBar (CurrentAnimation.Audio_Delta_Intensity, -1, 1, calculatedBarWidth, true) + " " +
+				MathUtilities.GenerateMeterBar (MathUtilities.ConvertRange (CurrentAnimation.Audio_Frequency_Distribution_Percentage, 0, 1, -1, 1), -1, 1, calculatedBarWidth, true) + " " +
+				MathUtilities.GenerateMeterBar (CurrentAnimation.Audio_Delta_Frequency_Distribution_Percentage, -1, 1, calculatedBarWidth, true)
+			);
 		}
 
 		private static void PrintAudioFrequencies (AbstractReactiveAnimation CurrentAnimation)
@@ -260,10 +276,11 @@ namespace Actinic
 			if (calculatedBarWidth < 10)
 				return;
 			// Divided by the number of meter bars displayed
-			Console.WriteLine (MathUtilities.GenerateMeterBar (CurrentAnimation.Audio_Low_Intensity, 0, 1, calculatedBarWidth, true) + " " +
-			                   MathUtilities.GenerateMeterBar (CurrentAnimation.Audio_Mid_Intensity, 0, 1, calculatedBarWidth, true) + " " +
-			                   MathUtilities.GenerateMeterBar (CurrentAnimation.Audio_High_Intensity, 0, 1, calculatedBarWidth, true)
-			                   );
+			Console.WriteLine (
+				MathUtilities.GenerateMeterBar (CurrentAnimation.Audio_Low_Intensity, 0, 1, calculatedBarWidth, true) + " " +
+				MathUtilities.GenerateMeterBar (CurrentAnimation.Audio_Mid_Intensity, 0, 1, calculatedBarWidth, true) + " " +
+				MathUtilities.GenerateMeterBar (CurrentAnimation.Audio_High_Intensity, 0, 1, calculatedBarWidth, true)
+			);
 		}
 
 		#endregion

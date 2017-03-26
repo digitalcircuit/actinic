@@ -249,13 +249,13 @@ namespace Actinic.Animations
 		}
 
 
-		public AbstractReactiveAnimation (int Light_Count):base(Light_Count)
+		public AbstractReactiveAnimation (int Light_Count) : base (Light_Count)
 		{
 			// No need to enable RequestSmoothCrossfade as it's assumed no previous frame is available
 			InitializeProperties ();
 		}
 
-		public AbstractReactiveAnimation (List<LED> PreviouslyShownFrame):base(PreviouslyShownFrame)
+		public AbstractReactiveAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			RequestSmoothCrossfade = true;
 			// By default, this will immediately override the existing colors.  Set to true to smoothly transition.

@@ -67,7 +67,8 @@ namespace Actinic.Outputs
 			get;
 		}
 
-		public delegate void SystemDataReceivedHandler (object sender, EventArgs e);
+		public delegate void SystemDataReceivedHandler (object sender,EventArgs e);
+
 		/// <summary>
 		/// Occurs when the output system provides data.
 		/// </summary>
@@ -156,10 +157,12 @@ namespace Actinic.Outputs
 		/// </summary>
 		/// <returns>The sort order, positive preceding, negative following, zero equals.</returns>
 		/// <param name="obj">The AbstractOutput to compare to this instance.</param>
-		public int CompareTo (AbstractOutput otherOutput) {
-			if (otherOutput == null) return 1;
+		public int CompareTo (AbstractOutput otherOutput)
+		{
+			if (otherOutput == null)
+				return 1;
 
-			return this.Priority.CompareTo(otherOutput.Priority);
+			return this.Priority.CompareTo (otherOutput.Priority);
 		}
 	}
 }

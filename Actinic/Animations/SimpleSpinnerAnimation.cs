@@ -25,26 +25,12 @@ namespace Actinic.Animations
 {
 	public class SimpleSpinnerAnimation:SimpleFadeAnimation
 	{
-
-//		private byte Anim_ColorShift_Red = Color_MAX;
-//		private byte Anim_ColorShift_Green = Color_MIN;
-//		private byte Anim_ColorShift_Blue = Color_MIN;
-//		private ColorShift_Mode Anim_LastColorShift_Mode = ColorShift_Mode.ShiftingRed;
-//
-//		private enum ColorShift_Mode
-//		{
-//			ShiftingRed,
-//			ShiftingGreen,
-//			ShiftingBlue
-//		}
-
-
-		public SimpleSpinnerAnimation (int Light_Count):base(Light_Count)
+		public SimpleSpinnerAnimation (int Light_Count) : base (Light_Count)
 		{
 			// No need to clear RequestSmoothCrossfade as inherited class SimpleFadeAnimation doesn't touch it here
 		}
 
-		public SimpleSpinnerAnimation (List<LED> PreviouslyShownFrame):base(PreviouslyShownFrame)
+		public SimpleSpinnerAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			RequestSmoothCrossfade = false;
 			// Inherited class SimpleFadeAnimation sets this to true; so reset it back to false
@@ -85,41 +71,6 @@ namespace Actinic.Animations
 				}
 			}
 		}
-
-//		private void Anim_Update_ColorShift ()
-//		{
-//			switch (Anim_LastColorShift_Mode) {
-//			case ColorShift_Mode.ShiftingRed:
-//				Anim_ColorShift_Red = (byte)Math.Max (Anim_ColorShift_Red - Styled_ColorShiftAmount, Color_MIN);
-//				Anim_ColorShift_Green = (byte)Math.Min (Anim_ColorShift_Green + Styled_ColorShiftAmount, Color_MAX);
-//				if (Anim_ColorShift_Red == Color_MIN & Anim_ColorShift_Green == Color_MAX) {
-//					Anim_LastColorShift_Mode = ColorShift_Mode.ShiftingGreen;
-//					Anim_ColorShift_Red = Color_MIN;
-//					Anim_ColorShift_Green = Color_MAX;
-//				}
-//				break;
-//			case ColorShift_Mode.ShiftingGreen:
-//				Anim_ColorShift_Green = (byte)Math.Max (Anim_ColorShift_Green - Styled_ColorShiftAmount, Color_MIN);
-//				Anim_ColorShift_Blue = (byte)Math.Min (Anim_ColorShift_Blue + Styled_ColorShiftAmount, Color_MAX);
-//				if (Anim_ColorShift_Green == Color_MIN & Anim_ColorShift_Blue == Color_MAX) {
-//					Anim_LastColorShift_Mode = ColorShift_Mode.ShiftingBlue;
-//					Anim_ColorShift_Green = Color_MIN;
-//					Anim_ColorShift_Blue = Color_MAX;
-//				}
-//				break;
-//			case ColorShift_Mode.ShiftingBlue:
-//				Anim_ColorShift_Blue = (byte)Math.Max (Anim_ColorShift_Blue - Styled_ColorShiftAmount, Color_MIN);
-//				Anim_ColorShift_Red = (byte)Math.Min (Anim_ColorShift_Red + Styled_ColorShiftAmount, Color_MAX);
-//				if (Anim_ColorShift_Blue == Color_MIN & Anim_ColorShift_Red == Color_MAX) {
-//					Anim_LastColorShift_Mode = ColorShift_Mode.ShiftingRed;
-//					Anim_ColorShift_Blue = Color_MIN;
-//					Anim_ColorShift_Red = Color_MAX;
-//				}
-//				break;
-//			default:
-//				break;
-//			}
-//		}
 	}
 }
 

@@ -26,9 +26,10 @@ namespace Actinic
 	public static class LightSystem
 	{
 
-#region Lights
+		#region Lights
 
 		private static int lastLightCount = 0;
+
 		/// <summary>
 		/// Gets the number of lights in the system.
 		/// </summary>
@@ -80,9 +81,9 @@ namespace Actinic
 
 		// Based on above, just a range of handy LED indexes so you don't have to keep recalculating them
 
-#endregion
+		#endregion
 
-#region Color and Brightness
+		#region Color and Brightness
 
 		public const byte Color_MAX = 255;
 		public const byte Color_MIN = 0;
@@ -99,7 +100,7 @@ namespace Actinic
 		// Due to the range conversion (maximum posible in hex is 0xFF, but max allowed is 0xCC - see ArduinoOutput.cs),
 		//  anything below a brightness of '2' is not visible.
 
-#endregion
+		#endregion
 
 	}
 }
