@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Animations
 {
 	public class SimpleSpinnerAnimation:SimpleFadeAnimation
@@ -30,14 +33,14 @@ namespace Actinic.Animations
 			// No need to clear RequestSmoothCrossfade as inherited class SimpleFadeAnimation doesn't touch it here
 		}
 
-		public SimpleSpinnerAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public SimpleSpinnerAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			RequestSmoothCrossfade = false;
 			// Inherited class SimpleFadeAnimation sets this to true; so reset it back to false
 		}
 
 
-		public override List<LED> GetNextFrame ()
+		public override List<Color> GetNextFrame ()
 		{
 			Anim_Update_ColorShift ();
 			CurrentFrame [0].R = Anim_ColorShift_Red;
@@ -54,12 +57,12 @@ namespace Actinic.Animations
 		/// Shifts the lights forward.
 		/// </summary>
 		/// <param name='LightSet'>
-		/// Light set to manipulate (List<LED> of GE lights).
+		/// Light set to manipulate (List<Color> of GE lights).
 		/// </param>
 		/// <param name='ShiftCount'>
 		/// Number of times to shift lights.
 		/// </param>
-		private void ShiftLightsForwards (List<LED> LightSet, int ShiftCount)
+		private void ShiftLightsForwards (List<Color> LightSet, int ShiftCount)
 		{
 			//Shifts forwards from LED 1 to 50
 			for (int times_shifted = 0; times_shifted < ShiftCount; times_shifted++) {

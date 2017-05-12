@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic
 {
 	public class LightProcessing
@@ -34,12 +37,12 @@ namespace Actinic
 		/// Shifts the lights outward.
 		/// </summary>
 		/// <param name='LightSet'>
-		/// Light set to manipulate (List<LED> of GE lights).
+		/// Light set to manipulate (List<Color> of GE lights).
 		/// </param>
 		/// <param name='ShiftCount'>
 		/// Number of times to shift lights.
 		/// </param>
-		public static void ShiftLightsOutward (List<LED> LightSet, int ShiftCount)
+		public static void ShiftLightsOutward (List<Color> LightSet, int ShiftCount)
 		{
 			//Shifts outwards, from LED 24 to 1 and from LED 25 to 50
 			for (int times_shifted = 0; times_shifted < ShiftCount; times_shifted++) {
@@ -60,12 +63,12 @@ namespace Actinic
 		/// Shifts the lights' brightness outward.
 		/// </summary>
 		/// <param name='LightSet'>
-		/// Light set to manipulate (List<LED> of GE lights).
+		/// Light set to manipulate (List<Color> of GE lights).
 		/// </param>
 		/// <param name='ShiftCount'>
 		/// Number of times to shift lights.
 		/// </param>
-		public static void ShiftLightsBrightnessOutward (List<LED> LightSet, int ShiftCount)
+		public static void ShiftLightsBrightnessOutward (List<Color> LightSet, int ShiftCount)
 		{
 			//Shifts outwards, from LED 24 to 1 and from LED 25 to 50
 			for (int times_shifted = 0; times_shifted < ShiftCount; times_shifted++) {
@@ -79,7 +82,7 @@ namespace Actinic
 		}
 
 
-		public static bool Is_LED_Dark_Color (List<LED> LightSet, int Index, int Threshold)
+		public static bool Is_LED_Dark_Color (List<Color> LightSet, int Index, int Threshold)
 		{
 			if (Index >= 0 & Index < LightSystem.LIGHT_COUNT) {
 				return (LightSet [Index].R < Threshold && LightSet [Index].G < Threshold && LightSet [Index].B < Threshold);
@@ -88,7 +91,7 @@ namespace Actinic
 			}
 		}
 
-		public static bool Is_LED_Dark_Brightness (List<LED> LightSet, int Index, int Threshold)
+		public static bool Is_LED_Dark_Brightness (List<Color> LightSet, int Index, int Threshold)
 		{
 			if (Index >= 0 & Index < LightSystem.LIGHT_COUNT) {
 				return (LightSet [Index].Brightness < Threshold);
@@ -102,9 +105,9 @@ namespace Actinic
 		/// </summary>
 		/// <param name="UpperLayer">Upper layer of LEDs.</param>
 		/// <param name="LowerLayer">Lower layer of LEDs.</param>
-		/// <param name="Subtractive">If set to <c>true</c> the new color reduces the brightness and hue of the current.</param>
-		/// <param name="Opacity">Strength of the upper layer's influence.</param>
-		public static void MergeLayerDown (List<LED> UpperLayer, List<LED> LowerLayer, bool Subtractive = false, double Opacity = 1.0)
+		/// <param name="Opacity">Strength of the upper layer's influence as a decimal from 0 to 1.</param>
+		/// <param name="Fade">If set to <c>true</c> fades between current layer and new layer with <see cref="Opacity"/> specifying the fade amount.</param>
+		public static void MergeLayerDown (List<Color> UpperLayer, List<Color> LowerLayer, double Opacity = 1.0, bool Fade = false)
 		{
 			if (UpperLayer.Count != LowerLayer.Count)
 				throw new ArgumentException ("UpperLayer and LowerLayer must have the same number of lights to merge together.");
@@ -112,7 +115,7 @@ namespace Actinic
 				throw new ArgumentOutOfRangeException ("Opacity", "Opacity must be a value between 0 and 1.");
 
 			for (int i = 0; i < UpperLayer.Count; i++) {
-				LowerLayer [i].BlendColor (UpperLayer [i].GetColor (), Subtractive, Opacity);
+				LowerLayer [i].Blend (UpperLayer [i], Opacity, Fade);
 			}
 		}
 
@@ -122,12 +125,12 @@ namespace Actinic
 		/// <param name="UpperLayer">Upper layer of LEDs.</param>
 		/// <param name="LowerLayer">Lower layer of LEDs.</param>
 		/// <param name="BlendMode">Blending mode for merging upper layer into lower layer.</param>
-		public static void MergeLayerDown (List<LED> UpperLayer, List<LED> LowerLayer, LED.BlendingStyle BlendMode)
+		public static void MergeLayerDown (List<Color> UpperLayer, List<Color> LowerLayer, Color.BlendMode BlendMode)
 		{
 			if (UpperLayer.Count != LowerLayer.Count)
 				throw new ArgumentException ("UpperLayer and LowerLayer must have the same number of lights to merge together.");
 			for (int i = 0; i < UpperLayer.Count; i++) {
-				LowerLayer [i].BlendColor (UpperLayer [i].GetColor (), BlendMode);
+				LowerLayer [i].Blend (UpperLayer [i], BlendMode);
 			}
 		}
 	}

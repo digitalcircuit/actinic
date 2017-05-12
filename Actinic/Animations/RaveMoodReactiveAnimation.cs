@@ -22,6 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Utilities;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Animations
 {
 	public class RaveMoodReactiveAnimation:BeatPulseReactiveAnimation
@@ -72,19 +75,19 @@ namespace Actinic.Animations
 		/// <summary>
 		/// List of LEDs representing the upper strobe layer of animation
 		/// </summary>
-		protected List<LED> CurrentFrame_Strobe = new List<LED> ();
+		protected List<Color> CurrentFrame_Strobe = new List<Color> ();
 
 		/// <summary>
 		/// List of LEDs representing the combined animation layers, to avoid interferring with below
 		/// </summary>
-		protected List<LED> CurrentFrame_Combined = new List<LED> ();
+		protected List<Color> CurrentFrame_Combined = new List<Color> ();
 
 		public RaveMoodReactiveAnimation (int Light_Count) : base (Light_Count)
 		{
 			InitializeLayers ();
 		}
 
-		public RaveMoodReactiveAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public RaveMoodReactiveAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			InitializeLayers ();
 		}
@@ -96,13 +99,13 @@ namespace Actinic.Animations
 
 			// Add the empty LEDs to the upper layer
 			for (int index = 0; index < Light_Count; index++) {
-				CurrentFrame_Strobe.Add (new LED (0, 0, 0, 0));
-				CurrentFrame_Combined.Add (new LED (0, 0, 0, 0));
+				CurrentFrame_Strobe.Add (new Color (0, 0, 0, 0));
+				CurrentFrame_Combined.Add (new Color (0, 0, 0, 0));
 			}
 		}
 
 
-		public override List<LED> GetNextFrame ()
+		public override List<Color> GetNextFrame ()
 		{
 
 			for (int i = 0; i < LightSystem.LIGHT_INDEX_MAX; i++) {

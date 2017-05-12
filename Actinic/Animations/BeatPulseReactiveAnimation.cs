@@ -61,12 +61,12 @@ namespace Actinic.Animations
 		/// <summary>
 		/// List of LEDs representing the hue-shifting backdrop layer
 		/// </summary>
-		protected List<LED> CurrentFrame_Backdrop = new List<LED> ();
+		protected List<Color> CurrentFrame_Backdrop = new List<Color> ();
 
 		/// <summary>
 		/// List of LEDs representing the upper layer that pulses according to the beat
 		/// </summary>
-		protected List<LED> CurrentFrame_Pulse = new List<LED> ();
+		protected List<Color> CurrentFrame_Pulse = new List<Color> ();
 
 		#region Desaturate Boost
 
@@ -87,7 +87,7 @@ namespace Actinic.Animations
 			InitializeLayers ();
 		}
 
-		public BeatPulseReactiveAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public BeatPulseReactiveAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			InitializeLayers ();
 		}
@@ -101,12 +101,12 @@ namespace Actinic.Animations
 
 			// Add empty LEDs to the standalone layers
 			for (int index = 0; index < Light_Count; index++) {
-				CurrentFrame_Backdrop.Add (new LED (0, 0, 0, 0));
-				CurrentFrame_Pulse.Add (new LED (0, 0, 0, 0));
+				CurrentFrame_Backdrop.Add (new Color (0, 0, 0, 0));
+				CurrentFrame_Pulse.Add (new Color (0, 0, 0, 0));
 			}
 		}
 
-		public override List<LED> GetNextFrame ()
+		public override List<Color> GetNextFrame ()
 		{
 			// Low frequency controls the brightness and desaturation for all of the lights
 			// > Brightness (scales from 0 to 1, dark to maximum)
@@ -156,9 +156,9 @@ namespace Actinic.Animations
 			LightProcessing.ShiftLightsOutward (CurrentFrame_Backdrop, 4);
 
 			// Reset the current frame with the backdrop
-			LightProcessing.MergeLayerDown (CurrentFrame_Backdrop, CurrentFrame, LED.BlendingStyle.Replace);
+			LightProcessing.MergeLayerDown (CurrentFrame_Backdrop, CurrentFrame, Color.BlendMode.Replace);
 			// Add the backdrop to the beat-pulse layer
-			LightProcessing.MergeLayerDown (CurrentFrame_Pulse, CurrentFrame, LED.BlendingStyle.Sum);
+			LightProcessing.MergeLayerDown (CurrentFrame_Pulse, CurrentFrame, Color.BlendMode.Sum);
 
 			// Mirror the one half of the lights to the other side
 			// Note: change to handling each layer individually if any layers should not be mirrored

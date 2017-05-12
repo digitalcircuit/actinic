@@ -27,6 +27,9 @@ using System.IO.Ports;
 using System.Collections.Generic;
 using FoxSoft.Utilities;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Outputs
 {
 	public class ArduinoOutput:AbstractOutput
@@ -337,7 +340,7 @@ namespace Actinic.Outputs
 		}
 
 
-		public override bool UpdateLightsBrightness (List<LED> Actinic_Light_Set)
+		public override bool UpdateLightsBrightness (List<Color> Actinic_Light_Set)
 		{
 			if (Initialized == false)
 				return false;
@@ -346,7 +349,7 @@ namespace Actinic.Outputs
 			try {
 				List<byte> output_all = new List<byte> ();
 				output_all.Add (Protocol_SET_BRIGHTNESS);
-				foreach (LED LED_Light in Actinic_Light_Set) {
+				foreach (Color LED_Light in Actinic_Light_Set) {
 					output_all.Add ((byte)MathUtilities.ConvertRange (LED_Light.Brightness, LightSystem.Brightness_MIN, LightSystem.Brightness_MAX, Protocol_Brightness_MIN, Protocol_Brightness_MAX));
 				}
 
@@ -359,7 +362,7 @@ namespace Actinic.Outputs
 			}
 		}
 
-		public override bool UpdateLightsColor (List<LED> Actinic_Light_Set)
+		public override bool UpdateLightsColor (List<Color> Actinic_Light_Set)
 		{
 			if (Initialized == false)
 				return false;
@@ -368,7 +371,7 @@ namespace Actinic.Outputs
 			try {
 				List<byte> output_all = new List<byte> ();
 				output_all.Add (Protocol_SET_HUE);
-				foreach (LED LED_Light in Actinic_Light_Set) {
+				foreach (Color LED_Light in Actinic_Light_Set) {
 					byte[] output = new byte[] {
 						(byte)(MathUtilities.ConvertRange (LED_Light.B, LightSystem.Color_MIN, LightSystem.Color_MAX, Protocol_Color_MIN, Protocol_Color_MAX)),
 						(byte)(MathUtilities.ConvertRange (LED_Light.G, LightSystem.Color_MIN, LightSystem.Color_MAX, Protocol_Color_MIN, Protocol_Color_MAX)),
@@ -386,7 +389,7 @@ namespace Actinic.Outputs
 			}
 		}
 
-		public override bool UpdateLightsAll (List<LED> Actinic_Light_Set)
+		public override bool UpdateLightsAll (List<Color> Actinic_Light_Set)
 		{
 			if (Initialized == false)
 				return false;
@@ -395,7 +398,7 @@ namespace Actinic.Outputs
 			try {
 				List<byte> output_all = new List<byte> ();
 				output_all.Add (Protocol_SET_ALL);
-				foreach (LED LED_Light in Actinic_Light_Set) {
+				foreach (Color LED_Light in Actinic_Light_Set) {
 					byte[] output = new byte[] {
 						(byte)(MathUtilities.ConvertRange (LED_Light.B, LightSystem.Color_MIN, LightSystem.Color_MAX, Protocol_Color_MIN, Protocol_Color_MAX)),
 						(byte)(MathUtilities.ConvertRange (LED_Light.G, LightSystem.Color_MIN, LightSystem.Color_MAX, Protocol_Color_MIN, Protocol_Color_MAX)),

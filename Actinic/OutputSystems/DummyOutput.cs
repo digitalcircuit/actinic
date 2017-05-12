@@ -20,6 +20,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Outputs
 {
 	public class DummyOutput:AbstractOutput, IOutputDummy
@@ -71,19 +74,19 @@ namespace Actinic.Outputs
 			return true;
 		}
 
-		public override bool UpdateLightsBrightness (System.Collections.Generic.List<LED> Actinic_Light_Set)
+		public override bool UpdateLightsBrightness (System.Collections.Generic.List<Color> Actinic_Light_Set)
 		{
 			ValidateLightSet (Actinic_Light_Set);
 			return true;
 		}
 
-		public override bool UpdateLightsColor (System.Collections.Generic.List<LED> Actinic_Light_Set)
+		public override bool UpdateLightsColor (System.Collections.Generic.List<Color> Actinic_Light_Set)
 		{
 			ValidateLightSet (Actinic_Light_Set);
 			return true;
 		}
 
-		public override bool UpdateLightsAll (System.Collections.Generic.List<LED> Actinic_Light_Set)
+		public override bool UpdateLightsAll (System.Collections.Generic.List<Color> Actinic_Light_Set)
 		{
 			ValidateLightSet (Actinic_Light_Set);
 			return true;

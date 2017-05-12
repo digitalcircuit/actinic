@@ -31,7 +31,7 @@ namespace Actinic.Animations
 	{
 		#region Definitions
 
-		private List<LED> Actinic_Lights_Unprocessed = new List<LED> ();
+		private List<Color> Actinic_Lights_Unprocessed = new List<Color> ();
 
 		public VU_Meter_Mode VU_Selected_Mode = VU_Meter_Mode.AutomaticFastBeat;
 
@@ -211,7 +211,7 @@ namespace Actinic.Animations
 			InitializeLayersAndVariables ();
 		}
 
-		public LegacyReactiveAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public LegacyReactiveAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			InitializeLayersAndVariables ();
 		}
@@ -219,13 +219,13 @@ namespace Actinic.Animations
 		private void InitializeLayersAndVariables ()
 		{
 			for (int i = 0; i < CurrentFrame.Count; i++) {
-				Actinic_Lights_Unprocessed.Add (new LED ());
+				Actinic_Lights_Unprocessed.Add (new Color ());
 			}
 			// When LIGHT_COUNT was made a property, these could no longer be calculated at compile-time.  Do it here.
 			VU_Moving_Bar_Half_Max_Length = (int)(VU_Moving_Bar_Max_Length / 2);
 		}
 
-		public override List<LED> GetNextFrame ()
+		public override List<Color> GetNextFrame ()
 		{
 			// Disable algorithmic control of smoothing for these two modes, as the mode sets it manually
 			EnableAlgorithmicSmoothingControl = !(VU_Selected_Mode == VU_Meter_Mode.SolidSingleWhiteStrobe || VU_Selected_Mode == VU_Meter_Mode.SolidSingleRainbowStrobe);

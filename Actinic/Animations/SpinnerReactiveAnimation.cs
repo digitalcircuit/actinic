@@ -22,6 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Utilities;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Animations
 {
 	public class SpinnerReactiveAnimation:AbstractReactiveAnimation
@@ -30,14 +33,14 @@ namespace Actinic.Animations
 		/// <summary>
 		/// List of LEDs representing the range of colors
 		/// </summary>
-		protected List<LED> CalculuatedHues = new List<LED> ();
+		protected List<Color> CalculuatedHues = new List<Color> ();
 
 		public SpinnerReactiveAnimation (int Light_Count) : base (Light_Count)
 		{
 			InitializeLayers ();
 		}
 
-		public SpinnerReactiveAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public SpinnerReactiveAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			InitializeLayers ();
 		}
@@ -49,17 +52,17 @@ namespace Actinic.Animations
 			}
 
 			// Get it to run once, so the following loop continues
-			CalculuatedHues.Add (new LED (ColorShift_Red, ColorShift_Green, ColorShift_Blue, LightSystem.Brightness_MAX));
+			CalculuatedHues.Add (new Color (ColorShift_Red, ColorShift_Green, ColorShift_Blue, LightSystem.Brightness_MAX));
 			ColorShift_Amount = (byte)((LightSystem.Color_MAX * 3) / CurrentFrame.Count);
 			// (Max color * three stages) / light count
 			AnimationUpdateColorShift ();
 			while (!(ColorShift_LastMode == ColorShift_Mode.ShiftingRed && ColorShift_Blue == LightSystem.Color_MIN & ColorShift_Red == LightSystem.Color_MAX)) {
-				CalculuatedHues.Add (new LED (ColorShift_Red, ColorShift_Green, ColorShift_Blue, LightSystem.Brightness_MAX));
+				CalculuatedHues.Add (new Color (ColorShift_Red, ColorShift_Green, ColorShift_Blue, LightSystem.Brightness_MAX));
 				AnimationUpdateColorShift ();
 			}
 		}
 
-		public override List<LED> GetNextFrame ()
+		public override List<Color> GetNextFrame ()
 		{
 			int copy_color_index = (int)MathUtilities.ConvertRange (Audio_Average_Intensity, 0, 1, 0, CalculuatedHues.Count);
 			for (int index = 0; index < CurrentFrame.Count; index++) {

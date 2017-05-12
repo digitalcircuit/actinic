@@ -22,6 +22,9 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Animations
 {
 	public class BitmapAnimation:AbstractAnimation
@@ -63,7 +66,7 @@ namespace Actinic.Animations
 			AnimationFrames = AnimationUtilities.ConvertImageToLEDArray (Light_Count, bitmapImage);
 		}
 
-		public override List<LED> GetNextFrame ()
+		public override List<Color> GetNextFrame ()
 		{
 			if (animation_frame > -1 && animation_frame < AnimationFrames.Count) {
 				int actual_frame = animation_frame;

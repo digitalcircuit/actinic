@@ -22,19 +22,22 @@ using System;
 using System.Collections.Generic;
 using Actinic;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic
 {
 	public class LED_Set
 	{
-		public List<LED> LED_Values = new List<LED> ();
+		public List<Color> LED_Values = new List<Color> ();
 
-		private LED.BlendingStyle blending_mode = LED.BlendingStyle.Combine;
+		private Color.BlendMode blending_mode = Color.BlendMode.Combine;
 
 		/// <summary>
 		/// When merged down, this defines how the layer should be handled, default of Combine.
 		/// </summary>
 		/// <value>The blending mode.</value>
-		public LED.BlendingStyle BlendMode {
+		public Color.BlendMode BlendMode {
 			get {
 				return blending_mode;
 			}
@@ -50,8 +53,8 @@ namespace Actinic
 		/// <value><c>true</c> if lights have no effect; otherwise, <c>false</c>.</value>
 		public bool LightsHaveNoEffect {
 			get {
-				foreach (LED light in LED_Values) {
-					if (light.HasNoEffect == false)
+				foreach (Color light in LED_Values) {
+					if (light.HasEffect)
 						return false;
 				}
 				return true;
@@ -69,11 +72,11 @@ namespace Actinic
 		public LED_Set (int NumberOfLights)
 		{
 			for (int i = 0; i < NumberOfLights; i++) {
-				LED_Values.Add (new LED ());
+				LED_Values.Add (new Color ());
 			}
 		}
 
-		public LED_Set (List<LED> Actinic_Light_Set)
+		public LED_Set (List<Color> Actinic_Light_Set)
 		{
 			LED_Values.AddRange (Actinic_Light_Set);
 		}
@@ -82,7 +85,7 @@ namespace Actinic
 		{
 			LED_Set cloned_set = new LED_Set (0);
 			cloned_set.BlendMode = BlendMode;
-			foreach (LED LED_to_clone in LED_Values) {
+			foreach (Color LED_to_clone in LED_Values) {
 				cloned_set.LED_Values.Add (LED_to_clone.Clone ());
 			}
 			return cloned_set;

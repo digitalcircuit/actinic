@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Animations
 {
 	public class SimpleFadeAnimation:AbstractAnimation
@@ -44,14 +47,14 @@ namespace Actinic.Animations
 			// No need to enable RequestSmoothCrossfade as it's assumed no previous frame is available
 		}
 
-		public SimpleFadeAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public SimpleFadeAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			RequestSmoothCrossfade = true;
 			// By default, this will immediately override the existing colors.  Set to true to smoothly transition.
 		}
 
 
-		public override List<LED> GetNextFrame ()
+		public override List<Color> GetNextFrame ()
 		{
 			Anim_Update_ColorShift ();
 			for (int led_index = 0; led_index < CurrentFrame.Count; led_index++) {

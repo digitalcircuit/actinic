@@ -24,6 +24,9 @@ using System.Collections.Generic;
 // Animation management
 using Actinic.Animations;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic
 {
 	public class LED_Queue
@@ -31,13 +34,13 @@ namespace Actinic
 		/// <summary>
 		/// Modifiable list of LEDs representing the desired output state
 		/// </summary>
-		public List<LED> Lights = new List<LED> ();
+		public List<Color> Lights = new List<Color> ();
 
 		/// <summary>
 		/// Gets a list of LEDs representing the last state processed by the output system, useful for fades
 		/// </summary>
 		/// <value>Read-only list of LEDs</value>
-		public List<LED> LightsLastProcessed {
+		public List<Color> LightsLastProcessed {
 			get;
 			private set;
 		}
@@ -98,21 +101,21 @@ namespace Actinic
 			get {
 				if (AnimationActive == true || QueueEmpty == false)
 					return false;
-				foreach (LED light in Lights) {
-					if (light.HasNoEffect == false)
+				foreach (Color light in Lights) {
+					if (light.HasEffect)
 						return false;
 				}
 				return true;
 			}
 		}
 
-		private LED.BlendingStyle blending_mode = LED.BlendingStyle.Combine;
+		private Color.BlendMode blending_mode = Color.BlendMode.Combine;
 
 		/// <summary>
 		/// When merged down, this defines how the layer should be handled, default of Combine.
 		/// </summary>
 		/// <value>The blending mode.</value>
-		public LED.BlendingStyle BlendMode {
+		public Color.BlendMode BlendMode {
 			get {
 				return blending_mode;
 			}
@@ -135,18 +138,18 @@ namespace Actinic
 
 		private void InitializeFromBlanks (int LED_Light_Count, bool ClearAllLEDs)
 		{
-			LightsLastProcessed = new List<LED> ();
+			LightsLastProcessed = new List<Color> ();
 
 			byte brightness = (ClearAllLEDs ? LightSystem.Brightness_MIN : LightSystem.Brightness_MAX);
 			for (int i = 0; i < LED_Light_Count; i++) {
-				Lights.Add (new LED (0, 0, 0, brightness));
-				LightsLastProcessed.Add (new LED (0, 0, 0, brightness));
+				Lights.Add (new Color (0, 0, 0, brightness));
+				LightsLastProcessed.Add (new Color (0, 0, 0, brightness));
 			}
 		}
 
-		public LED_Queue (List<LED> PreviouslyShownFrame)
+		public LED_Queue (List<Color> PreviouslyShownFrame)
 		{
-			LightsLastProcessed = new List<LED> ();
+			LightsLastProcessed = new List<Color> ();
 
 			Lights.AddRange (PreviouslyShownFrame);
 			LightsLastProcessed.AddRange (PreviouslyShownFrame);
@@ -161,7 +164,7 @@ namespace Actinic
 			lock (Lights) {
 				lock (LightsLastProcessed) {
 					for (int index = 0; index < Lights.Count; index++) {
-						LightsLastProcessed [index].SetColor (Lights [index].GetColor ());
+						LightsLastProcessed [index].SetColor (Lights [index]);
 					}
 				}
 			}
@@ -209,7 +212,7 @@ namespace Actinic
 		/// Adds a list of LEDs representing a frame to the end of the output queue
 		/// </summary>
 		/// <param name="NextFrame">A list of LEDs representing the desired frame.</param>
-		public void PushToQueue (List<LED> NextFrame)
+		public void PushToQueue (List<Color> NextFrame)
 		{
 			if (NextFrame.Count != LightCount)
 				throw new ArgumentOutOfRangeException (string.Format ("NextFrame must contain same number of LEDs (has {0}, expected {1})", NextFrame.Count, LightCount));

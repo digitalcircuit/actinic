@@ -363,7 +363,8 @@ namespace Actinic
 												selected_color.R,
 												selected_color.G,
 												selected_color.B,
-												false
+												// Preserve brightness by default
+												Actinic_Lights_Queue.Lights [light_index].Brightness
 											);
 											if (!keep_brightness)
 												Actinic_Lights_Queue.Lights [light_index].Brightness = (selected_color.Brightness);
@@ -721,7 +722,8 @@ namespace Actinic
 																		selected_color.R,
 																		selected_color.G,
 																		selected_color.B,
-																		false
+																		// Preserve brightness by default
+																		resulting_queue.Lights [light_index].Brightness
 																	);
 																	if (!keep_brightness)
 																		resulting_queue.Lights [light_index].Brightness = (selected_color.Brightness);
@@ -932,19 +934,19 @@ namespace Actinic
 														if (resulting_queue != null) {
 															switch (cmd_args [3].ToLowerInvariant ()) {
 															case "combine":
-																resulting_queue.BlendMode = LED.BlendingStyle.Combine;
+																resulting_queue.BlendMode = Color.BlendMode.Combine;
 																break;
 															case "favor":
-																resulting_queue.BlendMode = LED.BlendingStyle.Favor;
+																resulting_queue.BlendMode = Color.BlendMode.Favor;
 																break;
 															case "mask":
-																resulting_queue.BlendMode = LED.BlendingStyle.Mask;
+																resulting_queue.BlendMode = Color.BlendMode.Mask;
 																break;
 															case "replace":
-																resulting_queue.BlendMode = LED.BlendingStyle.Replace;
+																resulting_queue.BlendMode = Color.BlendMode.Replace;
 																break;
 															case "sum":
-																resulting_queue.BlendMode = LED.BlendingStyle.Sum;
+																resulting_queue.BlendMode = Color.BlendMode.Sum;
 																break;
 															default:
 																blending_changed = false;
@@ -1601,7 +1603,7 @@ namespace Actinic
 					bool queueWithMaskBlendingActive = false;
 					foreach (KeyValuePair <string, LED_Queue> queue in Actinic_Lights_Overlay_Queues) {
 						selected_oneshot_animation = queue.Value.SelectedAnimation as IAnimationOneshot;
-						if (queue.Value.BlendMode == LED.BlendingStyle.Mask || queue.Value.BlendMode == LED.BlendingStyle.Replace)
+						if (queue.Value.BlendMode == Color.BlendMode.Mask || queue.Value.BlendMode == Color.BlendMode.Replace)
 							queueWithMaskBlendingActive = true;
 						if ((queue.Value.LightsHaveNoEffect) || (selected_oneshot_animation != null && selected_oneshot_animation.AnimationFinished)) {
 							HaltActivity (queue.Value, true);
@@ -1787,13 +1789,13 @@ namespace Actinic
 			}
 			LED_Set MergedLayers = new LED_Set ();
 			for (int index = 0; index < LightSnapshots [0].LightCount; index++) {
-				MergedLayers.LED_Values.Add (new LED (0, 0, 0, 0));
+				MergedLayers.LED_Values.Add (new Color (0, 0, 0, 0));
 			}
 
 			List<int> snapshots_requesting_replacement = new List<int> ();
 
 			for (int i = 0; i < LightSnapshots.Count; i++) {
-				if (LightSnapshots [i].BlendMode == LED.BlendingStyle.Favor || LightSnapshots [i].BlendMode == LED.BlendingStyle.Mask || LightSnapshots [i].BlendMode == LED.BlendingStyle.Replace) {
+				if (LightSnapshots [i].BlendMode == Color.BlendMode.Favor || LightSnapshots [i].BlendMode == Color.BlendMode.Mask || LightSnapshots [i].BlendMode == Color.BlendMode.Replace) {
 					snapshots_requesting_replacement.Add (i);
 				} else {
 					// Blend the layers together
@@ -1867,7 +1869,7 @@ namespace Actinic
 		/// </summary>
 		/// <param name="QueueToModify">Queue to add animation to</param>
 		/// <param name="LED_Collection">Desired LED appearance</param>
-		private static void AddToAnimQueue (LED_Queue QueueToModify, List<LED> LED_Collection)
+		private static void AddToAnimQueue (LED_Queue QueueToModify, List<Color> LED_Collection)
 		{
 			if (QueueToModify.QueueCount > 0 && Command_ConflictsExpected == false)
 				Console.WriteLine ("(Warning: interrupting fade, appearance may vary.  If intended, prefix with '!')");
@@ -1877,10 +1879,10 @@ namespace Actinic
 			if (Animation_Fading_Enabled) {
 				double Avg_OldPercent = Math.Min (Animation_Smoothing_Percentage_DEFAULT, 1);
 				double Avg_NewPercent = Math.Max (1 - Animation_Smoothing_Percentage_DEFAULT, 0);
-				List<LED> LED_Intermediate = new List<LED> ();
+				List<Color> LED_Intermediate = new List<Color> ();
 				lock (QueueToModify.LightsLastProcessed) {
 					for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
-						LED_Intermediate.Add (new LED (QueueToModify.LightsLastProcessed [i].R, QueueToModify.LightsLastProcessed [i].G, QueueToModify.LightsLastProcessed [i].B, QueueToModify.LightsLastProcessed [i].Brightness));
+						LED_Intermediate.Add (new Color (QueueToModify.LightsLastProcessed [i].R, QueueToModify.LightsLastProcessed [i].G, QueueToModify.LightsLastProcessed [i].B, QueueToModify.LightsLastProcessed [i].Brightness));
 					}
 				}
 				for (int i_fades = 0; i_fades < Animation_Smoothing_Iterations_DEFAULT; i_fades++) {
@@ -2047,7 +2049,7 @@ namespace Actinic
 		/// <param name='QueueToModify'>
 		/// Queue to apply the smoothed results to.
 		/// </param>
-		private static void ApplySmoothing (double SmoothingAmount, bool OnlySmoothBrightnessDecrease, List<LED> Lights_Unsmoothed, LED_Queue QueueToModify)
+		private static void ApplySmoothing (double SmoothingAmount, bool OnlySmoothBrightnessDecrease, List<Color> Lights_Unsmoothed, LED_Queue QueueToModify)
 		{
 			double Avg_OldPercent = Math.Min (SmoothingAmount, 1);
 			double Avg_NewPercent = Math.Max (1 - SmoothingAmount, 0);
@@ -2157,7 +2159,7 @@ namespace Actinic
 			}
 		}
 
-		private static bool UpdateLights_Brightness (List<LED> Actinic_Light_Set)
+		private static bool UpdateLights_Brightness (List<Color> Actinic_Light_Set)
 		{
 			if (ActiveOutputSystemReady () == false)
 				return false;
@@ -2165,7 +2167,7 @@ namespace Actinic
 			return ActiveOutputSystem.UpdateLightsBrightness (Actinic_Light_Set);
 		}
 
-		private static bool UpdateLights_Color (List<LED> Actinic_Light_Set)
+		private static bool UpdateLights_Color (List<Color> Actinic_Light_Set)
 		{
 			if (ActiveOutputSystemReady () == false)
 				return false;
@@ -2173,7 +2175,7 @@ namespace Actinic
 			return ActiveOutputSystem.UpdateLightsColor (Actinic_Light_Set);
 		}
 
-		private static bool UpdateLights_All (List<LED> Actinic_Light_Set)
+		private static bool UpdateLights_All (List<Color> Actinic_Light_Set)
 		{
 			if (ActiveOutputSystemReady () == false)
 				return false;

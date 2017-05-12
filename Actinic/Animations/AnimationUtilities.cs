@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Animations
 {
 	public static class AnimationUtilities
@@ -35,7 +38,7 @@ namespace Actinic.Animations
 				loaded_animation.Add (new LED_Set ());
 				for (int x = 0; x < Light_Count; x++) {
 					CurrentColor = BitmapImage.GetPixel (x, y);
-					loaded_animation [y].LED_Values.Add (new LED (CurrentColor.R, CurrentColor.G, CurrentColor.B));
+					loaded_animation [y].LED_Values.Add (new Color (CurrentColor.R, CurrentColor.G, CurrentColor.B));
 				}
 			}
 			return loaded_animation;

@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Animations
 {
 	public abstract class AbstractAnimation
@@ -141,12 +144,12 @@ namespace Actinic.Animations
 		/// <summary>
 		/// List of LEDs representing the current frame of animation
 		/// </summary>
-		protected List<LED> CurrentFrame = new List<LED> ();
+		protected List<Color> CurrentFrame = new List<Color> ();
 
 		public AbstractAnimation (int LED_Light_Count)
 		{
 			for (int i = 0; i < LED_Light_Count; i++) {
-				CurrentFrame.Add (new LED (LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Brightness_MAX));
+				CurrentFrame.Add (new Color (LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Brightness_MAX));
 			}
 			Light_Count = LED_Light_Count;
 			RequestedAnimationDelay = 0;
@@ -155,7 +158,7 @@ namespace Actinic.Animations
 				SmoothingAmount = SmoothingAmount_Default;
 		}
 
-		public AbstractAnimation (List<LED> PreviouslyShownFrame)
+		public AbstractAnimation (List<Color> PreviouslyShownFrame)
 		{
 			for (int i = 0; i < PreviouslyShownFrame.Count; i++) {
 				CurrentFrame.Add (PreviouslyShownFrame [i].Clone ());
@@ -171,7 +174,7 @@ namespace Actinic.Animations
 		/// Gets the next frame of animation.
 		/// </summary>
 		/// <returns>A list of LEDs that represent the next frame.</returns>
-		public abstract List<LED> GetNextFrame ();
+		public abstract List<Color> GetNextFrame ();
 
 	}
 }

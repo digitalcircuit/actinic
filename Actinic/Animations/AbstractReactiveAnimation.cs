@@ -22,6 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Utilities;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Animations
 {
 	public abstract class AbstractReactiveAnimation:AbstractAnimation
@@ -255,7 +258,7 @@ namespace Actinic.Animations
 			InitializeProperties ();
 		}
 
-		public AbstractReactiveAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public AbstractReactiveAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			RequestSmoothCrossfade = true;
 			// By default, this will immediately override the existing colors.  Set to true to smoothly transition.

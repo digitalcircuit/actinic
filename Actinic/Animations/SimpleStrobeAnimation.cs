@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Animations
 {
 	public class SimpleStrobeAnimation:AbstractAnimation
@@ -98,12 +101,12 @@ namespace Actinic.Animations
 			InitBaseSystem (Light_Count, DesiredStrobeMode);
 		}
 
-		public SimpleStrobeAnimation (List<LED> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public SimpleStrobeAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
 		{
 			InitBaseSystem (PreviouslyShownFrame.Count, StrobeMode.White);
 		}
 
-		public SimpleStrobeAnimation (List<LED> PreviouslyShownFrame, StrobeMode DesiredStrobeMode) : base (PreviouslyShownFrame)
+		public SimpleStrobeAnimation (List<Color> PreviouslyShownFrame, StrobeMode DesiredStrobeMode) : base (PreviouslyShownFrame)
 		{
 			InitBaseSystem (PreviouslyShownFrame.Count, DesiredStrobeMode);
 		}
@@ -122,7 +125,7 @@ namespace Actinic.Animations
 			SelectedStrobeMode = DesiredStrobeMode;
 		}
 
-		public override List<LED> GetNextFrame ()
+		public override List<Color> GetNextFrame ()
 		{
 			switch (SelectedStrobeMode) {
 			case StrobeMode.White:
@@ -235,14 +238,14 @@ namespace Actinic.Animations
 
 
 		/// <summary>
-		/// Gets a new LED representing a random rain particle.
+		/// Gets a new Color representing a random rain particle.
 		/// </summary>
 		/// <returns>
 		/// An LED colored like a rain particle.
 		/// </returns>
-		private LED GetRainParticle ()
+		private Color GetRainParticle ()
 		{
-			return new LED (Styled_SoftColor, Styled_SoftColor, Styled_BrightColor, (byte)RandomGenerator.Next (Styled_SoftBrightness, Styled_ModerateBrightness));
+			return new Color (Styled_SoftColor, Styled_SoftColor, Styled_BrightColor, (byte)RandomGenerator.Next (Styled_SoftBrightness, Styled_ModerateBrightness));
 		}
 
 	}

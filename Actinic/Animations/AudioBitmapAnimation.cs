@@ -26,6 +26,9 @@ using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Animations
 {
 	public class AudioBitmapAnimation:AbstractAnimation, IAnimationOneshot
@@ -220,7 +223,7 @@ namespace Actinic.Animations
 			return desiredFrame;
 		}
 
-		public override List<LED> GetNextFrame ()
+		public override List<Color> GetNextFrame ()
 		{
 			animation_frame = getPlayingFrame ();
 			if (animation_frame > -1 && animation_frame < AnimationFrames.Count) {
