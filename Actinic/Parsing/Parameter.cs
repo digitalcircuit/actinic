@@ -22,6 +22,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Parsing
 {
 	public static class Parameter

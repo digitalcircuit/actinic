@@ -47,7 +47,6 @@
     <Compile Include="Main.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="LED.cs" />
-    <Compile Include="Color.cs" />
     <Compile Include="LED_Set.cs" />
     <Compile Include="RandomColorGenerator.cs" />
     <Compile Include="LightSystem.cs" />
@@ -81,6 +80,7 @@
     <Compile Include="AudioInputSystems\DummyAudioInput.cs" />
     <Compile Include="Parsing\Parameter.cs" />
     <Compile Include="Utilities\Randomizer.cs" />
+    <Compile Include="Rendering\Color.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -92,6 +92,7 @@
     <Folder Include="Utilities\" />
     <Folder Include="AudioInputSystems\" />
     <Folder Include="Parsing\" />
+    <Folder Include="Rendering\" />
   </ItemGroup>
   <ProjectExtensions>
     <MonoDevelop>

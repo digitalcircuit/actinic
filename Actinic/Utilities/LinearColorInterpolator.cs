@@ -27,6 +27,9 @@
 using System;
 using System.Collections.Generic;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic
 {
 	public class LinearColorInterpolator

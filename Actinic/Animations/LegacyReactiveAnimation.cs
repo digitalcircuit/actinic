@@ -22,6 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Utilities;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Animations
 {
 	public class LegacyReactiveAnimation:AbstractReactiveAnimation
@@ -155,7 +158,7 @@ namespace Actinic.Animations
 
 		#endregion
 
-		private Actinic.Color VU_RandomColor = new Actinic.Color (0, 0, 0);
+		private Color VU_RandomColor = new Color (0, 0, 0);
 
 		#region VU Meter: Moving Bars
 

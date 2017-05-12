@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic.Animations
 {
 	public class IntervalAnimation:AbstractAnimation
@@ -84,7 +87,7 @@ namespace Actinic.Animations
 		//			new KeyValuePair<int, Color> ((12 + 12) * 60, new Color (255, 0, 0))}
 		//		);
 
-		private Actinic.Color TimeColor = new Color (0, 0, 0);
+		private Color TimeColor = new Color (0, 0, 0);
 		private byte TimeColor_Brightness;
 
 		public enum IntervalMode

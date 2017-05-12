@@ -21,6 +21,9 @@
 using System;
 using FoxSoft.Utilities;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic
 {
 	public class LED
@@ -114,7 +117,7 @@ namespace Actinic
 			return new Color (R, G, B, Brightness);
 		}
 
-		public void SetColor (Actinic.Color SelectedColor)
+		public void SetColor (Color SelectedColor)
 		{
 			R = SelectedColor.R;
 			G = SelectedColor.G;
@@ -153,7 +156,7 @@ namespace Actinic
 		/// <param name="SelectedColor">Selected color.</param>
 		/// <param name="Subtractive">If set to <c>true</c> the new color reduces the brightness and hue of the current.</param>
 		/// <param name="Opacity">Amount this color influences the current color.</param>
-		public void BlendColor (Actinic.Color SelectedColor, bool Subtractive, double Opacity)
+		public void BlendColor (Color SelectedColor, bool Subtractive, double Opacity)
 		{
 			if (Opacity < 0 || Opacity > 1)
 				throw new ArgumentOutOfRangeException (
@@ -162,12 +165,12 @@ namespace Actinic
 				);
 
 			// Reduce the intensity of the new color
-			Actinic.Color opacifiedColor = new Actinic.Color (
-				                               (byte)(SelectedColor.R * Opacity),
-				                               (byte)(SelectedColor.G * Opacity),
-				                               (byte)(SelectedColor.B * Opacity),
-				                               (byte)(SelectedColor.Brightness * Opacity)
-			                               );
+			Color opacifiedColor = new Color (
+				                       (byte)(SelectedColor.R * Opacity),
+				                       (byte)(SelectedColor.G * Opacity),
+				                       (byte)(SelectedColor.B * Opacity),
+				                       (byte)(SelectedColor.Brightness * Opacity)
+			                       );
 			if (Subtractive) {
 				// Reduce these colors from the current
 				R = (byte)Math.Max (R - opacifiedColor.R, 0);
@@ -188,7 +191,7 @@ namespace Actinic
 		/// </summary>
 		/// <param name="SelectedColor">Selected color.</param>
 		/// <param name="BlendMode">Mode for blending colors together.</param>
-		public void BlendColor (Actinic.Color SelectedColor, Actinic.LED.BlendingStyle BlendMode)
+		public void BlendColor (Color SelectedColor, Actinic.LED.BlendingStyle BlendMode)
 		{
 			switch (BlendMode) {
 			case LED.BlendingStyle.Combine:
@@ -199,7 +202,7 @@ namespace Actinic
 				Brightness = Math.Max (Brightness, SelectedColor.Brightness);
 				break;
 			case LED.BlendingStyle.Favor:
-				if (SelectedColor.HasNoEffect == false) {
+				if (SelectedColor.HasEffect) {
 					// Overwrite the original with the new layer
 					// Brightness controls the amount overriden
 					double override_amount = MathUtilities.ConvertRange ((double)SelectedColor.Brightness, (double)LightSystem.Brightness_MIN, (double)LightSystem.Brightness_MAX, 0, 1);
@@ -210,7 +213,7 @@ namespace Actinic
 				}
 				break;
 			case LED.BlendingStyle.Mask:
-				if (SelectedColor.HasNoEffect == false) {
+				if (SelectedColor.HasEffect) {
 					// Don't override empty LEDs
 					// Don't directly set (use .Clone() or value-by-value), for by-reference improperly overrides the LED values when multiple 'replace' mode layers exist
 					R = SelectedColor.R;

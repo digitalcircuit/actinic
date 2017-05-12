@@ -40,6 +40,9 @@ using Actinic.AudioInputs;
 // Output systems
 using Actinic.Outputs;
 
+// Rendering
+using Actinic.Rendering;
+
 namespace Actinic
 {
 	class MainClass
@@ -2087,17 +2090,17 @@ namespace Actinic
 			}
 		}
 
-		private static void FillLights_Color (LED_Queue QueueToModify, Actinic.Color SelectedColor)
+		private static void FillLights_Color (LED_Queue QueueToModify, Color SelectedColor)
 		{
 			FillLights_Color (QueueToModify, SelectedColor, true);
 		}
 
-		private static void FillLights_Color (LED_Queue QueueToModify, Actinic.Color SelectedColor, bool ApplyNow)
+		private static void FillLights_Color (LED_Queue QueueToModify, Color SelectedColor, bool ApplyNow)
 		{
 			FillLights_Color (QueueToModify, SelectedColor, ApplyNow, false);
 		}
 
-		private static void FillLights_Color (LED_Queue QueueToModify, Actinic.Color SelectedColor, bool ApplyNow, bool SkipAnimationQueue)
+		private static void FillLights_Color (LED_Queue QueueToModify, Color SelectedColor, bool ApplyNow, bool SkipAnimationQueue)
 		{
 			FillLights_Color (QueueToModify, SelectedColor.R, SelectedColor.G, SelectedColor.B, ApplyNow, SkipAnimationQueue);
 		}
