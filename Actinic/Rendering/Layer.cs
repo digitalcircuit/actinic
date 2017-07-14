@@ -35,8 +35,10 @@ namespace Actinic.Rendering
 		/// </summary>
 		/// <param name="PixelCount">Number of pixels.</param>
 		/// <param name="Blending">Default mode for blending upper layers into this layer.</param>
+		/// <param name="FillColor">Initial color for all pixels.</param>
 		public Layer (
-			int PixelCount, Color.BlendMode Blending = Color.BlendMode.Combine)
+			int PixelCount, Color.BlendMode Blending = Color.BlendMode.Combine,
+			Color FillColor = null)
 		{
 			if (PixelCount <= 0) {
 				throw new ArgumentOutOfRangeException (
@@ -46,6 +48,10 @@ namespace Actinic.Rendering
 			}
 			setPixelCount (PixelCount);
 			this.Blending = Blending;
+			if (FillColor != null) {
+				// Fill color specified, set it now.
+				Fill (FillColor);
+			}
 		}
 
 		/// <summary>
@@ -202,6 +208,21 @@ namespace Actinic.Rendering
 			for (int i = 0; i < UpperLayer.PixelCount; i++) {
 				// Blend this layer with the upper layer
 				this [i].Blend (UpperLayer [i], BlendMode);
+			}
+		}
+
+		/// <summary>
+		/// Fills all pixels of the current layer with the specified color.
+		/// </summary>
+		/// <param name="FillColor">Fill color.</param>
+		public void Fill (Color FillColor)
+		{
+			if (FillColor == null) {
+				// Need a valid layer
+				throw new ArgumentNullException ("FillColor");
+			}
+			for (int index = 0; index < layerPixels.Length; index++) {
+				layerPixels [index] = FillColor.Clone ();
 			}
 		}
 

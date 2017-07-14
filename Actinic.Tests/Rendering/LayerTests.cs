@@ -83,6 +83,38 @@ namespace Actinic.Tests.Rendering
 		}
 
 		[Test]
+		public void Construct_Direct_BlendMode_FillColor ()
+		{
+			// [Arrange]
+			const int lightCount = 23;
+			const Color.BlendMode expectBlend = Color.BlendMode.Replace;
+			const bool expectHasEffect = true;
+			Color expectColor = new Color (255, 128, 64, 32);
+
+			// [Act]
+			Layer resultLayer =
+				new Layer (lightCount, expectBlend, expectColor);
+
+			// [Assert]
+			// Make sure the count is accurate
+			Assert.That (resultLayer.PixelCount,
+				Is.EqualTo (lightCount)
+			);
+			// Verify the specified blend mode
+			Assert.That (resultLayer.Blending,
+				Is.EqualTo (expectBlend)
+			);
+			// Check that the colors are created with effect
+			Assert.That (resultLayer.HasEffect,
+				Is.EqualTo (expectHasEffect)
+			);
+			// Check that it's the right color
+			Assert.That (resultLayer.GetPixels (),
+				Has.All.EqualTo (expectColor)
+			);
+		}
+
+		[Test]
 		public void Construct_Clone ()
 		{
 			// [Arrange]
@@ -526,6 +558,47 @@ namespace Actinic.Tests.Rendering
 				},
 				Throws.TypeOf<ArgumentNullException> ()
 				.With.Property ("ParamName").EqualTo ("UpperLayer")
+			);
+		}
+
+		#endregion
+
+		#region Functions - Fill
+
+		[Test]
+		public void Fill_Test ()
+		{
+			// [Arrange]
+			const int lightCount = 23;
+			Layer resultLayer = new Layer (lightCount);
+			Color testColor = new Color (32, 64, 128, 255);
+			// Ensure there's no reference
+			Color expectColor = testColor.Clone ();
+
+			// [Act]
+			resultLayer.Fill (testColor);
+
+			// [Assert]
+			// Check that it's the right color
+			Assert.That (resultLayer.GetPixels (),
+				Has.All.EqualTo (expectColor)
+			);
+		}
+
+		[Test]
+		public void Fill_NullColor_Throws ()
+		{
+			// [Arrange]
+			Layer sampleLayer = new Layer (1);
+			const Color invalidColor = null;
+
+			// [Act/Assert]
+			Assert.That (
+				delegate {
+					sampleLayer.Fill (invalidColor);
+				},
+				Throws.TypeOf<ArgumentNullException> ()
+				.With.Property ("ParamName").EqualTo ("FillColor")
 			);
 		}
 
