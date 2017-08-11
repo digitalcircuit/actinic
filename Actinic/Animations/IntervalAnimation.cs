@@ -34,21 +34,34 @@ namespace Actinic.Animations
 		private LinearColorInterpolator TimeColorGradient =
 			new LinearColorInterpolator (
 				new KeyValuePair<int, Color>[] {
-					new KeyValuePair<int, Color> (0, new Color (0, 0, 255, 30)),
-					new KeyValuePair<int, Color> (4 * 60, new Color (0, 0, 255, 30)),
-					new KeyValuePair<int, Color> (6 * 60, new Color (100, 0, 255, 80)),
-					new KeyValuePair<int, Color> (7 * 60, new Color (100, 100, 255, 80)),
-					new KeyValuePair<int, Color> (8 * 60, new Color (255, 150, 100)),
-					new KeyValuePair<int, Color> (9 * 60, new Color (255, 255, 255)),
-					new KeyValuePair<int, Color> (11 * 60, new Color (255, 255, 255)),
-					new KeyValuePair<int, Color> (12 * 60, new Color (255, 100, 50)),
-					new KeyValuePair<int, Color> ((5 + 12) * 60, new Color (255, 100, 30)),
-					new KeyValuePair<int, Color> ((8 + 12) * 60, new Color (255, 50, 30)),
-					new KeyValuePair<int, Color> ((9 + 12) * 60, new Color (255, 50, 0)),
-					new KeyValuePair<int, Color> ((10 + 12) * 60, new Color (255, 30, 0)),
-					new KeyValuePair<int, Color> ((10 + 12) * 60 + 1, new Color (255, 30, 2, 150)),
-					new KeyValuePair<int, Color> ((11 + 12) * 60, new Color (255, 0, 255, 50)),
-					new KeyValuePair<int, Color> ((12 + 12) * 60, new Color (0, 0, 255, 30))
+					new KeyValuePair<int, Color> (
+						0, new Color (255, 30, 0, 150)),
+					new KeyValuePair<int, Color> (
+						4 * 60, new Color (255, 30, 0, 30)),
+					new KeyValuePair<int, Color> (
+						6 * 60, new Color (255, 30, 30, 30)),
+					new KeyValuePair<int, Color> (
+						7 * 60, new Color (255, 100, 30, 80)),
+					new KeyValuePair<int, Color> (
+						8 * 60, new Color (255, 150, 100)),
+					new KeyValuePair<int, Color> (
+						9 * 60, new Color (255, 255, 255)),
+					new KeyValuePair<int, Color> (
+						11 * 60, new Color (255, 255, 255)),
+					new KeyValuePair<int, Color> (
+						12 * 60, new Color (255, 100, 50)),
+					new KeyValuePair<int, Color> (
+						(5 + 12) * 60, new Color (255, 100, 30)),
+					new KeyValuePair<int, Color> (
+						(8 + 12) * 60, new Color (255, 50, 30)),
+					new KeyValuePair<int, Color> (
+						(9 + 12) * 60, new Color (255, 50, 0)),
+					new KeyValuePair<int, Color> (
+						(10 + 12) * 60, new Color (255, 30, 0)),
+					new KeyValuePair<int, Color> (
+						(11 + 12) * 60, new Color (255, 30, 0, 200)),
+					new KeyValuePair<int, Color> (
+						(12 + 12) * 60, new Color (255, 30, 0, 150))
 				}
 			);
 
