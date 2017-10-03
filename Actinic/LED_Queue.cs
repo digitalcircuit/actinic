@@ -34,13 +34,13 @@ namespace Actinic
 		/// <summary>
 		/// Modifiable list of LEDs representing the desired output state
 		/// </summary>
-		public List<Color> Lights = new List<Color> ();
+		public Layer Lights;
 
 		/// <summary>
 		/// Gets a list of LEDs representing the last state processed by the output system, useful for fades
 		/// </summary>
 		/// <value>Read-only list of LEDs</value>
-		public List<Color> LightsLastProcessed {
+		public Layer LightsLastProcessed {
 			get;
 			private set;
 		}
@@ -50,7 +50,7 @@ namespace Actinic
 		/// </summary>
 		/// <value>Number of lights</value>
 		public int LightCount {
-			get { return Lights.Count; }
+			get { return Lights.PixelCount; }
 		}
 
 		/// <summary>
@@ -101,14 +101,12 @@ namespace Actinic
 			get {
 				if (AnimationActive == true || QueueEmpty == false)
 					return false;
-				foreach (Color light in Lights) {
-					if (light.HasEffect)
-						return false;
-				}
-				return true;
+				// Check if the lights -don't- have an effect.
+				return !Lights.HasEffect;
 			}
 		}
 
+		// FIXME: Revisit queue-wide blend-mode after LED Queue update
 		private Color.BlendMode blending_mode = Color.BlendMode.Combine;
 
 		/// <summary>
@@ -124,7 +122,7 @@ namespace Actinic
 			}
 		}
 
-		private Queue<LED_Set> OutputQueue = new Queue<LED_Set> ();
+		private Queue<Layer> OutputQueue = new Queue<Layer> ();
 
 		public LED_Queue (int LED_Light_Count)
 		{
@@ -136,23 +134,26 @@ namespace Actinic
 			InitializeFromBlanks (LED_Light_Count, ClearAllLEDs);
 		}
 
-		private void InitializeFromBlanks (int LED_Light_Count, bool ClearAllLEDs)
+		private void InitializeFromBlanks (
+			int LED_Light_Count, bool ClearAllLEDs)
 		{
-			LightsLastProcessed = new List<Color> ();
+			byte brightness = (ClearAllLEDs ? (byte)0 : Color.MAX);
+			Color fillColor = new Color (0, 0, 0, brightness);
+			// Fill the layer with the given color
+			Lights =
+				new Layer (LED_Light_Count, Color.BlendMode.Combine, fillColor);
 
-			byte brightness = (ClearAllLEDs ? LightSystem.Brightness_MIN : LightSystem.Brightness_MAX);
-			for (int i = 0; i < LED_Light_Count; i++) {
-				Lights.Add (new Color (0, 0, 0, brightness));
-				LightsLastProcessed.Add (new Color (0, 0, 0, brightness));
-			}
+			// Copy to the processed list.  When first initializing, skip
+			// locking.
+			LightsLastProcessed = Lights.Clone ();
 		}
 
-		public LED_Queue (List<Color> PreviouslyShownFrame)
+		public LED_Queue (Layer PreviouslyShownFrame)
 		{
-			LightsLastProcessed = new List<Color> ();
-
-			Lights.AddRange (PreviouslyShownFrame);
-			LightsLastProcessed.AddRange (PreviouslyShownFrame);
+			Lights = PreviouslyShownFrame.Clone ();
+			// Copy to the processed list.  When first initializing, skip
+			// locking.
+			LightsLastProcessed = Lights.Clone ();
 		}
 
 
@@ -163,9 +164,8 @@ namespace Actinic
 		{
 			lock (Lights) {
 				lock (LightsLastProcessed) {
-					for (int index = 0; index < Lights.Count; index++) {
-						LightsLastProcessed [index].SetColor (Lights [index]);
-					}
+					// Clone the layer over to avoid any reference links
+					LightsLastProcessed = Lights.Clone ();
 				}
 			}
 		}
@@ -173,13 +173,15 @@ namespace Actinic
 		/// <summary>
 		/// Grabs the first frame from the queue if entries are queued, otherwise returns null
 		/// </summary>
-		/// <returns>If multiple frames are queued, returns an LED_Set, otherwise null</returns>
-		public LED_Set PopFromQueue ()
+		/// <returns>If multiple frames are queued, returns a Layer, otherwise null</returns>
+		public Layer PopFromQueue ()
 		{
 			lock (OutputQueue) {
 				if (OutputQueue.Count > 0) {
-					LED_Set result = OutputQueue.Dequeue ();
-					result.BlendMode = BlendMode;
+					Layer result = OutputQueue.Dequeue ();
+					// Update the layer blending mode to the queue default
+					// FIXME: Revisit blend-mode coercion after LED Queue update
+					result.Blending = BlendMode;
 					return result;
 				} else {
 					return null;
@@ -198,26 +200,18 @@ namespace Actinic
 		/// <summary>
 		/// Adds a frame to the end of the output queue
 		/// </summary>
-		/// <param name="NextFrame">An LED_Set representing the desired frame.</param>
-		public void PushToQueue (LED_Set NextFrame)
+		/// <param name="NextFrame">A Layer representing the desired frame.</param>
+		public void PushToQueue (Layer NextFrame)
 		{
-			if (NextFrame.LightCount != LightCount)
-				throw new ArgumentOutOfRangeException (string.Format ("NextFrame must contain same number of LEDs (has {0}, expected {1})", NextFrame.LightCount, LightCount));
+			if (NextFrame.PixelCount != LightCount)
+				throw new ArgumentOutOfRangeException ("NextFrame",
+					string.Format (
+						"NextFrame must contain same number of LEDs (has {0}," +
+						" expected {1})", NextFrame.PixelCount, LightCount
+					)
+				);
 			lock (OutputQueue) {
 				OutputQueue.Enqueue (NextFrame.Clone ());
-			}
-		}
-
-		/// <summary>
-		/// Adds a list of LEDs representing a frame to the end of the output queue
-		/// </summary>
-		/// <param name="NextFrame">A list of LEDs representing the desired frame.</param>
-		public void PushToQueue (List<Color> NextFrame)
-		{
-			if (NextFrame.Count != LightCount)
-				throw new ArgumentOutOfRangeException (string.Format ("NextFrame must contain same number of LEDs (has {0}, expected {1})", NextFrame.Count, LightCount));
-			lock (OutputQueue) {
-				OutputQueue.Enqueue (new LED_Set (NextFrame).Clone ());
 			}
 		}
 

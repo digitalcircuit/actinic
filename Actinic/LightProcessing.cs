@@ -42,16 +42,16 @@ namespace Actinic
 		/// <param name='ShiftCount'>
 		/// Number of times to shift lights.
 		/// </param>
-		public static void ShiftLightsOutward (List<Color> LightSet, int ShiftCount)
+		public static void ShiftLightsOutward (Layer LightSet, int ShiftCount)
 		{
 			//Shifts outwards, from LED 24 to 1 and from LED 25 to 50
 			for (int times_shifted = 0; times_shifted < ShiftCount; times_shifted++) {
-				for (int i = LightSystem.LIGHT_COUNT - 1; i >= ((LightSystem.LIGHT_COUNT / 2)); i--) {
+				for (int i = LightSet.PixelCount - 1; i >= ((LightSet.PixelCount / 2)); i--) {
 					LightSet [i].R = LightSet [i - 1].R;
 					LightSet [i].G = LightSet [i - 1].G;
 					LightSet [i].B = LightSet [i - 1].B;
 				}
-				for (int i = 1; i < ((LightSystem.LIGHT_COUNT / 2) - 1); i++) {
+				for (int i = 1; i < ((LightSet.PixelCount / 2) - 1); i++) {
 					LightSet [i - 1].R = LightSet [i].R;
 					LightSet [i - 1].G = LightSet [i].G;
 					LightSet [i - 1].B = LightSet [i].B;
@@ -68,69 +68,35 @@ namespace Actinic
 		/// <param name='ShiftCount'>
 		/// Number of times to shift lights.
 		/// </param>
-		public static void ShiftLightsBrightnessOutward (List<Color> LightSet, int ShiftCount)
+		public static void ShiftLightsBrightnessOutward (Layer LightSet, int ShiftCount)
 		{
 			//Shifts outwards, from LED 24 to 1 and from LED 25 to 50
 			for (int times_shifted = 0; times_shifted < ShiftCount; times_shifted++) {
-				for (int i = LightSystem.LIGHT_COUNT - 1; i >= ((LightSystem.LIGHT_COUNT / 2)); i--) {
+				for (int i = LightSet.PixelCount - 1; i >= ((LightSet.PixelCount / 2)); i--) {
 					LightSet [i].Brightness = LightSet [i - 1].Brightness;
 				}
-				for (int i = 1; i < ((LightSystem.LIGHT_COUNT / 2) - 1); i++) {
+				for (int i = 1; i < ((LightSet.PixelCount / 2) - 1); i++) {
 					LightSet [i - 1].Brightness = LightSet [i].Brightness;
 				}
 			}
 		}
 
 
-		public static bool Is_LED_Dark_Color (List<Color> LightSet, int Index, int Threshold)
+		public static bool Is_LED_Dark_Color (Layer LightSet, int Index, int Threshold)
 		{
-			if (Index >= 0 & Index < LightSystem.LIGHT_COUNT) {
+			if (Index >= 0 & Index < LightSet.PixelCount) {
 				return (LightSet [Index].R < Threshold && LightSet [Index].G < Threshold && LightSet [Index].B < Threshold);
 			} else {
 				return false;
 			}
 		}
 
-		public static bool Is_LED_Dark_Brightness (List<Color> LightSet, int Index, int Threshold)
+		public static bool Is_LED_Dark_Brightness (Layer LightSet, int Index, int Threshold)
 		{
-			if (Index >= 0 & Index < LightSystem.LIGHT_COUNT) {
+			if (Index >= 0 & Index < LightSet.PixelCount) {
 				return (LightSet [Index].Brightness < Threshold);
 			} else {
 				return false;
-			}
-		}
-
-		/// <summary>
-		/// Merges the colors and brightness of the upper layer into the lower layer.
-		/// </summary>
-		/// <param name="UpperLayer">Upper layer of LEDs.</param>
-		/// <param name="LowerLayer">Lower layer of LEDs.</param>
-		/// <param name="Opacity">Strength of the upper layer's influence as a decimal from 0 to 1.</param>
-		/// <param name="Fade">If set to <c>true</c> fades between current layer and new layer with <see cref="Opacity"/> specifying the fade amount.</param>
-		public static void MergeLayerDown (List<Color> UpperLayer, List<Color> LowerLayer, double Opacity = 1.0, bool Fade = false)
-		{
-			if (UpperLayer.Count != LowerLayer.Count)
-				throw new ArgumentException ("UpperLayer and LowerLayer must have the same number of lights to merge together.");
-			if (Opacity < 0 || Opacity > 1)
-				throw new ArgumentOutOfRangeException ("Opacity", "Opacity must be a value between 0 and 1.");
-
-			for (int i = 0; i < UpperLayer.Count; i++) {
-				LowerLayer [i].Blend (UpperLayer [i], Opacity, Fade);
-			}
-		}
-
-		/// <summary>
-		/// Merges the colors and brightness of the upper layer into the lower layer.
-		/// </summary>
-		/// <param name="UpperLayer">Upper layer of LEDs.</param>
-		/// <param name="LowerLayer">Lower layer of LEDs.</param>
-		/// <param name="BlendMode">Blending mode for merging upper layer into lower layer.</param>
-		public static void MergeLayerDown (List<Color> UpperLayer, List<Color> LowerLayer, Color.BlendMode BlendMode)
-		{
-			if (UpperLayer.Count != LowerLayer.Count)
-				throw new ArgumentException ("UpperLayer and LowerLayer must have the same number of lights to merge together.");
-			for (int i = 0; i < UpperLayer.Count; i++) {
-				LowerLayer [i].Blend (UpperLayer [i], BlendMode);
 			}
 		}
 	}

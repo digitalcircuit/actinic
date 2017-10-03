@@ -1280,7 +1280,7 @@ namespace Actinic
 										Actinic_Lights_Queue.PushToQueue ();
 										WaitForQueue (Actinic_Lights_Queue);
 										Console.WriteLine ("(Actinic light queue test: synchronous)");
-										for (int i = 0; i < Actinic_Lights_Queue.Lights.Count; i++) {
+										for (int i = 0; i < Actinic_Lights_Queue.Lights.PixelCount; i++) {
 											Actinic_Lights_Queue.Lights [i].R = LightSystem.Color_MAX;
 											Actinic_Lights_Queue.Lights [i].G = LightSystem.Color_MIN;
 											Actinic_Lights_Queue.Lights [i].B = LightSystem.Color_MAX;
@@ -1294,7 +1294,7 @@ namespace Actinic
 										System.Threading.Thread.Sleep (500);
 										Console.WriteLine ("(Actinic lights queue test: asynchronous)");
 										Console.WriteLine ("(filling queue)");
-										for (int i = 0; i < Actinic_Lights_Queue.Lights.Count; i++) {
+										for (int i = 0; i < Actinic_Lights_Queue.Lights.PixelCount; i++) {
 
 											Actinic_Lights_Queue.Lights [i].R = LightSystem.Color_MIN;
 											Actinic_Lights_Queue.Lights [i].G = LightSystem.Color_MIN;
@@ -1314,13 +1314,13 @@ namespace Actinic
 										WaitForQueue (Actinic_Lights_Queue);
 										Console.WriteLine ("(Actinic light queue test: adding 1000 events)");
 										for (int loop = 0; loop < (1000 / (LightSystem.LIGHT_COUNT * 2)); loop++) {
-											for (int i = 0; i < Actinic_Lights_Queue.Lights.Count; i++) {
+											for (int i = 0; i < Actinic_Lights_Queue.Lights.PixelCount; i++) {
 												Actinic_Lights_Queue.Lights [i].R = LightSystem.Color_MIN;
 												Actinic_Lights_Queue.Lights [i].G = LightSystem.Color_MIN;
 												Actinic_Lights_Queue.Lights [i].B = LightSystem.Color_MAX;
 												Actinic_Lights_Queue.PushToQueue ();
 											}
-											for (int i = 0; i < Actinic_Lights_Queue.Lights.Count; i++) {
+											for (int i = 0; i < Actinic_Lights_Queue.Lights.PixelCount; i++) {
 												Actinic_Lights_Queue.Lights [i].SetColor (RandomColorGenerator.GetRandomColor ());
 												Actinic_Lights_Queue.PushToQueue ();
 											}
@@ -1506,9 +1506,9 @@ namespace Actinic
 			Actinic_Lights_Queue.ClearQueue ();
 
 			// Current LED frame to send to output
-			LED_Set Light_Snapshot = null;
+			Layer Light_Snapshot = null;
 			// All individual frames to send to output
-			List<LED_Set> Light_Snapshots = new List<LED_Set> ();
+			List<Layer> Light_Snapshots = new List<Layer> ();
 			// Current VU volumes as collected from the VU input system; only used for AbstractReactiveAnimation
 			List<double> Audio_Volumes_Snapshot = new List<double> ();
 
@@ -1564,7 +1564,7 @@ namespace Actinic
 				// Fixed: with multi-threaded timing, the light-queue could become empty between checking the count and pulling a snapshot
 
 				if (ActiveOutputSystemReady ()) {
-					LED_Set QueueLightSnapshot = null;
+					Layer QueueLightSnapshot = null;
 					bool update_needed = false;
 					foreach (KeyValuePair <string, LED_Queue> queue in GetAllQueues ()) {
 						if (queue.Value.QueueEmpty == false) {
@@ -1580,16 +1580,17 @@ namespace Actinic
 							#endif
 							Light_Snapshots.Add (QueueLightSnapshot);
 							queue.Value.QueueIdleTime = 0;
-							queue.Value.Lights = QueueLightSnapshot.LED_Values;
+							queue.Value.Lights = QueueLightSnapshot;
 							#if DEBUG_PERFORMANCE
 							Console.WriteLine ("{0} ms - updating last processed ({1})", Queue_PerfStopwatch.ElapsedMilliseconds, queue.Key);
 							#endif
 							queue.Value.MarkAsProcessed ();
 						} else if (update_needed) {
-							// Nothing new in the queue, but it must be added to the snapshot for it to be blended down again
-							LED_Set last_processed_set = new LED_Set (queue.Value.LightsLastProcessed);
-							last_processed_set.BlendMode = queue.Value.BlendMode;
-							Light_Snapshots.Add (last_processed_set);
+							// Nothing new in the queue, but it must be added to
+							// the snapshot for it to be blended down again
+							Light_Snapshots.Add (
+								queue.Value.LightsLastProcessed.Clone ()
+							);
 						}
 					}
 				}
@@ -1659,7 +1660,7 @@ namespace Actinic
 							throw new System.IO.IOException ("Could not reconnect to output system in background after 5 tries, giving up");
 						}
 						try {
-							if (UpdateLights_All (Light_Snapshot.LED_Values) == false) {
+							if (UpdateLights_All (Light_Snapshot) == false) {
 								Console.WriteLine ("(Error while updating lights in the animation queue!)");
 							}
 							// It at least didn't throw an exception...
@@ -1782,30 +1783,37 @@ namespace Actinic
 			}
 		}
 
-		private static LED_Set MergeSnapshotsDown (List<LED_Set> LightSnapshots)
+		private static Layer MergeSnapshotsDown (List<Layer> LightSnapshots)
 		{
 			if (LightSnapshots.Count <= 0) {
 				return null;
 			}
-			LED_Set MergedLayers = new LED_Set ();
-			for (int index = 0; index < LightSnapshots [0].LightCount; index++) {
-				MergedLayers.LED_Values.Add (new Color (0, 0, 0, 0));
-			}
+			Layer MergedLayers =
+				new Layer (
+					LightSnapshots [0].PixelCount,
+					Color.BlendMode.Combine,
+					Color.Transparent
+				);
 
 			List<int> snapshots_requesting_replacement = new List<int> ();
 
 			for (int i = 0; i < LightSnapshots.Count; i++) {
-				if (LightSnapshots [i].BlendMode == Color.BlendMode.Favor || LightSnapshots [i].BlendMode == Color.BlendMode.Mask || LightSnapshots [i].BlendMode == Color.BlendMode.Replace) {
+				if (LightSnapshots [i].Blending == Color.BlendMode.Favor
+				    || LightSnapshots [i].Blending == Color.BlendMode.Mask
+				    || LightSnapshots [i].Blending == Color.BlendMode.Replace) {
 					snapshots_requesting_replacement.Add (i);
 				} else {
 					// Blend the layers together
-					LightProcessing.MergeLayerDown (LightSnapshots [i].LED_Values, MergedLayers.LED_Values, LightSnapshots [i].BlendMode);
+					MergedLayers.Blend (LightSnapshots [i],
+						LightSnapshots [i].Blending);
 				}
 			}
 
-			// These must be done after standard blending modes due to the possibility of overriding the above
+			// These must be done after standard blending modes due to the
+			// possibility of overriding the above
 			foreach (int snapshot_index in snapshots_requesting_replacement) {
-				LightProcessing.MergeLayerDown (LightSnapshots [snapshot_index].LED_Values, MergedLayers.LED_Values, LightSnapshots [snapshot_index].BlendMode);
+				MergedLayers.Blend (LightSnapshots [snapshot_index],
+					LightSnapshots [snapshot_index].Blending);
 			}
 			return MergedLayers;
 		}
@@ -1869,7 +1877,8 @@ namespace Actinic
 		/// </summary>
 		/// <param name="QueueToModify">Queue to add animation to</param>
 		/// <param name="LED_Collection">Desired LED appearance</param>
-		private static void AddToAnimQueue (LED_Queue QueueToModify, List<Color> LED_Collection)
+		private static void AddToAnimQueue (
+			LED_Queue QueueToModify, Layer LED_Collection)
 		{
 			if (QueueToModify.QueueCount > 0 && Command_ConflictsExpected == false)
 				Console.WriteLine ("(Warning: interrupting fade, appearance may vary.  If intended, prefix with '!')");
@@ -1879,11 +1888,10 @@ namespace Actinic
 			if (Animation_Fading_Enabled) {
 				double Avg_OldPercent = Math.Min (Animation_Smoothing_Percentage_DEFAULT, 1);
 				double Avg_NewPercent = Math.Max (1 - Animation_Smoothing_Percentage_DEFAULT, 0);
-				List<Color> LED_Intermediate = new List<Color> ();
+				Layer LED_Intermediate;
 				lock (QueueToModify.LightsLastProcessed) {
-					for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
-						LED_Intermediate.Add (new Color (QueueToModify.LightsLastProcessed [i].R, QueueToModify.LightsLastProcessed [i].G, QueueToModify.LightsLastProcessed [i].B, QueueToModify.LightsLastProcessed [i].Brightness));
-					}
+					LED_Intermediate =
+						QueueToModify.LightsLastProcessed.Clone ();
 				}
 				for (int i_fades = 0; i_fades < Animation_Smoothing_Iterations_DEFAULT; i_fades++) {
 					for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
@@ -2049,7 +2057,7 @@ namespace Actinic
 		/// <param name='QueueToModify'>
 		/// Queue to apply the smoothed results to.
 		/// </param>
-		private static void ApplySmoothing (double SmoothingAmount, bool OnlySmoothBrightnessDecrease, List<Color> Lights_Unsmoothed, LED_Queue QueueToModify)
+		private static void ApplySmoothing (double SmoothingAmount, bool OnlySmoothBrightnessDecrease, Layer Lights_Unsmoothed, LED_Queue QueueToModify)
 		{
 			double Avg_OldPercent = Math.Min (SmoothingAmount, 1);
 			double Avg_NewPercent = Math.Max (1 - SmoothingAmount, 0);
@@ -2159,7 +2167,7 @@ namespace Actinic
 			}
 		}
 
-		private static bool UpdateLights_Brightness (List<Color> Actinic_Light_Set)
+		private static bool UpdateLights_Brightness (Layer Actinic_Light_Set)
 		{
 			if (ActiveOutputSystemReady () == false)
 				return false;
@@ -2167,7 +2175,7 @@ namespace Actinic
 			return ActiveOutputSystem.UpdateLightsBrightness (Actinic_Light_Set);
 		}
 
-		private static bool UpdateLights_Color (List<Color> Actinic_Light_Set)
+		private static bool UpdateLights_Color (Layer Actinic_Light_Set)
 		{
 			if (ActiveOutputSystemReady () == false)
 				return false;
@@ -2175,7 +2183,7 @@ namespace Actinic
 			return ActiveOutputSystem.UpdateLightsColor (Actinic_Light_Set);
 		}
 
-		private static bool UpdateLights_All (List<Color> Actinic_Light_Set)
+		private static bool UpdateLights_All (Layer Actinic_Light_Set)
 		{
 			if (ActiveOutputSystemReady () == false)
 				return false;

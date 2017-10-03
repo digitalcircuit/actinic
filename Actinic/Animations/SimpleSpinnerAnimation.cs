@@ -33,14 +33,15 @@ namespace Actinic.Animations
 			// No need to clear RequestSmoothCrossfade as inherited class SimpleFadeAnimation doesn't touch it here
 		}
 
-		public SimpleSpinnerAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public SimpleSpinnerAnimation (Layer PreviouslyShownFrame)
+			: base (PreviouslyShownFrame)
 		{
 			RequestSmoothCrossfade = false;
 			// Inherited class SimpleFadeAnimation sets this to true; so reset it back to false
 		}
 
 
-		public override List<Color> GetNextFrame ()
+		public override Layer GetNextFrame ()
 		{
 			Anim_Update_ColorShift ();
 			CurrentFrame [0].R = Anim_ColorShift_Red;
@@ -62,7 +63,7 @@ namespace Actinic.Animations
 		/// <param name='ShiftCount'>
 		/// Number of times to shift lights.
 		/// </param>
-		private void ShiftLightsForwards (List<Color> LightSet, int ShiftCount)
+		private void ShiftLightsForwards (Layer LightSet, int ShiftCount)
 		{
 			//Shifts forwards from LED 1 to 50
 			for (int times_shifted = 0; times_shifted < ShiftCount; times_shifted++) {

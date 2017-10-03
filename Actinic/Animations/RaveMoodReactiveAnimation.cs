@@ -75,19 +75,20 @@ namespace Actinic.Animations
 		/// <summary>
 		/// List of LEDs representing the upper strobe layer of animation
 		/// </summary>
-		protected List<Color> CurrentFrame_Strobe = new List<Color> ();
+		protected Layer CurrentFrame_Strobe;
 
 		/// <summary>
 		/// List of LEDs representing the combined animation layers, to avoid interferring with below
 		/// </summary>
-		protected List<Color> CurrentFrame_Combined = new List<Color> ();
+		protected Layer CurrentFrame_Combined;
 
 		public RaveMoodReactiveAnimation (int Light_Count) : base (Light_Count)
 		{
 			InitializeLayers ();
 		}
 
-		public RaveMoodReactiveAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public RaveMoodReactiveAnimation (Layer PreviouslyShownFrame)
+			: base (PreviouslyShownFrame)
 		{
 			InitializeLayers ();
 		}
@@ -97,15 +98,15 @@ namespace Actinic.Animations
 			// Enable the low-freqeuncy desaturation boost modifier
 			LowFrequencyDesaturatesColors = true;
 
-			// Add the empty LEDs to the upper layer
-			for (int index = 0; index < Light_Count; index++) {
-				CurrentFrame_Strobe.Add (new Color (0, 0, 0, 0));
-				CurrentFrame_Combined.Add (new Color (0, 0, 0, 0));
-			}
+			// Add the empty LEDs to the upper layers
+			CurrentFrame_Strobe = new Layer (
+				Light_Count, Color.BlendMode.Combine, Color.Transparent
+			);
+			CurrentFrame_Combined = CurrentFrame_Strobe.Clone ();
 		}
 
 
-		public override List<Color> GetNextFrame ()
+		public override Layer GetNextFrame ()
 		{
 
 			for (int i = 0; i < LightSystem.LIGHT_INDEX_MAX; i++) {
@@ -148,12 +149,12 @@ namespace Actinic.Animations
 			// Update the lower layer as in the BeatPulse animation
 			base.GetNextFrame ();
 
-			for (int i = 0; i < CurrentFrame_Combined.Count; i++) {
-				CurrentFrame_Combined [i].SetColor (0, 0, 0, 0);
-			}
-			LightProcessing.MergeLayerDown (CurrentFrame_Strobe, CurrentFrame_Combined);
-			LightProcessing.MergeLayerDown (CurrentFrame, CurrentFrame_Combined);
-			// Merge each layer into the final combined, keeping layers separate to avoid interference
+			// Clear the combined layer
+			CurrentFrame_Combined.Fill (Color.Transparent);
+			// Merge each layer into the final combined, keeping layers separate
+			// to avoid interference.  Force simple blending with Opacity of 1.
+			CurrentFrame_Combined.Blend (CurrentFrame_Strobe, 1);
+			CurrentFrame_Combined.Blend (CurrentFrame, 1);
 
 			return CurrentFrame_Combined;
 		}

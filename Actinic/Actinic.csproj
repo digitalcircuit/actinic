@@ -46,7 +46,6 @@
   <ItemGroup>
     <Compile Include="Main.cs" />
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="LED_Set.cs" />
     <Compile Include="RandomColorGenerator.cs" />
     <Compile Include="LightSystem.cs" />
     <Compile Include="ReactiveSystem.cs" />

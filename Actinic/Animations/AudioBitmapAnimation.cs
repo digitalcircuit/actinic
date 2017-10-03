@@ -62,7 +62,7 @@ namespace Actinic.Animations
 		/// If true, the current time is unavailable (e.g. error), otherwise false.
 		/// </summary>
 		private bool AudioPlayer_CurrentTime_Unavailable = false;
-		private List<LED_Set> AnimationFrames = new List<LED_Set> ();
+		private List<Layer> AnimationFrames = new List<Layer> ();
 		private int animation_frame = 0;
 
 		public int AnimationFrame {
@@ -223,15 +223,18 @@ namespace Actinic.Animations
 			return desiredFrame;
 		}
 
-		public override List<Color> GetNextFrame ()
+		public override Layer GetNextFrame ()
 		{
 			animation_frame = getPlayingFrame ();
 			if (animation_frame > -1 && animation_frame < AnimationFrames.Count) {
-				if (AudioPlayer_CurrentTime_Updated == false && (animation_frame + 1) < AnimationFrames.Count) {
-					return AnimationFrames [animation_frame + 1].LED_Values;
-				} else {
-					return AnimationFrames [animation_frame].LED_Values;
+				int frame_index = animation_frame;
+				if (AudioPlayer_CurrentTime_Updated == false
+				    && (animation_frame + 1) < AnimationFrames.Count) {
+					// Predictively skip one over to the next frame
+					frame_index++;
 				}
+				// Don't allow the calling code to modify the animation
+				return AnimationFrames [frame_index].Clone ();
 			} else {
 				throw new System.ArgumentOutOfRangeException (
 					"animation_frame",

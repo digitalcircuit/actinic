@@ -116,10 +116,16 @@ namespace Actinic.Outputs
 		/// <exception cref="ArgumentException">Thrown when provided with an invalid light set</exception>
 		/// </summary>
 		/// <param name="Actinic_Light_Set">List of LEDs to verify</param>
-		protected void ValidateLightSet (List<Color> Actinic_Light_Set)
+		protected void ValidateLightSet (Layer Actinic_Light_Set)
 		{
-			if (Actinic_Light_Set.Count != LightCount)
-				throw new ArgumentException (string.Format ("Given Actinic_Light_Set with {0} lights, needed {1}", Actinic_Light_Set.Count, LightCount));
+			if (Actinic_Light_Set.PixelCount != LightCount)
+				throw new ArgumentException (
+					"Actinic_Light_Set",
+					string.Format (
+						"Given Actinic_Light_Set with {0} lights, needed {1}",
+						Actinic_Light_Set.PixelCount, LightCount
+					)
+				);
 		}
 
 		/// <summary>
@@ -127,21 +133,21 @@ namespace Actinic.Outputs
 		/// </summary>
 		/// <returns><c>true</c>, if brightness was updated, <c>false</c> otherwise.</returns>
 		/// <param name="Actinic_Light_Set">LED list representing desired state of lights, ignoring the color component.</param>
-		public abstract bool UpdateLightsBrightness (List<Color> Actinic_Light_Set);
+		public abstract bool UpdateLightsBrightness (Layer Actinic_Light_Set);
 
 		/// <summary>
 		/// Updates the color of the lights.
 		/// </summary>
 		/// <returns><c>true</c>, if color was updated, <c>false</c> otherwise.</returns>
 		/// <param name="Actinic_Light_Set">LED list representing desired state of lights, ignoring the brightness components.</param>
-		public abstract bool UpdateLightsColor (List<Color> Actinic_Light_Set);
+		public abstract bool UpdateLightsColor (Layer Actinic_Light_Set);
 
 		/// <summary>
 		/// Updates both color and brightness of the lights.
 		/// </summary>
 		/// <returns><c>true</c>, if color and brightness was updated, <c>false</c> otherwise.</returns>
 		/// <param name="Actinic_Light_Set">LED list representing desired state of lights.</param>
-		public abstract bool UpdateLightsAll (List<Color> Actinic_Light_Set);
+		public abstract bool UpdateLightsAll (Layer Actinic_Light_Set);
 
 		/// <summary>
 		/// Raises the system data received event.

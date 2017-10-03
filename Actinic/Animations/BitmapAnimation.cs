@@ -30,7 +30,7 @@ namespace Actinic.Animations
 	public class BitmapAnimation:AbstractAnimation
 	{
 
-		private List<LED_Set> AnimationFrames = new List<LED_Set> ();
+		private List<Layer> AnimationFrames = new List<Layer> ();
 		private int animation_frame = 0;
 
 		public int AnimationFrame {
@@ -66,7 +66,7 @@ namespace Actinic.Animations
 			AnimationFrames = AnimationUtilities.ConvertImageToLEDArray (Light_Count, bitmapImage);
 		}
 
-		public override List<Color> GetNextFrame ()
+		public override Layer GetNextFrame ()
 		{
 			if (animation_frame > -1 && animation_frame < AnimationFrames.Count) {
 				int actual_frame = animation_frame;
@@ -77,7 +77,7 @@ namespace Actinic.Animations
 					animation_frame++;
 				}
 				//Console.WriteLine ("Frame: {0} | {1}, {2}, {3}", actual_frame, AnimationFrames [actual_frame].LED_Values[24].R, AnimationFrames [actual_frame].LED_Values[24].G, AnimationFrames [actual_frame].LED_Values[24].B);
-				return AnimationFrames [actual_frame].LED_Values;
+				return AnimationFrames [actual_frame];
 			} else {
 				throw new System.ArgumentOutOfRangeException (
 					"animation_frame",

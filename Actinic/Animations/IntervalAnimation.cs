@@ -115,7 +115,8 @@ namespace Actinic.Animations
 			UpdateColorsFromTime ();
 		}
 
-		public IntervalAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public IntervalAnimation (Layer PreviouslyShownFrame)
+			: base (PreviouslyShownFrame)
 		{
 			RequestedAnimationDelay = Animation_Update_Delay;
 			EnableSmoothing = false;
@@ -124,7 +125,7 @@ namespace Actinic.Animations
 			UpdateColorsFromTime ();
 		}
 
-		public override List<Color> GetNextFrame ()
+		public override Layer GetNextFrame ()
 		{
 			UpdateColorsFromTime ();
 			for (int i = 0; i < Light_Count; i++) {

@@ -340,7 +340,7 @@ namespace Actinic.Outputs
 		}
 
 
-		public override bool UpdateLightsBrightness (List<Color> Actinic_Light_Set)
+		public override bool UpdateLightsBrightness (Layer Actinic_Light_Set)
 		{
 			if (Initialized == false)
 				return false;
@@ -349,8 +349,10 @@ namespace Actinic.Outputs
 			try {
 				List<byte> output_all = new List<byte> ();
 				output_all.Add (Protocol_SET_BRIGHTNESS);
-				foreach (Color LED_Light in Actinic_Light_Set) {
-					output_all.Add ((byte)MathUtilities.ConvertRange (LED_Light.Brightness, LightSystem.Brightness_MIN, LightSystem.Brightness_MAX, Protocol_Brightness_MIN, Protocol_Brightness_MAX));
+				foreach (Color LED_Light in Actinic_Light_Set.GetEnumerator()) {
+					output_all.Add (
+						ConvertBrightnessValue (LED_Light.Brightness)
+					);
 				}
 
 				USB_Serial.Write (output_all.ToArray (), 0, output_all.ToArray ().Length);
@@ -362,7 +364,7 @@ namespace Actinic.Outputs
 			}
 		}
 
-		public override bool UpdateLightsColor (List<Color> Actinic_Light_Set)
+		public override bool UpdateLightsColor (Layer Actinic_Light_Set)
 		{
 			if (Initialized == false)
 				return false;
@@ -371,11 +373,11 @@ namespace Actinic.Outputs
 			try {
 				List<byte> output_all = new List<byte> ();
 				output_all.Add (Protocol_SET_HUE);
-				foreach (Color LED_Light in Actinic_Light_Set) {
+				foreach (Color LED_Light in Actinic_Light_Set.GetEnumerator()) {
 					byte[] output = new byte[] {
-						(byte)(MathUtilities.ConvertRange (LED_Light.B, LightSystem.Color_MIN, LightSystem.Color_MAX, Protocol_Color_MIN, Protocol_Color_MAX)),
-						(byte)(MathUtilities.ConvertRange (LED_Light.G, LightSystem.Color_MIN, LightSystem.Color_MAX, Protocol_Color_MIN, Protocol_Color_MAX)),
-						(byte)(MathUtilities.ConvertRange (LED_Light.R, LightSystem.Color_MIN, LightSystem.Color_MAX, Protocol_Color_MIN, Protocol_Color_MAX))
+						ConvertColorValue (LED_Light.B),
+						ConvertColorValue (LED_Light.G),
+						ConvertColorValue (LED_Light.R)
 					};
 					output_all.AddRange (output);
 				}
@@ -389,7 +391,7 @@ namespace Actinic.Outputs
 			}
 		}
 
-		public override bool UpdateLightsAll (List<Color> Actinic_Light_Set)
+		public override bool UpdateLightsAll (Layer Actinic_Light_Set)
 		{
 			if (Initialized == false)
 				return false;
@@ -398,12 +400,12 @@ namespace Actinic.Outputs
 			try {
 				List<byte> output_all = new List<byte> ();
 				output_all.Add (Protocol_SET_ALL);
-				foreach (Color LED_Light in Actinic_Light_Set) {
+				foreach (Color LED_Light in Actinic_Light_Set.GetEnumerator()) {
 					byte[] output = new byte[] {
-						(byte)(MathUtilities.ConvertRange (LED_Light.B, LightSystem.Color_MIN, LightSystem.Color_MAX, Protocol_Color_MIN, Protocol_Color_MAX)),
-						(byte)(MathUtilities.ConvertRange (LED_Light.G, LightSystem.Color_MIN, LightSystem.Color_MAX, Protocol_Color_MIN, Protocol_Color_MAX)),
-						(byte)(MathUtilities.ConvertRange (LED_Light.R, LightSystem.Color_MIN, LightSystem.Color_MAX, Protocol_Color_MIN, Protocol_Color_MAX)),
-						(byte)(MathUtilities.ConvertRange (LED_Light.Brightness, LightSystem.Brightness_MIN, LightSystem.Brightness_MAX, Protocol_Brightness_MIN, Protocol_Brightness_MAX))
+						ConvertColorValue (LED_Light.B),
+						ConvertColorValue (LED_Light.G),
+						ConvertColorValue (LED_Light.R),
+						ConvertBrightnessValue (LED_Light.Brightness)
 					};
 					output_all.AddRange (output);
 				}
@@ -478,6 +480,40 @@ namespace Actinic.Outputs
 			Console.WriteLine ("[Arduino] Acknowledged in {0} ms", measuredLatency);
 #endif
 			return result;
+		}
+
+		/// <summary>
+		/// Converts the given <see cref="Color"/> color component value to fit
+		/// within the range of the Arduino protocol.
+		/// </summary>
+		/// <returns>The color value within protocol limits.</returns>
+		/// <param name="ColorValue">Color color component value.</param>
+		private byte ConvertColorValue (byte ColorValue)
+		{
+			return (byte)MathUtilities.ConvertRange (
+				ColorValue,
+				LightSystem.Color_MIN,
+				LightSystem.Color_MAX,
+				Protocol_Color_MIN,
+				Protocol_Color_MAX
+			);
+		}
+
+		/// <summary>
+		/// Converts the given <see cref="Color.Brightness"/> value to fit
+		/// within the range of the Arduino protocol.
+		/// </summary>
+		/// <returns>The brightness value within protocol limits.</returns>
+		/// <param name="BrightnessValue">Color.Brightness value.</param>
+		private byte ConvertBrightnessValue (byte BrightnessValue)
+		{
+			return (byte)MathUtilities.ConvertRange (
+				BrightnessValue,
+				LightSystem.Brightness_MIN,
+				LightSystem.Brightness_MAX,
+				Protocol_Brightness_MIN,
+				Protocol_Brightness_MAX
+			);
 		}
 
 	}

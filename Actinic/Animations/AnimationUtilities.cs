@@ -29,16 +29,17 @@ namespace Actinic.Animations
 	public static class AnimationUtilities
 	{
 
-		public static List<LED_Set> ConvertImageToLEDArray (int Light_Count, System.Drawing.Bitmap BitmapImage)
+		public static List<Layer> ConvertImageToLEDArray (int Light_Count, System.Drawing.Bitmap BitmapImage)
 		{
-			List<LED_Set> loaded_animation = new List<LED_Set> ();
+			List<Layer> loaded_animation = new List<Layer> ();
 			loaded_animation.Clear ();
 			System.Drawing.Color CurrentColor;
 			for (int y = 0; y < BitmapImage.Height; y++) {
-				loaded_animation.Add (new LED_Set ());
+				loaded_animation.Add (new Layer (Light_Count));
 				for (int x = 0; x < Light_Count; x++) {
 					CurrentColor = BitmapImage.GetPixel (x, y);
-					loaded_animation [y].LED_Values.Add (new Color (CurrentColor.R, CurrentColor.G, CurrentColor.B));
+					// Refer to x'th Pixel within the y'th Layer
+					loaded_animation [y] [x] = new Color (CurrentColor.R, CurrentColor.G, CurrentColor.B);
 				}
 			}
 			return loaded_animation;

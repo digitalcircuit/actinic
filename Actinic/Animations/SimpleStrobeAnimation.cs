@@ -101,31 +101,29 @@ namespace Actinic.Animations
 			InitBaseSystem (Light_Count, DesiredStrobeMode);
 		}
 
-		public SimpleStrobeAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public SimpleStrobeAnimation (Layer PreviouslyShownFrame)
+			: base (PreviouslyShownFrame)
 		{
-			InitBaseSystem (PreviouslyShownFrame.Count, StrobeMode.White);
+			InitBaseSystem (PreviouslyShownFrame.PixelCount, StrobeMode.White);
 		}
 
-		public SimpleStrobeAnimation (List<Color> PreviouslyShownFrame, StrobeMode DesiredStrobeMode) : base (PreviouslyShownFrame)
+		public SimpleStrobeAnimation (
+			Layer PreviouslyShownFrame, StrobeMode DesiredStrobeMode)
+			: base (PreviouslyShownFrame)
 		{
-			InitBaseSystem (PreviouslyShownFrame.Count, DesiredStrobeMode);
+			InitBaseSystem (PreviouslyShownFrame.PixelCount, DesiredStrobeMode);
 		}
 
 
 
 		private void InitBaseSystem (int Light_Count, StrobeMode DesiredStrobeMode)
 		{
-			for (int i = 0; i < Light_Count; i++) {
-				CurrentFrame [i].R = 0;
-				CurrentFrame [i].G = 0;
-				CurrentFrame [i].B = 0;
-				CurrentFrame [i].Brightness = 0;
-			}
+			CurrentFrame.Fill (Color.Transparent);
 			RandomGenerator = new Random ();
 			SelectedStrobeMode = DesiredStrobeMode;
 		}
 
-		public override List<Color> GetNextFrame ()
+		public override Layer GetNextFrame ()
 		{
 			switch (SelectedStrobeMode) {
 			case StrobeMode.White:

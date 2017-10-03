@@ -139,31 +139,29 @@ namespace Actinic.Animations
 		/// <summary>
 		/// Number of lights in use
 		/// </summary>
-		protected int Light_Count;
+		protected int Light_Count {
+			get {
+				return CurrentFrame.PixelCount;
+			}
+		}
 
 		/// <summary>
 		/// List of LEDs representing the current frame of animation
 		/// </summary>
-		protected List<Color> CurrentFrame = new List<Color> ();
+		protected Layer CurrentFrame;
 
 		public AbstractAnimation (int LED_Light_Count)
 		{
-			for (int i = 0; i < LED_Light_Count; i++) {
-				CurrentFrame.Add (new Color (LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Brightness_MAX));
-			}
-			Light_Count = LED_Light_Count;
+			CurrentFrame = new Layer (LED_Light_Count);
 			RequestedAnimationDelay = 0;
 			AnimationStyle = Style.Moderate;
 			if (SmoothingAmount == 0)
 				SmoothingAmount = SmoothingAmount_Default;
 		}
 
-		public AbstractAnimation (List<Color> PreviouslyShownFrame)
+		public AbstractAnimation (Layer PreviouslyShownFrame)
 		{
-			for (int i = 0; i < PreviouslyShownFrame.Count; i++) {
-				CurrentFrame.Add (PreviouslyShownFrame [i].Clone ());
-			}
-			Light_Count = PreviouslyShownFrame.Count;
+			CurrentFrame = PreviouslyShownFrame.Clone ();
 			RequestedAnimationDelay = 0;
 			AnimationStyle = Style.Moderate;
 			if (SmoothingAmount == 0)
@@ -174,7 +172,7 @@ namespace Actinic.Animations
 		/// Gets the next frame of animation.
 		/// </summary>
 		/// <returns>A list of LEDs that represent the next frame.</returns>
-		public abstract List<Color> GetNextFrame ();
+		public abstract Layer GetNextFrame ();
 
 	}
 }

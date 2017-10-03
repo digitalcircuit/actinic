@@ -74,19 +74,19 @@ namespace Actinic.Outputs
 			return true;
 		}
 
-		public override bool UpdateLightsBrightness (System.Collections.Generic.List<Color> Actinic_Light_Set)
+		public override bool UpdateLightsBrightness (Layer Actinic_Light_Set)
 		{
 			ValidateLightSet (Actinic_Light_Set);
 			return true;
 		}
 
-		public override bool UpdateLightsColor (System.Collections.Generic.List<Color> Actinic_Light_Set)
+		public override bool UpdateLightsColor (Layer Actinic_Light_Set)
 		{
 			ValidateLightSet (Actinic_Light_Set);
 			return true;
 		}
 
-		public override bool UpdateLightsAll (System.Collections.Generic.List<Color> Actinic_Light_Set)
+		public override bool UpdateLightsAll (Layer Actinic_Light_Set)
 		{
 			ValidateLightSet (Actinic_Light_Set);
 			return true;

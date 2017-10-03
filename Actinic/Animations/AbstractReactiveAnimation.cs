@@ -258,7 +258,8 @@ namespace Actinic.Animations
 			InitializeProperties ();
 		}
 
-		public AbstractReactiveAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public AbstractReactiveAnimation (Layer PreviouslyShownFrame)
+			: base (PreviouslyShownFrame)
 		{
 			RequestSmoothCrossfade = true;
 			// By default, this will immediately override the existing colors.  Set to true to smoothly transition.

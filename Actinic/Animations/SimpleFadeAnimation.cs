@@ -47,22 +47,23 @@ namespace Actinic.Animations
 			// No need to enable RequestSmoothCrossfade as it's assumed no previous frame is available
 		}
 
-		public SimpleFadeAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public SimpleFadeAnimation (Layer PreviouslyShownFrame)
+			: base (PreviouslyShownFrame)
 		{
 			RequestSmoothCrossfade = true;
 			// By default, this will immediately override the existing colors.  Set to true to smoothly transition.
 		}
 
 
-		public override List<Color> GetNextFrame ()
+		public override Layer GetNextFrame ()
 		{
 			Anim_Update_ColorShift ();
-			for (int led_index = 0; led_index < CurrentFrame.Count; led_index++) {
-				CurrentFrame [led_index].R = Anim_ColorShift_Red;
-				CurrentFrame [led_index].G = Anim_ColorShift_Green;
-				CurrentFrame [led_index].B = Anim_ColorShift_Blue;
-				CurrentFrame [led_index].Brightness = LightSystem.Brightness_MAX;
-			}
+			CurrentFrame.Fill (new Color (
+				Anim_ColorShift_Red,
+				Anim_ColorShift_Green,
+				Anim_ColorShift_Blue,
+				Color.MAX
+			));
 
 			return CurrentFrame;
 		}

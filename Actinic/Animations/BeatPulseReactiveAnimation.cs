@@ -61,12 +61,12 @@ namespace Actinic.Animations
 		/// <summary>
 		/// List of LEDs representing the hue-shifting backdrop layer
 		/// </summary>
-		protected List<Color> CurrentFrame_Backdrop = new List<Color> ();
+		protected Layer CurrentFrame_Backdrop;
 
 		/// <summary>
 		/// List of LEDs representing the upper layer that pulses according to the beat
 		/// </summary>
-		protected List<Color> CurrentFrame_Pulse = new List<Color> ();
+		protected Layer CurrentFrame_Pulse;
 
 		#region Desaturate Boost
 
@@ -87,7 +87,8 @@ namespace Actinic.Animations
 			InitializeLayers ();
 		}
 
-		public BeatPulseReactiveAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public BeatPulseReactiveAnimation (Layer PreviouslyShownFrame)
+			: base (PreviouslyShownFrame)
 		{
 			InitializeLayers ();
 		}
@@ -95,18 +96,18 @@ namespace Actinic.Animations
 		private void InitializeLayers ()
 		{
 			// Lower the brightness of all the LEDs in the base layer
-			for (int index = 0; index < CurrentFrame.Count; index++) {
+			for (int index = 0; index < CurrentFrame.PixelCount; index++) {
 				CurrentFrame [index].Brightness = LightSystem.Color_DARK;
 			}
 
 			// Add empty LEDs to the standalone layers
-			for (int index = 0; index < Light_Count; index++) {
-				CurrentFrame_Backdrop.Add (new Color (0, 0, 0, 0));
-				CurrentFrame_Pulse.Add (new Color (0, 0, 0, 0));
-			}
+			CurrentFrame_Backdrop = new Layer (
+				Light_Count, Color.BlendMode.Combine, Color.Transparent
+			);
+			CurrentFrame_Pulse = CurrentFrame_Backdrop.Clone ();
 		}
 
-		public override List<Color> GetNextFrame ()
+		public override Layer GetNextFrame ()
 		{
 			// Low frequency controls the brightness and desaturation for all of the lights
 			// > Brightness (scales from 0 to 1, dark to maximum)
@@ -156,9 +157,9 @@ namespace Actinic.Animations
 			LightProcessing.ShiftLightsOutward (CurrentFrame_Backdrop, 4);
 
 			// Reset the current frame with the backdrop
-			LightProcessing.MergeLayerDown (CurrentFrame_Backdrop, CurrentFrame, Color.BlendMode.Replace);
+			CurrentFrame.Blend (CurrentFrame_Backdrop, Color.BlendMode.Replace);
 			// Add the backdrop to the beat-pulse layer
-			LightProcessing.MergeLayerDown (CurrentFrame_Pulse, CurrentFrame, Color.BlendMode.Sum);
+			CurrentFrame.Blend (CurrentFrame_Pulse, Color.BlendMode.Sum);
 
 			// Mirror the one half of the lights to the other side
 			// Note: change to handling each layer individually if any layers should not be mirrored

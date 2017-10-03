@@ -40,20 +40,21 @@ namespace Actinic.Animations
 			InitializeLayers ();
 		}
 
-		public SpinnerReactiveAnimation (List<Color> PreviouslyShownFrame) : base (PreviouslyShownFrame)
+		public SpinnerReactiveAnimation (Layer PreviouslyShownFrame)
+			: base (PreviouslyShownFrame)
 		{
 			InitializeLayers ();
 		}
 
 		private void InitializeLayers ()
 		{
-			for (int index = 0; index < CurrentFrame.Count; index++) {
+			for (int index = 0; index < CurrentFrame.PixelCount; index++) {
 				CurrentFrame [index].Brightness = LightSystem.Brightness_MAX;
 			}
 
 			// Get it to run once, so the following loop continues
 			CalculuatedHues.Add (new Color (ColorShift_Red, ColorShift_Green, ColorShift_Blue, LightSystem.Brightness_MAX));
-			ColorShift_Amount = (byte)((LightSystem.Color_MAX * 3) / CurrentFrame.Count);
+			ColorShift_Amount = (byte)((LightSystem.Color_MAX * 3) / CurrentFrame.PixelCount);
 			// (Max color * three stages) / light count
 			AnimationUpdateColorShift ();
 			while (!(ColorShift_LastMode == ColorShift_Mode.ShiftingRed && ColorShift_Blue == LightSystem.Color_MIN & ColorShift_Red == LightSystem.Color_MAX)) {
@@ -62,10 +63,10 @@ namespace Actinic.Animations
 			}
 		}
 
-		public override List<Color> GetNextFrame ()
+		public override Layer GetNextFrame ()
 		{
 			int copy_color_index = (int)MathUtilities.ConvertRange (Audio_Average_Intensity, 0, 1, 0, CalculuatedHues.Count);
-			for (int index = 0; index < CurrentFrame.Count; index++) {
+			for (int index = 0; index < CurrentFrame.PixelCount; index++) {
 				CurrentFrame [index] = CalculuatedHues [copy_color_index];
 				copy_color_index++;
 				if (copy_color_index >= CalculuatedHues.Count) {
