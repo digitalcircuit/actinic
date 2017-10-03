@@ -20,6 +20,12 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 
+// IEnumerable
+using System.Collections.Generic;
+
+// ReadOnlyCollection, used for IEnumerable
+using System.Collections.ObjectModel;
+
 namespace Actinic.Rendering
 {
 	/// <summary>
@@ -270,6 +276,38 @@ namespace Actinic.Rendering
 			}
 			// All match
 			return true;
+		}
+
+		/// <summary>
+		/// Returns an enumerator that iterates through the collection of
+		/// pixels.
+		/// </summary>
+		/// <returns>The enumerator.</returns>
+		public IEnumerable<Color> GetEnumerator ()
+		{
+			// GetEnumerator is for the sake of 'foreach' loops.
+
+			// Now you might be going, "Aha, this fool didn't realize there's an
+			// IEnumerable interface!  They're doing it all wrong!"
+			//
+			// Fear not, I tried.  NUnit prioritizes an enumerator-based
+			// equality test, so defining this as an enumerable collection
+			// breaks asserting equality.
+			//
+			// See https://stackoverflow.com/questions/10737209/assert-areequal-does-not-use-my-equals-overrides-on-an-ienumerable-implementati
+			// And https://stackoverflow.com/questions/2860484/c-ienumerable-getenumerator-a-simple-simple-example-please
+
+			// Note: IEnumerable is read-only, but doesn't protect against
+			// casting back to the source type.  This allows externally
+			// modifying the internal array.  Wrap it in a read-only collection
+			// to stop this.
+			//
+			// See https://stackoverflow.com/questions/7310454/simple-ienumerator-use-with-example#comment8811203_7310570
+
+			// Explicit cast isn't required, added to clarify intent
+			return (IEnumerable<Color>)(
+			    new ReadOnlyCollection<Color> (layerPixels)
+			);
 		}
 
 		public override string ToString ()

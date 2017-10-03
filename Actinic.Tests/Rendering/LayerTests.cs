@@ -21,6 +21,9 @@
 using NUnit.Framework;
 using System;
 
+// For testing GetEnumerator()
+using System.Linq;
+
 using Actinic.Rendering;
 
 namespace Actinic.Tests.Rendering
@@ -769,6 +772,67 @@ namespace Actinic.Tests.Rendering
 			// [Act/Assert]
 			Assert.That (startLayer,
 				Is.Not.EqualTo (modifiedLayer)
+			);
+		}
+
+		#endregion
+
+		#region Functions - GetEnumerator
+
+		[Test]
+		public void GetEnumerator_Equals_Test ()
+		{
+			// [Arrange]
+			Color[] sampleColors = new Color[] {
+				new Color (255, 128, 64, 32),
+				new Color (111, 151, 222, 1),
+				new Color (255, 255, 255, 16)
+			};
+			// Dynamically set lightCount to make changing the test easier
+			int lightCount = sampleColors.Length;
+			// Set up the sample layer
+			Layer sampleLayer = new Layer (lightCount);
+			for (int i = 0; i < lightCount; i++) {
+				sampleLayer [i].SetColor (sampleColors [i]);
+			}
+
+			// [Act]
+			// Take all entries and store as an array
+			Color[] resultColors = sampleLayer.GetEnumerator ().ToArray ();
+
+			// [Assert]
+			// Make sure each color is correct
+			Assert.That (resultColors,
+				Is.EqualTo (sampleColors)
+			);
+
+			// This might not be a solid way to unit test the GetEnumerator()
+			// method.  However, we're at least ensuring the basics work.
+			//
+			// See https://stackoverflow.com/questions/1510031/c-how-do-you-test-the-ienumerable-getenumerator-method
+		}
+
+		[Test]
+		public void GetEnumerator_InvalidCast_Test ()
+		{
+			// [Arrange]
+			const int lightCount = 1;
+			// Set up the sample layer
+			Layer sampleLayer = new Layer (lightCount);
+
+			// [Act/Assert]
+			Assert.That (
+				delegate {
+					// Try to cast the enumerator back to a modifiable object
+					// See https://stackoverflow.com/questions/7310454/simple-ienumerator-use-with-example#comment8811203_7310570
+					Color[] test = (Color[])sampleLayer.GetEnumerator ();
+					// This should fail, meaning the following won't work,
+					// either...
+					test [0] = new Color ();
+					// Arguably I won't be trying to break my own code, but it's
+					// probably still a good idea to defend against this.
+				},
+				Throws.TypeOf<InvalidCastException> ()
 			);
 		}
 
