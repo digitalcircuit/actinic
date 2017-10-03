@@ -80,6 +80,7 @@
     <Compile Include="Parsing\Parameter.cs" />
     <Compile Include="Utilities\Randomizer.cs" />
     <Compile Include="Rendering\Color.cs" />
+    <Compile Include="Rendering\Layer.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

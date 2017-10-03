@@ -38,6 +38,7 @@
   <ItemGroup>
     <Compile Include="DummyTests.cs" />
     <Compile Include="Rendering\ColorTests.cs" />
+    <Compile Include="Rendering\LayerTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
