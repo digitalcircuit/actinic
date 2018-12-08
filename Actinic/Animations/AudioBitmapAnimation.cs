@@ -159,7 +159,7 @@ namespace Actinic.Animations
 
 		private void AudioPlayer_OutputCallback (object sender, System.Diagnostics.DataReceivedEventArgs e)
 		{
-			if (e.Data == "")
+			if (e?.Data == null || e.Data == "")
 				return;
 #if DEBUG_MPLAYER
 			Console.WriteLine ("MPlayer output: " + e.Data);
@@ -177,7 +177,7 @@ namespace Actinic.Animations
 
 		private void AudioPlayer_ErrorCallback (object sender, System.Diagnostics.DataReceivedEventArgs e)
 		{
-			if (e.Data == "")
+			if (e?.Data == null || e.Data == "")
 				return;
 #if DEBUG_MPLAYER
 			Console.WriteLine ("MPlayer error: " + e.Data);
