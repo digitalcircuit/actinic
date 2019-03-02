@@ -39,4 +39,4 @@ To list commands, type `help`.  For help on a particular command, type it withou
 * [ReflectiveEnumerator.cs](https://stackoverflow.com/questions/5411694/get-all-inherited-classes-of-an-abstract-class) by [Repo Man](https://stackoverflow.com/users/140126/repo-man)
 * *If you're missing, let me know, and I'll fix it as soon as I can!*
 
-[arduino-firmware]: https://github.com/digitalcircuit/ActinicArduino_Controller
+[arduino-firmware]: https://github.com/digitalcircuit/ActinicArduino
