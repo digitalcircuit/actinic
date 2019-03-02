@@ -51,17 +51,15 @@ namespace Actinic
 
 		/// <summary>
 		/// The light animation target latency in ms.
+		/// DEPRECATED: This will be replaced with timing-independent
+		/// calculations.
 		/// </summary>
-		private const int Light_Animation_Target_Latency = 48;
+		private const int Light_Animation_Target_Latency = 5;
+
 		// Above should at least be slightly longer than the USB processing
 		// time, to reduce the risk of the queue getting filled.
 		// EDIT: With the new layered processing system, 48 ms may be too fast
 		// of a target.  Trying 49 ms...
-
-		/// <summary>
-		/// The actual light animation latency in ms.
-		/// </summary>
-		private static int Light_Animation_Latency = 0;
 
 		/// <summary>
 		/// The current delay when idle in ms.
@@ -98,9 +96,15 @@ namespace Actinic
 
 		private static int Actinic_Light_Queue_BufferFullWarning {
 			get {
-				return (1 * 1000) / Light_Animation_Latency;  // First # is in seconds
+				if (ActiveOutputSystem != null && ActiveOutputSystem.ProcessingLatency > 0) {
+					return (int)((1 * 1000) / ActiveOutputSystem.ProcessingLatency);
+					// First # is in seconds
+				} else {
+					// Make a good guess
+					return 100;
+				}
 				// Output a warning if number of frames reaches this amount
-				//  Reaching this makes future commands seem slower to respond
+				// Reaching this makes future commands seem slower to respond
 			}
 		}
 
@@ -639,7 +643,7 @@ namespace Actinic
 												foreach (KeyValuePair <string, LED_Queue> queue in GetAllQueues ()) {
 													if (queue.Value.AnimationActive) {
 														queue.Value.SelectedAnimation.AnimationStyle = Animation_AnimationStyle;
-														if ((queue.Value.SelectedAnimation.RequestedAnimationDelay > Light_Animation_Latency) || (queue.Value.SelectedAnimation.RequestSmoothCrossfade))
+														if ((queue.Value.SelectedAnimation.RequestedAnimationDelay > ActiveOutputSystem.ProcessingLatency) || (queue.Value.SelectedAnimation.RequestSmoothCrossfade))
 															queue.Value.AnimationForceFrameRequest = true;
 													}
 												}
@@ -1678,7 +1682,7 @@ namespace Actinic
 					Console.WriteLine ("{0} ms - frame sent", Queue_PerfStopwatch.ElapsedMilliseconds);
 					#endif
 					#if DEBUG_BRIEF_PERFORMANCE
-					if (Queue_PerfStopwatch.ElapsedMilliseconds > Light_Animation_Latency)
+					if (Queue_PerfStopwatch.ElapsedMilliseconds > ActiveOutputSystem.ProcessingLatency)
 						Console.WriteLine ("# {0} ms - frame finished ({1})", Queue_PerfStopwatch.ElapsedMilliseconds, DateTime.Now.ToLongTimeString ());
 					#endif
 					// Attempt to keep each frame spaced 'Light_Animation_Delay' time apart, default 50ms
@@ -1729,12 +1733,12 @@ namespace Actinic
 		{
 			if (QueueToModify.AnimationActive && QueueToModify.QueueEmpty) {
 				// Only add an animation frame if enabled, and the queue is empty
-				if ((QueueToModify.SelectedAnimation.RequestedAnimationDelay <= Light_Animation_Latency) ||
+				if ((QueueToModify.SelectedAnimation.RequestedAnimationDelay <= ActiveOutputSystem.ProcessingLatency) ||
 				    (QueueToModify.QueueIdleTime >= QueueToModify.SelectedAnimation.RequestedAnimationDelay) ||
 				    (QueueToModify.AnimationForceFrameRequest == true)) {
 					// Only add an animation frame if less than default delay is requested, or enough time elapsed in idle
 					#if DEBUG_PERFORMANCE
-						Console.WriteLine ("{0} ms - queuing frame from active animation ({1})", PerfTracking_TimeElapsed, PerfTracking_QueueName);
+					Console.WriteLine ("{0} ms - queuing frame from active animation ({1})", PerfTracking_TimeElapsed, PerfTracking_QueueName);
 					#endif
 					try {
 						// In all of the below, you must set QueueToModify to the new, intended output, otherwise
@@ -1828,7 +1832,7 @@ namespace Actinic
 
 		private static void SleepForAnimation (int AlreadySleptAmount)
 		{
-			SleepForAnimation (AlreadySleptAmount, Light_Animation_Latency);
+			SleepForAnimation (AlreadySleptAmount, (int)Math.Round(ActiveOutputSystem.ProcessingLatency, MidpointRounding.AwayFromZero));
 		}
 
 		private static void SleepForAnimation (int AlreadySleptAmount, int RequestedDelay)
@@ -1904,7 +1908,7 @@ namespace Actinic
 				Animation_Stop (QueueToModify);
 
 			QueueToModify.SelectedAnimation = DesiredAnimation;
-			if ((QueueToModify.SelectedAnimation.RequestedAnimationDelay > Light_Animation_Latency) || (QueueToModify.SelectedAnimation.RequestSmoothCrossfade))
+			if ((QueueToModify.SelectedAnimation.RequestedAnimationDelay > ActiveOutputSystem.ProcessingLatency) || (QueueToModify.SelectedAnimation.RequestSmoothCrossfade))
 				QueueToModify.AnimationForceFrameRequest = true;
 			// If animation requests a longer delay or a smooth cross-fade, force the first frame to happen now
 
@@ -2201,12 +2205,8 @@ namespace Actinic
 			}
 
 			if (success) {
-				// Don't allow a shorter animation time than the output system processing can manage
-				Light_Animation_Latency = (int)Math.Round (Math.Max (ActiveOutputSystem.ProcessingLatency + 1,
-					Light_Animation_Target_Latency));
-
-				Console.WriteLine ("- Connected to '{0}' via '{1}', update rate {2} ms",
-					outputType, ActiveOutputSystem.Identifier, Light_Animation_Latency);
+				Console.WriteLine ("- Connected to '{0}' via '{1}'",
+					outputType, ActiveOutputSystem.Identifier);
 
 				// Update number of lights, (re-)initalize the light queues
 				LightSystem.SetLightCount (ActiveOutputSystem.LightCount);

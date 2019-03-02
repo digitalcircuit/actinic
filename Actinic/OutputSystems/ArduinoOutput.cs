@@ -40,40 +40,54 @@ namespace Actinic.Outputs
 
 		#region Protocol
 
-		private const string Protocol_Firmware_Identifier = "ActinicArduino_Controller:";
-		private const string Protocol_Firmware_Version = Protocol_Firmware_Identifier + "2.2";
+		private const string Protocol_Firmware_Identifier =
+			"ActinicArduino";
+		private const string Protocol_Firmware_Negotiation_Version = "version:";
 		private const string Protocol_Firmware_Negotiation_Light_Count = "light_count:";
 		private const string Protocol_Firmware_Negotiation_Strand_Length = "strand_length:";
 		private const string Protocol_Firmware_Negotiation_Color_Max = "color_max:";
 		private const string Protocol_Firmware_Negotiation_Brightness_Max = "bright_max:";
-		private const string Protocol_Firmware_Negotiation_Average_Latency = "avg_latency:";
 		private const string Protocol_Firmware_Negotiation_End = "end_init";
 
+		/// <summary>
+		/// Compatible major version of the firmware
+		/// </summary>
+		private const int Protocol_Firmware_Compatible_Version_Major = 3;
+
+		/// <summary>
+		/// Version string for compatible firmware
+		/// </summary>
+		private readonly string Protocol_Firmware_Compatible_Version_String =
+			Protocol_Firmware_Negotiation_Version
+			+ Protocol_Firmware_Compatible_Version_Major
+			+ ".";
+
+		/// <summary>
+		/// The major version of the firmware, breaking changes
+		/// </summary>
+		private decimal Protocol_Version;
+
+		/// <summary>
+		/// The number of lights.
+		/// </summary>
 		private int Protocol_Light_Count;
-		// Note: The Actinic LED protocol only allows for up to 63 individually-addressable lights
 
 		/// <summary>
 		/// The lighted length of the strand in meters.
 		/// </summary>
 		private float Protocol_Strand_Length;
 
-		private float Protocol_Processing_Latency;
-		// ActinicArduino Controller tends to take 47-49 ms to update all lights
-
 		private int Protocol_Color_MAX;
 		private const int Protocol_Color_MIN = 0;
-		// Actinic LED protocol uses a range of 0-15 for each component of RGB
 
 		private int Protocol_Brightness_MAX;
 		private const int Protocol_Brightness_MIN = 0;
-		// Actinic LED protocol uses a range of 0-255 for brightness, HOWEVER, the firmware limits maximum brightness to 204
-		//  This originated from the original controller, so it's followed in the Arduino version out of concern for safety
 
-		private const byte Protocol_UPDATE_BRIGHTNESS = (byte)'I';
-		private const byte Protocol_UPDATE_COLOR = (byte)'H';
-		private const byte Protocol_UPDATE_ALL = (byte)'A';
-		// Arduino firmware expects one of the above to choose the mode of operation
-		//  Brightness = I, Color = H (don't ask me, that's what the unmodified version did), All = A (the mode I added)
+		private const byte Protocol_QUERY_INFO = (byte)'?';
+		private const byte Protocol_SET_ALL = (byte)'A';
+		private const byte Protocol_SET_BRIGHTNESS = (byte)'B';
+		private const byte Protocol_SET_COLOR = (byte)'C';
+		private const byte Protocol_SET_HUE = (byte)'H';
 
 		#endregion
 
@@ -85,7 +99,14 @@ namespace Actinic.Outputs
 
 		public override string Identifier {
 			get {
-				return Arduino_TTY;
+				if (Protocol_Version != 0) {
+					return String.Format("{0} (firmware ver: {1})",
+						Arduino_TTY,
+						Protocol_Version
+					);
+				} else {
+					return Arduino_TTY;
+				}
 			}
 		}
 
@@ -95,12 +116,14 @@ namespace Actinic.Outputs
 			}
 		}
 
+		/// <summary>
+		/// Measured processing latency
+		/// </summary>
+		private float measuredLatency = 0;
+
 		public override float ProcessingLatency {
 			get {
-				return Protocol_Processing_Latency;
-				// An average of sampled values (see #define DEBUG_USB_PERFORMANCE)
-				//  Adjusting this affects the minimum VU animation speed
-				//  Before Arduino adjustments, 49 ms, now, 47 ms
+				return measuredLatency;
 			}
 		}
 
@@ -115,6 +138,7 @@ namespace Actinic.Outputs
 			Disconnected,
 			Connecting,
 			FirmwareFound,
+			CompatibleVersionFound,
 			ProtocolFound,
 			Ready
 		}
@@ -190,6 +214,11 @@ namespace Actinic.Outputs
 				string result = "";
 				const int bufSize = 20;
 
+				// Prepare query for information
+				Byte[] writeQueryBuffer = { Protocol_QUERY_INFO };
+				// Query for information
+				USB_Serial.Write (writeQueryBuffer, 0, writeQueryBuffer.Length);
+
 				// Check for a valid response twenty times; assume failed if no success
 				for (int retry = 0; retry < 20; retry++) {
 					System.Threading.Thread.Sleep (200);
@@ -205,10 +234,18 @@ namespace Actinic.Outputs
 
 					switch (ConnectionStatus) {
 					case ConnectionState.Connecting:
-						if (result.Contains (Protocol_Firmware_Version) == true)
+						if (result.Contains (Protocol_Firmware_Identifier) == true) {
 							ConnectionStatus = ConnectionState.FirmwareFound;
+						} else {
+							// Retry sending the query for information
+							USB_Serial.Write (writeQueryBuffer, 0, writeQueryBuffer.Length);
+						}
 						break;
 					case ConnectionState.FirmwareFound:
+						if (result.Contains (Protocol_Firmware_Compatible_Version_String) == true)
+							ConnectionStatus = ConnectionState.CompatibleVersionFound;
+						break;
+					case ConnectionState.CompatibleVersionFound:
 						if (result.Contains (Protocol_Firmware_Negotiation_End) == true)
 							ConnectionStatus = ConnectionState.ProtocolFound;
 						break;
@@ -224,16 +261,23 @@ namespace Actinic.Outputs
 
 				if (ConnectionStatus == ConnectionState.ProtocolFound && result != "") {
 					// Reset protocol values
+					Protocol_Version = 0;
 					Protocol_Light_Count = 0;
 					Protocol_Color_MAX = 0;
 					Protocol_Brightness_MAX = 0;
-					Protocol_Processing_Latency = 0;
+
+					// Reset calculated values
+					measuredLatency = 0;
 
 					// Load protocol information
 					string[] negotiation_results = result.Split ('\n');
 					foreach (string protocol_entry in negotiation_results) {
 						if (protocol_entry.Trim () == "")
 							continue;
+						if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Version)) {
+							decimal.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Version.Length),
+								out Protocol_Version);
+						}
 						if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Light_Count)) {
 							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Light_Count.Length),
 								out Protocol_Light_Count);
@@ -250,15 +294,11 @@ namespace Actinic.Outputs
 							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Brightness_Max.Length),
 								out Protocol_Brightness_MAX);
 						}
-						if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Average_Latency)) {
-							float.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Average_Latency.Length),
-								out Protocol_Processing_Latency);
-						}
 					}
 
-					if ((Protocol_Light_Count < 1)
+					if ((Protocol_Version <= 0)
+						|| (Protocol_Light_Count < 1)
 					    || (Protocol_Strand_Length <= 0)
-					    || (Protocol_Processing_Latency < 1)
 					    || (Protocol_Color_MAX < 1)
 					    || (Protocol_Brightness_MAX < 1)) {
 						// Something's wrong with the connection or the Arduino firmware's configuration
@@ -305,7 +345,7 @@ namespace Actinic.Outputs
 
 			try {
 				List<byte> output_all = new List<byte> ();
-				output_all.Add (Protocol_UPDATE_BRIGHTNESS);
+				output_all.Add (Protocol_SET_BRIGHTNESS);
 				foreach (LED LED_Light in Actinic_Light_Set) {
 					output_all.Add ((byte)MathUtilities.ConvertRange (LED_Light.Brightness, LightSystem.Brightness_MIN, LightSystem.Brightness_MAX, Protocol_Brightness_MIN, Protocol_Brightness_MAX));
 				}
@@ -327,7 +367,7 @@ namespace Actinic.Outputs
 
 			try {
 				List<byte> output_all = new List<byte> ();
-				output_all.Add (Protocol_UPDATE_COLOR);
+				output_all.Add (Protocol_SET_HUE);
 				foreach (LED LED_Light in Actinic_Light_Set) {
 					byte[] output = new byte[] {
 						(byte)(MathUtilities.ConvertRange (LED_Light.B, LightSystem.Color_MIN, LightSystem.Color_MAX, Protocol_Color_MIN, Protocol_Color_MAX)),
@@ -354,7 +394,7 @@ namespace Actinic.Outputs
 
 			try {
 				List<byte> output_all = new List<byte> ();
-				output_all.Add (Protocol_UPDATE_ALL);
+				output_all.Add (Protocol_SET_ALL);
 				foreach (LED LED_Light in Actinic_Light_Set) {
 					byte[] output = new byte[] {
 						(byte)(MathUtilities.ConvertRange (LED_Light.B, LightSystem.Color_MIN, LightSystem.Color_MAX, Protocol_Color_MIN, Protocol_Color_MAX)),
@@ -392,14 +432,35 @@ namespace Actinic.Outputs
 				return false;
 
 			bool result;
-#if DEBUG_USB_PERFORMANCE
-			System.Diagnostics.Stopwatch start = System.Diagnostics.Stopwatch.StartNew ();
-#endif
+			var commandAckStopwatch = System.Diagnostics.Stopwatch.StartNew ();
+
 			try {
-				while (USB_Serial.ReadByte () != '#') {
+				string pendingInput;
+				var otherReply = new System.Text.StringBuilder();
+				do {
+					pendingInput = char.ConvertFromUtf32(USB_Serial.ReadByte ());
+					if (pendingInput != "#") {
+						otherReply.Append(pendingInput);
+					}
 					// Wait for Arduino to write the data to the LED string
+				} while (pendingInput != "#");
+
+				if (USB_Serial.BytesToRead > 0) {
+					// Add the rest of the bytes
+					otherReply.Append(USB_Serial.ReadExisting());
 				}
+
+				if (otherReply.Length > 0
+					&& otherReply.ToString().Trim().Length > 0) {
+					// Print unexpected results, excluding ending newline, etc
+					Console.WriteLine("[Arduino] {0}",
+						otherReply.ToString().Trim());
+				}
+
 				result = true;
+			} catch (System.ArgumentOutOfRangeException ex) {
+				Console.WriteLine ("! Error while waiting for Arduino\n\t{0}", ex.ToString ());
+				result = false;
 			} catch (System.IO.IOException ex) {
 				Console.WriteLine ("! Error while waiting for Arduino\n\t{0}", ex.ToString ());
 				result = false;
@@ -408,9 +469,10 @@ namespace Actinic.Outputs
 				result = false;
 			}
 
+			commandAckStopwatch.Stop ();
+			measuredLatency = commandAckStopwatch.ElapsedMilliseconds;
 #if DEBUG_USB_PERFORMANCE
-			Console.WriteLine ("[Arduino] Acknowledged in {0} ms", start.ElapsedMilliseconds);
-			start.Stop ();
+			Console.WriteLine ("[Arduino] Acknowledged in {0} ms", measuredLatency);
 #endif
 			return result;
 		}
