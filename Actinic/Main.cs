@@ -1949,7 +1949,7 @@ namespace Actinic
 
 			#if DEBUG_FORCE_DUMMYAUDIOINPUT
 			Console.WriteLine ("DEBUGGING:  Forcing DummyAudioInput, not checking other options!");
-			InitializeAudioInputSystem (new DummyAudioOutput ());
+			InitializeAudioInputSystem (new DummyAudioInput ());
 			#else
 			bool retryAgain = true;
 			bool success = false;
