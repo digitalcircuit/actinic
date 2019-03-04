@@ -320,6 +320,46 @@ namespace Actinic.Outputs
 						return true;
 					}
 				} else {
+					// Something went wrong, treat this as a non-existent device
+
+					// Connection state represents the last successful
+					// negotiation step
+					switch (ConnectionStatus) {
+					case ConnectionState.Disconnected:
+					case ConnectionState.Connecting:
+						// Don't warn for unexpected states; might be a random
+						// device
+						break;
+					case ConnectionState.FirmwareFound:
+						// Firmware found, but with an incompatible version
+						Console.Error.WriteLine (
+							"Arduino on '{0}' is not compatible with version " +
+							"{1}.x, ignoring device\n" +
+							"(Try upgrading Arduino firmware or Actinic " +
+							"software..?)",
+							Arduino_TTY,
+							Protocol_Firmware_Compatible_Version_Major);
+						break;
+					case ConnectionState.CompatibleVersionFound:
+						// Firmware version compatible, but negotiation didn't
+						// finish - interrupted connection?
+						Console.Error.WriteLine (
+							"Arduino on '{0}' has compatible version {1}.x, " +
+							"but negotiation didn't finish, ignoring device",
+							Arduino_TTY,
+							Protocol_Firmware_Compatible_Version_Major);
+						break;
+					case ConnectionState.ProtocolFound:
+					case ConnectionState.Ready:
+						// Something went really wrong - this shouldn't happen
+						Console.Error.WriteLine (
+							"Arduino on '{0}' has compatible version {1}.x, " +
+							"but something broke after negotiation, ignoring " +
+							"device",
+							Arduino_TTY,
+							Protocol_Firmware_Compatible_Version_Major);
+						break;
+					}
 					ShutdownSystem ();
 					return false;
 				}
