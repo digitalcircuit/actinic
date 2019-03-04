@@ -22,6 +22,9 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
+// Device configuration
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -51,7 +54,9 @@ namespace Actinic.Animations
 			private set;
 		}
 
-		public BitmapAnimation (int Light_Count, string BitmapImageFilePath) : base (Light_Count)
+		public BitmapAnimation (
+			ReadOnlyDeviceConfiguration Configuration,
+			string BitmapImageFilePath) : base (Configuration)
 		{
 			if (File.Exists (BitmapImageFilePath) == false)
 				throw new System.IO.FileNotFoundException ("BitmapImageFilePath must point to an image.", BitmapImageFilePath);

@@ -22,6 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Utilities;
 
+// Device configuration
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -82,13 +85,16 @@ namespace Actinic.Animations
 		/// </summary>
 		protected Layer CurrentFrame_Combined;
 
-		public RaveMoodReactiveAnimation (int Light_Count) : base (Light_Count)
+		public RaveMoodReactiveAnimation (
+			ReadOnlyDeviceConfiguration Configuration) : base (Configuration)
 		{
 			InitializeLayers ();
 		}
 
-		public RaveMoodReactiveAnimation (Layer PreviouslyShownFrame)
-			: base (PreviouslyShownFrame)
+		public RaveMoodReactiveAnimation (
+			ReadOnlyDeviceConfiguration Configuration,
+			Layer PreviouslyShownFrame)
+			: base (Configuration, PreviouslyShownFrame)
 		{
 			InitializeLayers ();
 		}

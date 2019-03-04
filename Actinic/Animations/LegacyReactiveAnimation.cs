@@ -22,6 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Utilities;
 
+// Device configuration
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -206,13 +209,16 @@ namespace Actinic.Animations
 		#endregion
 
 
-		public LegacyReactiveAnimation (int Light_Count) : base (Light_Count)
+		public LegacyReactiveAnimation (
+			ReadOnlyDeviceConfiguration Configuration) : base (Configuration)
 		{
 			InitializeLayersAndVariables ();
 		}
 
-		public LegacyReactiveAnimation (Layer PreviouslyShownFrame)
-			: base (PreviouslyShownFrame)
+		public LegacyReactiveAnimation (
+			ReadOnlyDeviceConfiguration Configuration,
+			Layer PreviouslyShownFrame)
+			: base (Configuration, PreviouslyShownFrame)
 		{
 			InitializeLayersAndVariables ();
 		}

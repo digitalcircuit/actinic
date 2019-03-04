@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Device configuration
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -42,13 +45,16 @@ namespace Actinic.Animations
 		}
 
 
-		public SimpleFadeAnimation (int Light_Count) : base (Light_Count)
+		public SimpleFadeAnimation (
+			ReadOnlyDeviceConfiguration Configuration) : base (Configuration)
 		{
 			// No need to enable RequestSmoothCrossfade as it's assumed no previous frame is available
 		}
 
-		public SimpleFadeAnimation (Layer PreviouslyShownFrame)
-			: base (PreviouslyShownFrame)
+		public SimpleFadeAnimation (
+			ReadOnlyDeviceConfiguration Configuration,
+			Layer PreviouslyShownFrame)
+			: base (Configuration, PreviouslyShownFrame)
 		{
 			RequestSmoothCrossfade = true;
 			// By default, this will immediately override the existing colors.  Set to true to smoothly transition.

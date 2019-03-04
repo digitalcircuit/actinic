@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Device configuration
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -108,15 +111,18 @@ namespace Actinic.Animations
 			}
 		}
 
-		public IntervalAnimation (int Light_Count) : base (Light_Count)
+		public IntervalAnimation (
+			ReadOnlyDeviceConfiguration Configuration) : base (Configuration)
 		{
 			RequestedAnimationDelay = Animation_Update_Delay;
 			EnableSmoothing = false;
 			UpdateColorsFromTime ();
 		}
 
-		public IntervalAnimation (Layer PreviouslyShownFrame)
-			: base (PreviouslyShownFrame)
+		public IntervalAnimation (
+			ReadOnlyDeviceConfiguration Configuration,
+			Layer PreviouslyShownFrame)
+			: base (Configuration, PreviouslyShownFrame)
 		{
 			RequestedAnimationDelay = Animation_Update_Delay;
 			EnableSmoothing = false;

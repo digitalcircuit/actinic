@@ -449,14 +449,14 @@ namespace Actinic
 													switch (cmd_args [3].ToLowerInvariant ()) {
 													case "fade":
 														HaltActivity (false);
-														SimpleFadeAnimation fade_animator = new SimpleFadeAnimation (Actinic_Lights_Queue.LightsLastProcessed);
+														SimpleFadeAnimation fade_animator = new SimpleFadeAnimation (ActiveOutputSystem.Configuration, Actinic_Lights_Queue.LightsLastProcessed);
 														fade_animator.AnimationStyle = Animation_AnimationStyle;
 														Animation_Play (Actinic_Lights_Queue, fade_animator);
 														break;
 													case "interval":
 														if (cmd_args.Count > 4 && cmd_args [4] != null) {
 															HaltActivity (false);
-															IntervalAnimation time_animator = new IntervalAnimation (Actinic_Lights_Queue.LightsLastProcessed);
+															IntervalAnimation time_animator = new IntervalAnimation (ActiveOutputSystem.Configuration, Actinic_Lights_Queue.LightsLastProcessed);
 															switch (cmd_args [4].ToLowerInvariant ()) {
 															case "time":
 																time_animator.SelectedIntervalMode = IntervalAnimation.IntervalMode.Time;
@@ -479,7 +479,7 @@ namespace Actinic
 													case "strobe":
 														if (cmd_args.Count > 4 && cmd_args [4] != null) {
 															HaltActivity (false);
-															SimpleStrobeAnimation strobe_animator = new SimpleStrobeAnimation (Actinic_Lights_Queue.LightsLastProcessed);
+															SimpleStrobeAnimation strobe_animator = new SimpleStrobeAnimation (ActiveOutputSystem.Configuration, Actinic_Lights_Queue.LightsLastProcessed);
 															switch (cmd_args [4].ToLowerInvariant ()) {
 															case "white":
 																strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.White;
@@ -511,7 +511,7 @@ namespace Actinic
 														break;
 													case "spinner":
 														HaltActivity (false);
-														SimpleSpinnerAnimation spinner_animator = new SimpleSpinnerAnimation (Actinic_Lights_Queue.LightsLastProcessed);
+														SimpleSpinnerAnimation spinner_animator = new SimpleSpinnerAnimation (ActiveOutputSystem.Configuration, Actinic_Lights_Queue.LightsLastProcessed);
 														spinner_animator.AnimationStyle = Animation_AnimationStyle;
 														Animation_Play (Actinic_Lights_Queue, spinner_animator);
 														break;
@@ -538,7 +538,7 @@ namespace Actinic
 															if (System.IO.File.Exists (file_name)) {
 																try {
 																	HaltActivity (false);
-																	BitmapAnimation imageAnimation = new BitmapAnimation (LightSystem.LIGHT_COUNT, file_name);
+																	BitmapAnimation imageAnimation = new BitmapAnimation (ActiveOutputSystem.Configuration, file_name);
 																	imageAnimation.AnimationStyle = Animation_AnimationStyle;
 																	Console.WriteLine ("(animation successfully loaded)");
 																	Animation_Play (Actinic_Lights_Queue, imageAnimation);
@@ -564,7 +564,7 @@ namespace Actinic
 															if (System.IO.File.Exists (file_name)) {
 																try {
 																	HaltActivity (false);
-																	AudioBitmapAnimation imageAnimation = new AudioBitmapAnimation (LightSystem.LIGHT_COUNT, file_name);
+																	AudioBitmapAnimation imageAnimation = new AudioBitmapAnimation (ActiveOutputSystem.Configuration, file_name);
 																	imageAnimation.AnimationStyle = Animation_AnimationStyle;
 																	Console.WriteLine ("(animation successfully loaded)");
 																	Animation_Play (Actinic_Lights_Queue, imageAnimation);
@@ -827,7 +827,7 @@ namespace Actinic
 																		case "strobe":
 																			if (cmd_args.Count > 5 && cmd_args [5] != null) {
 																				HaltActivity (resulting_queue);
-																				SimpleStrobeAnimation strobe_animator = new SimpleStrobeAnimation (resulting_queue.LightsLastProcessed);
+																				SimpleStrobeAnimation strobe_animator = new SimpleStrobeAnimation (ActiveOutputSystem.Configuration, resulting_queue.LightsLastProcessed);
 																				switch (cmd_args [5].ToLowerInvariant ()) {
 																				case "white":
 																					strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.White;
@@ -859,7 +859,7 @@ namespace Actinic
 																			break;
 																		case "spinner":
 																			HaltActivity (resulting_queue);
-																			SimpleSpinnerAnimation spinner_animator = new SimpleSpinnerAnimation (resulting_queue.LightsLastProcessed);
+																			SimpleSpinnerAnimation spinner_animator = new SimpleSpinnerAnimation (ActiveOutputSystem.Configuration, resulting_queue.LightsLastProcessed);
 																			spinner_animator.AnimationStyle = Animation_AnimationStyle;
 																			Animation_Play (resulting_queue, spinner_animator);
 																			break;
@@ -886,7 +886,7 @@ namespace Actinic
 																				if (System.IO.File.Exists (file_name)) {
 																					try {
 																						HaltActivity (resulting_queue);
-																						BitmapAnimation imageAnimation = new BitmapAnimation (LightSystem.LIGHT_COUNT, file_name);
+																						BitmapAnimation imageAnimation = new BitmapAnimation (ActiveOutputSystem.Configuration, file_name);
 																						imageAnimation.AnimationStyle = Animation_AnimationStyle;
 																						Console.WriteLine ("(animation successfully loaded)");
 																						Animation_Play (resulting_queue, imageAnimation);
@@ -912,7 +912,7 @@ namespace Actinic
 																				if (System.IO.File.Exists (file_name)) {
 																					try {
 																						HaltActivity (resulting_queue);
-																						AudioBitmapAnimation imageAnimation = new AudioBitmapAnimation (LightSystem.LIGHT_COUNT, file_name);
+																						AudioBitmapAnimation imageAnimation = new AudioBitmapAnimation (ActiveOutputSystem.Configuration, file_name);
 																						imageAnimation.AnimationStyle = Animation_AnimationStyle;
 																						Console.WriteLine ("(animation successfully loaded)");
 																						Animation_Play (resulting_queue, imageAnimation);
@@ -1042,19 +1042,19 @@ namespace Actinic
 											switch (cmd_args [2]) {
 											case "beat_pulse":
 												HaltActivity (false);
-												BeatPulseReactiveAnimation beatpulse_animator = new BeatPulseReactiveAnimation (Actinic_Lights_Queue.LightsLastProcessed);
+												BeatPulseReactiveAnimation beatpulse_animator = new BeatPulseReactiveAnimation (ActiveOutputSystem.Configuration, Actinic_Lights_Queue.LightsLastProcessed);
 												beatpulse_animator.AnimationStyle = Animation_AnimationStyle;
 												Animation_Play (Actinic_Lights_Queue, beatpulse_animator);
 												break;
 											case "spinner":
 												HaltActivity (false);
-												SpinnerReactiveAnimation spinner_animator = new SpinnerReactiveAnimation (Actinic_Lights_Queue.LightsLastProcessed);
+												SpinnerReactiveAnimation spinner_animator = new SpinnerReactiveAnimation (ActiveOutputSystem.Configuration, Actinic_Lights_Queue.LightsLastProcessed);
 												spinner_animator.AnimationStyle = Animation_AnimationStyle;
 												Animation_Play (Actinic_Lights_Queue, spinner_animator);
 												break;
 											case "rave_mood":
 												HaltActivity (false);
-												RaveMoodReactiveAnimation ravemood_animator = new RaveMoodReactiveAnimation (Actinic_Lights_Queue.LightsLastProcessed);
+												RaveMoodReactiveAnimation ravemood_animator = new RaveMoodReactiveAnimation (ActiveOutputSystem.Configuration, Actinic_Lights_Queue.LightsLastProcessed);
 												ravemood_animator.AnimationStyle = Animation_AnimationStyle;
 												Animation_Play (Actinic_Lights_Queue, ravemood_animator);
 												break;
@@ -1073,7 +1073,7 @@ namespace Actinic
 												Console.WriteLine ("(Starting legacy VU animation...)");
 
 												HaltActivity (false);
-												LegacyReactiveAnimation legacy_animator = new LegacyReactiveAnimation (Actinic_Lights_Queue.LightsLastProcessed);
+												LegacyReactiveAnimation legacy_animator = new LegacyReactiveAnimation (ActiveOutputSystem.Configuration, Actinic_Lights_Queue.LightsLastProcessed);
 												legacy_animator.AnimationStyle = Animation_AnimationStyle;
 												Animation_Play (Actinic_Lights_Queue, legacy_animator);
 											}

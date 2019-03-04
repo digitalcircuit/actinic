@@ -22,6 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Utilities;
 
+// Device configuration
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -82,13 +85,16 @@ namespace Actinic.Animations
 
 		#endregion
 
-		public BeatPulseReactiveAnimation (int Light_Count) : base (Light_Count)
+		public BeatPulseReactiveAnimation (
+			ReadOnlyDeviceConfiguration Configuration) : base (Configuration)
 		{
 			InitializeLayers ();
 		}
 
-		public BeatPulseReactiveAnimation (Layer PreviouslyShownFrame)
-			: base (PreviouslyShownFrame)
+		public BeatPulseReactiveAnimation (
+			ReadOnlyDeviceConfiguration Configuration,
+			Layer PreviouslyShownFrame)
+			: base (Configuration, PreviouslyShownFrame)
 		{
 			InitializeLayers ();
 		}

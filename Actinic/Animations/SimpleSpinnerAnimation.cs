@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Device configuration
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -28,13 +31,16 @@ namespace Actinic.Animations
 {
 	public class SimpleSpinnerAnimation:SimpleFadeAnimation
 	{
-		public SimpleSpinnerAnimation (int Light_Count) : base (Light_Count)
+		public SimpleSpinnerAnimation (
+			ReadOnlyDeviceConfiguration Configuration) : base (Configuration)
 		{
 			// No need to clear RequestSmoothCrossfade as inherited class SimpleFadeAnimation doesn't touch it here
 		}
 
-		public SimpleSpinnerAnimation (Layer PreviouslyShownFrame)
-			: base (PreviouslyShownFrame)
+		public SimpleSpinnerAnimation (
+			ReadOnlyDeviceConfiguration Configuration,
+			Layer PreviouslyShownFrame)
+			: base (Configuration, PreviouslyShownFrame)
 		{
 			RequestSmoothCrossfade = false;
 			// Inherited class SimpleFadeAnimation sets this to true; so reset it back to false

@@ -26,6 +26,9 @@ using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 
+// Device configuration
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -103,7 +106,9 @@ namespace Actinic.Animations
 			}
 		}
 
-		public AudioBitmapAnimation (int Light_Count, string AudioAnimationFilePath) : base (Light_Count)
+		public AudioBitmapAnimation (
+			ReadOnlyDeviceConfiguration Configuration,
+			string AudioAnimationFilePath) : base (Configuration)
 		{
 			if (File.Exists (AudioAnimationFilePath) == false)
 				throw new System.IO.FileNotFoundException ("AudioAnimationFilePath must point to an image.", AudioAnimationFilePath);

@@ -22,6 +22,9 @@ using System;
 using System.Collections.Generic;
 using FoxSoft.Utilities;
 
+// Device configuration
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -35,13 +38,16 @@ namespace Actinic.Animations
 		/// </summary>
 		protected List<Color> CalculuatedHues = new List<Color> ();
 
-		public SpinnerReactiveAnimation (int Light_Count) : base (Light_Count)
+		public SpinnerReactiveAnimation (
+			ReadOnlyDeviceConfiguration Configuration) : base (Configuration)
 		{
 			InitializeLayers ();
 		}
 
-		public SpinnerReactiveAnimation (Layer PreviouslyShownFrame)
-			: base (PreviouslyShownFrame)
+		public SpinnerReactiveAnimation (
+			ReadOnlyDeviceConfiguration Configuration,
+			Layer PreviouslyShownFrame)
+			: base (Configuration, PreviouslyShownFrame)
 		{
 			InitializeLayers ();
 		}

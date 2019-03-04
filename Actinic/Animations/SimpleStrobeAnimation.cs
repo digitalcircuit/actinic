@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Device configuration
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -91,25 +94,31 @@ namespace Actinic.Animations
 			}
 		}
 
-		public SimpleStrobeAnimation (int Light_Count) : base (Light_Count)
+		public SimpleStrobeAnimation (
+			ReadOnlyDeviceConfiguration Configuration) : base (Configuration)
 		{
 			InitBaseSystem (Light_Count, StrobeMode.White);
 		}
 
-		public SimpleStrobeAnimation (int Light_Count, StrobeMode DesiredStrobeMode) : base (Light_Count)
+		public SimpleStrobeAnimation (
+			ReadOnlyDeviceConfiguration Configuration,
+			StrobeMode DesiredStrobeMode) : base (Configuration)
 		{
 			InitBaseSystem (Light_Count, DesiredStrobeMode);
 		}
 
-		public SimpleStrobeAnimation (Layer PreviouslyShownFrame)
-			: base (PreviouslyShownFrame)
+		public SimpleStrobeAnimation (
+			ReadOnlyDeviceConfiguration Configuration,
+			Layer PreviouslyShownFrame)
+			: base (Configuration, PreviouslyShownFrame)
 		{
 			InitBaseSystem (PreviouslyShownFrame.PixelCount, StrobeMode.White);
 		}
 
 		public SimpleStrobeAnimation (
+			ReadOnlyDeviceConfiguration Configuration,
 			Layer PreviouslyShownFrame, StrobeMode DesiredStrobeMode)
-			: base (PreviouslyShownFrame)
+			: base (Configuration, PreviouslyShownFrame)
 		{
 			InitBaseSystem (PreviouslyShownFrame.PixelCount, DesiredStrobeMode);
 		}

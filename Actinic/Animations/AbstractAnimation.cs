@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Device configuration
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -150,17 +153,23 @@ namespace Actinic.Animations
 		/// </summary>
 		protected Layer CurrentFrame;
 
-		public AbstractAnimation (int LED_Light_Count)
+		protected ReadOnlyDeviceConfiguration deviceConfig;
+
+		public AbstractAnimation (ReadOnlyDeviceConfiguration Configuration)
 		{
-			CurrentFrame = new Layer (LED_Light_Count);
+			deviceConfig = Configuration;
+			CurrentFrame = new Layer (deviceConfig.LightCount);
 			RequestedAnimationDelay = 0;
 			AnimationStyle = Style.Moderate;
 			if (SmoothingAmount == 0)
 				SmoothingAmount = SmoothingAmount_Default;
 		}
 
-		public AbstractAnimation (Layer PreviouslyShownFrame)
+		public AbstractAnimation (
+			ReadOnlyDeviceConfiguration Configuration,
+			Layer PreviouslyShownFrame)
 		{
+			deviceConfig = Configuration;
 			CurrentFrame = PreviouslyShownFrame.Clone ();
 			RequestedAnimationDelay = 0;
 			AnimationStyle = Style.Moderate;
