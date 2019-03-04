@@ -43,6 +43,12 @@ namespace Actinic.Outputs
 			}
 		}
 
+		public override string VersionIdentifier {
+			get {
+				return "1.0";
+			}
+		}
+
 		public override int Priority {
 			get {
 				return int.MaxValue;

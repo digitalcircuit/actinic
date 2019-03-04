@@ -47,6 +47,14 @@ namespace Actinic.Outputs
 		}
 
 		/// <summary>
+		/// Gets the version identifier for chosen output system.
+		/// </summary>
+		/// <value>Output system version identifier.</value>
+		public abstract string VersionIdentifier {
+			get;
+		}
+
+		/// <summary>
 		/// Gets the priority of this output system, with lower numbers being higher priority.
 		/// </summary>
 		/// <value>The priority.</value>

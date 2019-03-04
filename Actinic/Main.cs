@@ -1845,7 +1845,7 @@ namespace Actinic
 
 		private static void SleepForAnimation (int AlreadySleptAmount)
 		{
-			SleepForAnimation (AlreadySleptAmount, (int)Math.Round(ActiveOutputSystem.ProcessingLatency, MidpointRounding.AwayFromZero));
+			SleepForAnimation (AlreadySleptAmount, (int)Math.Round (ActiveOutputSystem.ProcessingLatency, MidpointRounding.AwayFromZero));
 		}
 
 		private static void SleepForAnimation (int AlreadySleptAmount, int RequestedDelay)
@@ -2218,8 +2218,11 @@ namespace Actinic
 			}
 
 			if (success) {
-				Console.WriteLine ("- Connected to '{0}' via '{1}'",
-					outputType, ActiveOutputSystem.Identifier);
+				Console.WriteLine (
+					"- Connected to '{0}' via '{1}' (ver. {2})",
+					outputType,
+					ActiveOutputSystem.Identifier,
+					ActiveOutputSystem.VersionIdentifier);
 
 				// Update number of lights, (re-)initalize the light queues
 				LightSystem.SetLightCount (ActiveOutputSystem.LightCount);
@@ -2252,7 +2255,11 @@ namespace Actinic
 				if (outputType == "") {
 					outputType = "Unknown";
 				}
-				Console.WriteLine ("- Connected to '{0}' via '{1}'", outputType, ActiveOutputSystem.Identifier);
+				Console.WriteLine (
+					"- Connected to '{0}' via '{1}' (ver. {2})",
+					outputType,
+					ActiveOutputSystem.Identifier,
+					ActiveOutputSystem.VersionIdentifier);
 
 				return true;
 			} else {

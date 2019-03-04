@@ -102,13 +102,16 @@ namespace Actinic.Outputs
 
 		public override string Identifier {
 			get {
+				return Arduino_TTY;
+			}
+		}
+
+		public override string VersionIdentifier {
+			get {
 				if (Protocol_Version != 0) {
-					return String.Format("{0} (firmware ver: {1})",
-						Arduino_TTY,
-						Protocol_Version
-					);
+					return Protocol_Version.ToString ();
 				} else {
-					return Arduino_TTY;
+					return "unknown";
 				}
 			}
 		}
@@ -300,7 +303,7 @@ namespace Actinic.Outputs
 					}
 
 					if ((Protocol_Version <= 0)
-						|| (Protocol_Light_Count < 1)
+					    || (Protocol_Light_Count < 1)
 					    || (Protocol_Strand_Length <= 0)
 					    || (Protocol_Color_MAX < 1)
 					    || (Protocol_Brightness_MAX < 1)) {
@@ -441,25 +444,25 @@ namespace Actinic.Outputs
 
 			try {
 				string pendingInput;
-				var otherReply = new System.Text.StringBuilder();
+				var otherReply = new System.Text.StringBuilder ();
 				do {
-					pendingInput = char.ConvertFromUtf32(USB_Serial.ReadByte ());
+					pendingInput = char.ConvertFromUtf32 (USB_Serial.ReadByte ());
 					if (pendingInput != "#") {
-						otherReply.Append(pendingInput);
+						otherReply.Append (pendingInput);
 					}
 					// Wait for Arduino to write the data to the LED string
 				} while (pendingInput != "#");
 
 				if (USB_Serial.BytesToRead > 0) {
 					// Add the rest of the bytes
-					otherReply.Append(USB_Serial.ReadExisting());
+					otherReply.Append (USB_Serial.ReadExisting ());
 				}
 
 				if (otherReply.Length > 0
-					&& otherReply.ToString().Trim().Length > 0) {
+				    && otherReply.ToString ().Trim ().Length > 0) {
 					// Print unexpected results, excluding ending newline, etc
-					Console.WriteLine("[Arduino] {0}",
-						otherReply.ToString().Trim());
+					Console.WriteLine ("[Arduino] {0}",
+						otherReply.ToString ().Trim ());
 				}
 
 				result = true;
