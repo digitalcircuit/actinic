@@ -27,6 +27,9 @@ using System.IO.Ports;
 using System.Collections.Generic;
 using FoxSoft.Utilities;
 
+// Output systems (transitioning legacy to modern)
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -127,15 +130,23 @@ namespace Actinic.Outputs
 		/// </summary>
 		private float measuredLatency = 0;
 
-		public override float ProcessingLatency {
-			get {
-				return measuredLatency;
-			}
-		}
+		/// <summary>
+		/// Active device configuration
+		/// </summary>
+		private DeviceConfiguration deviceConfig;
 
-		public override int LightCount {
+		/// <summary>
+		/// Read-only version of the active device configuration
+		/// </summary>
+		private ReadOnlyDeviceConfiguration deviceConfigRO;
+
+		public override ReadOnlyDeviceConfiguration Configuration {
 			get {
-				return Protocol_Light_Count;
+				if (deviceConfigRO == null) {
+					deviceConfigRO =
+						new ReadOnlyDeviceConfiguration (deviceConfig);
+				}
+				return deviceConfigRO;
 			}
 		}
 
@@ -275,6 +286,10 @@ namespace Actinic.Outputs
 					// Reset calculated values
 					measuredLatency = 0;
 
+					// Remove stale device configuration
+					deviceConfig = null;
+					deviceConfigRO = null;
+
 					// Load protocol information
 					string[] negotiation_results = result.Split ('\n');
 					foreach (string protocol_entry in negotiation_results) {
@@ -313,6 +328,10 @@ namespace Actinic.Outputs
 						ShutdownSystem ();
 						return false;
 					} else {
+						// Set up device configuration
+						deviceConfig = new DeviceConfiguration (
+							Protocol_Light_Count, Protocol_Strand_Length);
+
 						// Wait to connect DataReceived until now so others don't nom the protocol negotiation data
 						USB_Serial.DataReceived += new SerialDataReceivedEventHandler (DataReceivedHandler);
 						// All is good, mark system as ready
@@ -376,6 +395,10 @@ namespace Actinic.Outputs
 				ConnectionStatus = ConnectionState.Disconnected;
 				USB_Serial.Close ();
 				USB_Serial = null;
+
+				// Remove stale device configuration
+				deviceConfig = null;
+				deviceConfigRO = null;
 				return true;
 			} else {
 				return true;
@@ -519,6 +542,7 @@ namespace Actinic.Outputs
 
 			commandAckStopwatch.Stop ();
 			measuredLatency = commandAckStopwatch.ElapsedMilliseconds;
+			deviceConfig.SetUpdateRate (measuredLatency);
 #if DEBUG_USB_PERFORMANCE
 			Console.WriteLine ("[Arduino] Acknowledged in {0} ms", measuredLatency);
 #endif

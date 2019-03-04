@@ -20,6 +20,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 
+// Output systems (transitioning legacy to modern)
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -29,6 +32,8 @@ namespace Actinic.Outputs
 	{
 		public DummyOutput ()
 		{
+			// Set update rate to something sensible
+			deviceConfig.SetUpdateRate (5);
 		}
 
 		public override bool Initialized {
@@ -56,17 +61,19 @@ namespace Actinic.Outputs
 			}
 		}
 
-		public override float ProcessingLatency {
-			get {
-				return 0;
-				// Not much latency in returning a boolean value...
-			}
-		}
+		// Set up a test strand with 50 lights over 12.4 meters
+		private readonly DeviceConfiguration deviceConfig =
+			new DeviceConfiguration (50, 12.4);
 
-		public override int LightCount {
+		private ReadOnlyDeviceConfiguration deviceConfigRO;
+
+		public override ReadOnlyDeviceConfiguration Configuration {
 			get {
-				return 50;
-				// Feel free to use whatever number you wish; this just represents my own lighting system
+				if (deviceConfigRO == null) {
+					deviceConfigRO =
+						new ReadOnlyDeviceConfiguration (deviceConfig);
+				}
+				return deviceConfigRO;
 			}
 		}
 

@@ -21,6 +21,9 @@
 using System;
 using System.Collections.Generic;
 
+// Output systems (transitioning legacy to modern)
+using Actinic.Output;
+
 // Rendering
 using Actinic.Rendering;
 
@@ -63,18 +66,11 @@ namespace Actinic.Outputs
 		}
 
 		/// <summary>
-		/// Length of time for an Update command to succeed (may be an average)
+		/// Gets the device's configuration details, e.g. number of lights and
+		/// length of string.
 		/// </summary>
-		/// <value>Delay in milliseconds</value>
-		public abstract float ProcessingLatency {
-			get;
-		}
-
-		/// <summary>
-		/// Gets the number of lights controlled by this output.
-		/// </summary>
-		/// <value>Number of controlled lights</value>
-		public abstract int LightCount {
+		/// <value>The device configuration configuration.</value>
+		public abstract ReadOnlyDeviceConfiguration Configuration {
 			get;
 		}
 
@@ -126,12 +122,12 @@ namespace Actinic.Outputs
 		/// <param name="Actinic_Light_Set">List of LEDs to verify</param>
 		protected void ValidateLightSet (Layer Actinic_Light_Set)
 		{
-			if (Actinic_Light_Set.PixelCount != LightCount)
+			if (Actinic_Light_Set.PixelCount != Configuration.LightCount)
 				throw new ArgumentException (
 					"Actinic_Light_Set",
 					string.Format (
 						"Given Actinic_Light_Set with {0} lights, needed {1}",
-						Actinic_Light_Set.PixelCount, LightCount
+						Actinic_Light_Set.PixelCount, Configuration.LightCount
 					)
 				);
 		}

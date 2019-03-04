@@ -53,11 +53,13 @@ namespace Actinic
 		private static AbstractOutput ActiveOutputSystem;
 
 		/// <summary>
-		/// The light animation target latency in ms.
-		/// DEPRECATED: This will be replaced with timing-independent
-		/// calculations.
+		/// The amount of additional time allowed for rendering before
+		/// considering it an issue.  Used for debugging and performance tuning.
+		/// <remarks>
+		/// This depends on the speed of the computer and may need adjusted.
+		/// </remarks>
 		/// </summary>
-		private const int Light_Animation_Target_Latency = 5;
+		private const double Render_MaxLatency = 2;
 
 		// Above should at least be slightly longer than the USB processing
 		// time, to reduce the risk of the queue getting filled.
@@ -99,8 +101,9 @@ namespace Actinic
 
 		private static int Actinic_Light_Queue_BufferFullWarning {
 			get {
-				if (ActiveOutputSystem != null && ActiveOutputSystem.ProcessingLatency > 0) {
-					return (int)((1 * 1000) / ActiveOutputSystem.ProcessingLatency);
+				if (ActiveOutputSystem?.Configuration != null
+				    && ActiveOutputSystem.Configuration.AverageLatency > 0) {
+					return (int)((1 * 1000) / ActiveOutputSystem.Configuration.AverageLatency);
 					// First # is in seconds
 				} else {
 					// Make a good guess
@@ -647,7 +650,8 @@ namespace Actinic
 												foreach (KeyValuePair <string, LED_Queue> queue in GetAllQueues ()) {
 													if (queue.Value.AnimationActive) {
 														queue.Value.SelectedAnimation.AnimationStyle = Animation_AnimationStyle;
-														if ((queue.Value.SelectedAnimation.RequestedAnimationDelay > ActiveOutputSystem.ProcessingLatency) || (queue.Value.SelectedAnimation.RequestSmoothCrossfade))
+														// Force a new frame if the animation delay is greater, or a smooth crossfade is requested
+														if ((queue.Value.SelectedAnimation.RequestedAnimationDelay > 0) || (queue.Value.SelectedAnimation.RequestSmoothCrossfade))
 															queue.Value.AnimationForceFrameRequest = true;
 													}
 												}
@@ -1684,15 +1688,13 @@ namespace Actinic
 							// Try again by nature of not calling break
 						}
 					}
-					#if DEBUG_PERFORMANCE
-					Console.WriteLine ("{0} ms - frame sent", Queue_PerfStopwatch.ElapsedMilliseconds);
-					#endif
 					#if DEBUG_BRIEF_PERFORMANCE
-					if (Queue_PerfStopwatch.ElapsedMilliseconds > ActiveOutputSystem.ProcessingLatency)
+					double allowedLatency =
+						ActiveOutputSystem.Configuration.AverageLatency
+						+ Render_MaxLatency;
+					if (Queue_PerfStopwatch.ElapsedMilliseconds > allowedLatency)
 						Console.WriteLine ("# {0} ms - frame finished ({1})", Queue_PerfStopwatch.ElapsedMilliseconds, DateTime.Now.ToLongTimeString ());
 					#endif
-					// Attempt to keep each frame spaced 'Light_Animation_Delay' time apart, default 50ms
-					SleepForAnimation ((int)Queue_PerfStopwatch.ElapsedMilliseconds);
 					#if DEBUG_PERFORMANCE
 					Console.WriteLine ("# {0} ms - frame finished", Queue_PerfStopwatch.ElapsedMilliseconds);
 					#endif
@@ -1739,10 +1741,10 @@ namespace Actinic
 		{
 			if (QueueToModify.AnimationActive && QueueToModify.QueueEmpty) {
 				// Only add an animation frame if enabled, and the queue is empty
-				if ((QueueToModify.SelectedAnimation.RequestedAnimationDelay <= ActiveOutputSystem.ProcessingLatency) ||
+				if ((QueueToModify.SelectedAnimation.RequestedAnimationDelay <= 0) ||
 				    (QueueToModify.QueueIdleTime >= QueueToModify.SelectedAnimation.RequestedAnimationDelay) ||
 				    (QueueToModify.AnimationForceFrameRequest == true)) {
-					// Only add an animation frame if less than default delay is requested, or enough time elapsed in idle
+					// Only add an animation frame if default delay is requested, or enough time elapsed in idle
 					#if DEBUG_PERFORMANCE
 					Console.WriteLine ("{0} ms - queuing frame from active animation ({1})", PerfTracking_TimeElapsed, PerfTracking_QueueName);
 					#endif
@@ -1838,31 +1840,6 @@ namespace Actinic
 			}
 		}
 
-		private static void SleepForAnimation ()
-		{
-			SleepForAnimation (0);
-		}
-
-		private static void SleepForAnimation (int AlreadySleptAmount)
-		{
-			SleepForAnimation (AlreadySleptAmount, (int)Math.Round (ActiveOutputSystem.ProcessingLatency, MidpointRounding.AwayFromZero));
-		}
-
-		private static void SleepForAnimation (int AlreadySleptAmount, int RequestedDelay)
-		{
-			#if DEBUG_PERFORMANCE
-			Console.WriteLine ("{0} ms - already waited above requested (latency)", Math.Max ((AlreadySleptAmount - RequestedDelay), 0));
-			#endif
-			if (Math.Max (RequestedDelay - AlreadySleptAmount, 0) > 0)
-				System.Threading.Thread.Sleep (Math.Max (RequestedDelay - AlreadySleptAmount, 0));
-
-			// Wait a preset amount of time.  This controls the animation speed
-			#if DEBUG_PERFORMANCE
-			Console.WriteLine ("{0} ms - attempt at delay request", RequestedDelay + Math.Max ((AlreadySleptAmount - RequestedDelay), 0));
-			#endif
-			// Don't let events build up, or there will be excessive lag between music and lights
-		}
-
 		/// <summary>
 		/// Add the current Lights collection of LEDs to the queue, automatically smoothly transitioning into it.
 		/// </summary>
@@ -1921,7 +1898,7 @@ namespace Actinic
 				Animation_Stop (QueueToModify);
 
 			QueueToModify.SelectedAnimation = DesiredAnimation;
-			if ((QueueToModify.SelectedAnimation.RequestedAnimationDelay > ActiveOutputSystem.ProcessingLatency) || (QueueToModify.SelectedAnimation.RequestSmoothCrossfade))
+			if ((QueueToModify.SelectedAnimation.RequestedAnimationDelay > 0) || (QueueToModify.SelectedAnimation.RequestSmoothCrossfade))
 				QueueToModify.AnimationForceFrameRequest = true;
 			// If animation requests a longer delay or a smooth cross-fade, force the first frame to happen now
 
@@ -2225,7 +2202,8 @@ namespace Actinic
 					ActiveOutputSystem.VersionIdentifier);
 
 				// Update number of lights, (re-)initalize the light queues
-				LightSystem.SetLightCount (ActiveOutputSystem.LightCount);
+				LightSystem.SetLightCount (
+					ActiveOutputSystem.Configuration.LightCount);
 				CreateLightQueues (LightSystem.LIGHT_COUNT);
 			} else {
 				Console.WriteLine ("- Could not connect to '{0}'", outputType);
