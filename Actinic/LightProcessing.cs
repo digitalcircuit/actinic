@@ -42,7 +42,12 @@ namespace Actinic
 		/// <param name='ShiftCount'>
 		/// Number of times to shift lights.
 		/// </param>
-		public static void ShiftLightsOutward (Layer LightSet, int ShiftCount)
+		/// <param name='ShiftBrightness'>
+		/// If true, shift brightness as well, otherwise leave brightness
+		/// unchanged.
+		/// </param>
+		public static void ShiftLightsOutward (
+			Layer LightSet, int ShiftCount, bool ShiftBrightness = false)
 		{
 			//Shifts outwards, from LED 24 to 1 and from LED 25 to 50
 			for (int times_shifted = 0; times_shifted < ShiftCount; times_shifted++) {
@@ -50,11 +55,17 @@ namespace Actinic
 					LightSet [i].R = LightSet [i - 1].R;
 					LightSet [i].G = LightSet [i - 1].G;
 					LightSet [i].B = LightSet [i - 1].B;
+					if (ShiftBrightness) {
+						LightSet [i].Brightness = LightSet [i - 1].Brightness;
+					}
 				}
 				for (int i = 1; i < ((LightSet.PixelCount / 2) - 1); i++) {
 					LightSet [i - 1].R = LightSet [i].R;
 					LightSet [i - 1].G = LightSet [i].G;
 					LightSet [i - 1].B = LightSet [i].B;
+					if (ShiftBrightness) {
+						LightSet [i - 1].Brightness = LightSet [i].Brightness;
+					}
 				}
 			}
 		}
