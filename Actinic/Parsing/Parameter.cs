@@ -50,7 +50,7 @@ namespace Actinic.Parsing
 			const string HELP_Examples =
 				"  Use combinations of" +
 				" [all], [index], [start]-[end], [start]-[end]:[increment]" +
-				"\n  Example: 1,5,10-20,30-40:2,40-50:5";
+				"\n  Example: 1,5,10-20,30-40:2,1-last:10,10-last-3:15";
 
 			// Which lights are selected?
 			SelectedLights = new List<int> ();
@@ -138,12 +138,46 @@ namespace Actinic.Parsing
 					}
 
 					// Ending index
-					if (int.TryParse (selection_boundaries [1], out range_end)) {
+					if (selection_boundaries [1] == "last") {
+						// Allow specifying "last" (one-based index)
+						range_end = MaximumLights;
+						int boundary_subtract;
+						if (selection_boundaries.Length > 2) {
+							// Specified a modified last, try to parse
+							if (int.TryParse (selection_boundaries [2], out boundary_subtract)) {
+								range_end = MaximumLights - boundary_subtract;
+								// Check if valid
+								if (!(range_end >= range_start
+								    && range_end <= MaximumLights)) {
+									if (ExplainErrors)
+										Console.Error.WriteLine (
+											"> Range end modifier for 'last' " +
+											"must be a whole number from " +
+											"'{1}' to '{2}'\n{0}",
+											HELP_Examples, 0, range_start - 1
+										);
+									return false;
+								}
+							} else {
+								// Not an integer, bail out
+								if (ExplainErrors)
+									Console.Error.WriteLine (
+										"> Range end modifier for 'last' " +
+										"must be a whole number from '{1}' " +
+										"to '{2}'\n{0}",
+										HELP_Examples, 0, range_start - 1
+									);
+								return false;
+							}
+						}
+					} else if (int.TryParse (selection_boundaries [1], out range_end)) {
 						if (!(range_end >= range_start && range_end <= MaximumLights)) {
 							// Not a valid start position (higher than start, within light count), bail out
 							if (ExplainErrors)
 								Console.Error.WriteLine (
-									"> Range end '{3}' is out of range, must be from '{1}' (range start) to '{2}'\n {0}",
+									"> Range end '{3}' is out of range, must " +
+									"be from '{1}' (range start) to '{2}', or" +
+									"'last', 'last-1', etc\n {0}",
 									HELP_Examples, range_start, MaximumLights, range_end
 								);
 							return false;
@@ -153,7 +187,8 @@ namespace Actinic.Parsing
 						// Not an integer, bail out
 						if (ExplainErrors)
 							Console.Error.WriteLine (
-								"> Range end must be a whole number from '{1}' to '{2}'\n{0}",
+								"> Range end must be a whole number from " +
+								"'{1}' to '{2}', or 'last', 'last-1', etc\n{0}",
 								HELP_Examples, 1, MaximumLights
 							);
 						return false;
