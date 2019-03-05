@@ -40,6 +40,7 @@
     <Compile Include="Rendering\LayerTests.cs" />
     <Compile Include="Output\DeviceConfigurationTests.cs" />
     <Compile Include="Output\ReadOnlyDeviceConfigurationTests.cs" />
+    <Compile Include="Utilities\IntFractionTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -50,6 +51,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Output\" />
+    <Folder Include="Utilities\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

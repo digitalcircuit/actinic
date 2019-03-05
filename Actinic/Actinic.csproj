@@ -82,6 +82,7 @@
     <Compile Include="Rendering\Layer.cs" />
     <Compile Include="Output\DeviceConfiguration.cs" />
     <Compile Include="Output\ReadOnlyDeviceConfiguration.cs" />
+    <Compile Include="Utilities\IntFraction.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
