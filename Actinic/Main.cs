@@ -92,8 +92,16 @@ namespace Actinic
 
 		private static System.Threading.Thread Actinic_Light_Queue_Thread;
 
-		private const int Animation_Smoothing_Iterations_DEFAULT = 15;
-		private const double Animation_Smoothing_Percentage_DEFAULT = 0.7;
+		/// <summary>
+		/// Function that takes in a given layer and modifies it.
+		/// </summary>
+		delegate void LayerTransformer(ref Layer lights);
+
+		/// <summary>
+		/// The duration of the animation smoothing in milliseconds.
+		/// </summary>
+		private const int Animation_Smoothing_Duration = 350;
+
 		private static bool Animation_Fading_Enabled = true;
 
 
@@ -116,11 +124,6 @@ namespace Actinic
 
 		private static bool Actinic_Light_Queue_BufferFullWarning_Shown = false;
 		// And don't spam the console about it; only notify when reached, then when fixed
-
-		/// <summary>
-		/// True if entered commands are expected to conflict with ongoing animations ('&&' concatenated or prefaced with '!'), otherwise false
-		/// </summary>
-		private static bool Command_ConflictsExpected = false;
 
 		private static AbstractAnimation.Style Animation_AnimationStyle = AbstractAnimation.Style.Moderate;
 		private const string Main_Command_Help = "color, brightness, white, black, identify, anim, overlay, shift_outwards, vu, clear, queue, reset, quit\n(tip: use '&&' to combine commands)";
@@ -244,13 +247,8 @@ namespace Actinic
 			if (SkipPreparingSystem == false) {
 				Console.WriteLine ("Preparing system...");
 
-				// Clear out any flickering in the buffer
-				System.Threading.Thread.Sleep (200);
 				Actinic_Lights_Queue.MarkAsProcessed ();
-				// UpdateLights_All (Actinic_Lights_Queue.LightsLastProcessed);
-				FillLights_Color (Actinic_Lights_Queue, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MIN, true, false);
-				// System.Threading.Thread.Sleep (100);
-				// FillLights_Color (Actinic_Lights_Queue, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MIN, true, false);
+				Actinic_Lights_Queue.Lights.Fill (Color.Named ["black"]);
 				if (UpdateLights_All (Actinic_Lights_Queue.Lights) == false) {
 					Console.WriteLine ("! Error while updating lights, is something wrong?");
 					// Can't do anything here, exit the application
@@ -260,8 +258,7 @@ namespace Actinic
 
 				// Initialize the higher level system
 				Actinic_Light_Start_Queue ();
-				FillLights_Brightness (Actinic_Lights_Queue, LightSystem.Brightness_MIN, false);
-				FillLights_Color (Actinic_Lights_Queue, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MIN, false, true);
+				Actinic_Lights_Queue.Lights.Fill (Color.Named ["black"]);
 
 				Actinic_Lights_Queue.PushToQueue ();
 			}
@@ -277,7 +274,8 @@ namespace Actinic
 			Console.WriteLine ("Shutting down...");
 
 			HaltActivity (true);
-			FillLights_Color (Actinic_Lights_Queue, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MIN);
+			Actinic_Lights_Queue.Lights.Fill (Color.Named ["black"]);
+			UpdateLights_All (Actinic_Lights_Queue.Lights);
 			Actinic_Light_Stop_Queue ();
 
 			ShutdownOutputSystem ();
@@ -290,10 +288,6 @@ namespace Actinic
 		{
 			// First-time around, show the command help
 			string command = "help";
-			// Used for the 'identify' command
-			int[] identifyLightsToModify = {0, 1, LightSystem.LIGHT_INDEX_MIDDLE - 1, LightSystem.LIGHT_INDEX_MIDDLE, LightSystem.LIGHT_INDEX_MIDDLE + 1,
-				LightSystem.LIGHT_INDEX_MIDDLE + 2, LightSystem.LIGHT_COUNT - 2, LightSystem.LIGHT_COUNT - 1
-			};
 			// Used for range and color parsing
 			List<int> selected_lights;
 			Color selected_color;
@@ -305,7 +299,6 @@ namespace Actinic
 			while (command != "quit") {
 				if (command != "") {
 					if (command.Contains ("&&")) {
-						Command_ConflictsExpected = true;
 						commands = new List<string> (command.Replace ("@", "LITERAL_AT")
 						                             .Replace (" && ", "@")
 						                             .Split ('@'));
@@ -313,12 +306,6 @@ namespace Actinic
 							commands [i] = commands [i].Replace ("LITERAL_AT", "@").Trim ();
 						}
 					} else {
-						if (command.StartsWith ("!")) {
-							command = command.TrimStart ('!');
-							Command_ConflictsExpected = true;
-						} else {
-							Command_ConflictsExpected = false;
-						}
 						commands.Clear ();
 						commands.Add (command);
 					}
@@ -360,19 +347,22 @@ namespace Actinic
 										// If there's an argument at the end, don't touch brightness
 										bool keep_brightness = (cmd_args.Count > 0);
 
-										// For each selected light, set the color and brightness (if not preserved)
-										foreach (int light_index in selected_lights) {
-											Actinic_Lights_Queue.Lights [light_index].SetColor (
-												selected_color.R,
-												selected_color.G,
-												selected_color.B,
-												// Preserve brightness by default
-												Actinic_Lights_Queue.Lights [light_index].Brightness
-											);
-											if (!keep_brightness)
-												Actinic_Lights_Queue.Lights [light_index].Brightness = (selected_color.Brightness);
-										}
-										AddToAnimQueue (Actinic_Lights_Queue);
+										AddToAnimQueue (Actinic_Lights_Queue,
+											delegate(ref Layer lights) {
+												// For each selected light, set the color and brightness (if not preserved)
+												foreach (int light_index in selected_lights) {
+													lights [light_index].SetColor (
+														selected_color.R,
+														selected_color.G,
+														selected_color.B,
+														// Preserve brightness by default
+														lights [light_index].Brightness
+													);
+													if (!keep_brightness)
+														lights [light_index].Brightness = (selected_color.Brightness);
+												}
+											}
+										);
 									} else {
 										Console.WriteLine ("> color [range] [color] [optional: keep brightness]");
 									}
@@ -389,11 +379,14 @@ namespace Actinic
 
 									// Parse brightness if specified
 									if (cmd_args.Count >= 1 && byte.TryParse (cmd_args [0], out Brightness)) {
-										// For each selected light, set the brightness
-										foreach (int light_index in selected_lights) {
-											Actinic_Lights_Queue.Lights [light_index].Brightness = Brightness;
-										}
-										AddToAnimQueue (Actinic_Lights_Queue);
+										AddToAnimQueue (Actinic_Lights_Queue,
+											delegate(ref Layer lights) {
+												// For each selected light, set the brightness
+												foreach (int light_index in selected_lights) {
+													lights [light_index].Brightness = Brightness;
+												}
+											}
+										);
 									} else {
 										Console.WriteLine ("(invalid numbers entered; type 'brightness' for help)");
 									}
@@ -406,33 +399,44 @@ namespace Actinic
 								break;
 							case "white":
 								HaltActivity (false);
-								FillLights_Brightness (Actinic_Lights_Queue, LightSystem.Brightness_MAX, false);
-								FillLights_Color (Actinic_Lights_Queue, LightSystem.Color_MAX, LightSystem.Color_MAX, LightSystem.Color_MAX);
+								AddToAnimQueue (Actinic_Lights_Queue,
+									delegate(ref Layer lights) {
+										lights.Fill (Color.Named ["white"]);
+									}
+								);
 								break;
 							case "black":
 								HaltActivity (false);
-								FillLights_Brightness (Actinic_Lights_Queue, LightSystem.Brightness_MIN, false);
-								FillLights_Color (Actinic_Lights_Queue, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MIN);
+								AddToAnimQueue (Actinic_Lights_Queue,
+									delegate(ref Layer lights) {
+										lights.Fill (Color.Transparent);
+									}
+								);
 								break;
 							case "identify":
 								HaltActivity (false);
-								FillLights_Brightness (Actinic_Lights_Queue, LightSystem.Brightness_MIN, false);
-								foreach (int ledIndex in identifyLightsToModify) {
-									Actinic_Lights_Queue.Lights [ledIndex].Brightness = LightSystem.Brightness_MAX;
-								}
 
-								FillLights_Color (Actinic_Lights_Queue, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MIN, false);
-								SetLight_Color (Actinic_Lights_Queue, 0, LightSystem.Color_MAX, LightSystem.Color_MIN, LightSystem.Color_MIN, false);
-								SetLight_Color (Actinic_Lights_Queue, 1, LightSystem.Color_MAX, LightSystem.Color_MAX, LightSystem.Color_MIN, false);
+								AddToAnimQueue (Actinic_Lights_Queue,
+									delegate(ref Layer lights) {
+										lights.Fill (Color.Named ["black"]);
+										lights [0].SetColor (Color.Named ["red"]);
+										lights [1].SetColor (Color.Named ["yellow"]);
 
-								SetLight_Color (Actinic_Lights_Queue, LightSystem.LIGHT_INDEX_MIDDLE - 1, LightSystem.Color_MAX, LightSystem.Color_MIN, LightSystem.Color_MIN, false);
-								SetLight_Color (Actinic_Lights_Queue, LightSystem.LIGHT_INDEX_MIDDLE, LightSystem.Color_MAX, LightSystem.Color_MIN, LightSystem.Color_MAX, false);
-								SetLight_Color (Actinic_Lights_Queue, LightSystem.LIGHT_INDEX_MIDDLE + 1, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MAX, false);
-								SetLight_Color (Actinic_Lights_Queue, LightSystem.LIGHT_INDEX_MIDDLE + 2, LightSystem.Color_MIN, LightSystem.Color_MAX, LightSystem.Color_MAX, false);
+										lights [LightSystem.LIGHT_INDEX_MIDDLE - 1]
+											.SetColor (Color.Named ["yellow"]);
+										lights [LightSystem.LIGHT_INDEX_MIDDLE]
+											.SetColor (Color.Named ["purple"]);
+										lights [LightSystem.LIGHT_INDEX_MIDDLE + 1]
+											.SetColor (Color.Named ["blue"]);
+										lights [LightSystem.LIGHT_INDEX_MIDDLE + 2]
+											.SetColor (Color.Named ["yellow"]);
 
-								SetLight_Color (Actinic_Lights_Queue, LightSystem.LIGHT_COUNT - 2, LightSystem.Color_MAX, LightSystem.Color_MAX, LightSystem.Color_MIN, false);
-								SetLight_Color (Actinic_Lights_Queue, LightSystem.LIGHT_COUNT - 1, LightSystem.Color_MIN, LightSystem.Color_MAX, LightSystem.Color_MIN, false);
-								AddToAnimQueue (Actinic_Lights_Queue);
+										lights [LightSystem.LIGHT_COUNT - 2]
+											.SetColor (Color.Named ["yellow"]);
+										lights [LightSystem.LIGHT_COUNT - 1]
+											.SetColor (Color.Named ["green"]);
+									}
+								);
 								break;
 							case "anim":
 								if (cmd_args.Count > 1 && cmd_args [1] != null) {
@@ -688,8 +692,6 @@ namespace Actinic
 										lock (Actinic_Lights_Overlay_Queues) {
 											foreach (KeyValuePair <string, LED_Queue> queue in Actinic_Lights_Overlay_Queues) {
 												HaltActivity (queue.Value);
-												FillLights_Brightness (queue.Value, 0, false, true);
-												FillLights_Color (queue.Value, 0, 0, 0, true, true);
 											}
 											Actinic_Lights_Overlay_Queues.Clear ();
 										}
@@ -720,19 +722,22 @@ namespace Actinic
 																// If there's an argument at the end, don't touch brightness
 																bool keep_brightness = (cmd_args.Count > 0);
 
-																// For each selected light, set the color and brightness (if not preserved)
-																foreach (int light_index in selected_lights) {
-																	resulting_queue.Lights [light_index].SetColor (
-																		selected_color.R,
-																		selected_color.G,
-																		selected_color.B,
-																		// Preserve brightness by default
-																		resulting_queue.Lights [light_index].Brightness
-																	);
-																	if (!keep_brightness)
-																		resulting_queue.Lights [light_index].Brightness = (selected_color.Brightness);
-																}
-																AddToAnimQueue (resulting_queue);
+																AddToAnimQueue (resulting_queue,
+																	delegate(ref Layer lights) {
+																		// For each selected light, set the color and brightness (if not preserved)
+																		foreach (int light_index in selected_lights) {
+																			lights [light_index].SetColor (
+																				selected_color.R,
+																				selected_color.G,
+																				selected_color.B,
+																				// Preserve brightness by default
+																				lights [light_index].Brightness
+																			);
+																			if (!keep_brightness)
+																				lights [light_index].Brightness = (selected_color.Brightness);
+																		}
+																	}
+																);
 															} else {
 																Console.WriteLine (
 																	"> overlay {0} color [range] [color] [optional: keep brightness]",
@@ -757,11 +762,14 @@ namespace Actinic
 
 																// Parse brightness if specified
 																if (cmd_args.Count >= 1 && byte.TryParse (cmd_args [0], out Brightness)) {
-																	// For each selected light, set the brightness
-																	foreach (int light_index in selected_lights) {
-																		resulting_queue.Lights [light_index].Brightness = Brightness;
-																	}
-																	AddToAnimQueue (resulting_queue);
+																	AddToAnimQueue (resulting_queue,
+																		delegate(ref Layer lights) {
+																			// For each selected light, set the brightness
+																			foreach (int light_index in selected_lights) {
+																				lights [light_index].Brightness = Brightness;
+																			}
+																		}
+																	);
 																} else {
 																	Console.WriteLine ("(invalid numbers entered; type 'brightness' for help)");
 																}
@@ -781,23 +789,28 @@ namespace Actinic
 														if (resulting_queue != null) {
 															// Mapping from usual 'identify' command:  Numbers 1 -> 3
 															HaltActivity (resulting_queue);
-															FillLights_Brightness (resulting_queue, LightSystem.Brightness_MIN, false);
-															foreach (int ledIndex in identifyLightsToModify) {
-																resulting_queue.Lights [ledIndex].Brightness = LightSystem.Brightness_MAX;
-															}
 
-															FillLights_Color (resulting_queue, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MIN, false);
-															SetLight_Color (resulting_queue, 0, LightSystem.Color_MAX, LightSystem.Color_MIN, LightSystem.Color_MIN, false);
-															SetLight_Color (resulting_queue, 1, LightSystem.Color_MAX, LightSystem.Color_MAX, LightSystem.Color_MIN, false);
+															AddToAnimQueue (resulting_queue,
+																delegate(ref Layer lights) {
+																	lights.Fill (Color.Named ["black"]);
+																	lights [0].SetColor (Color.Named ["red"]);
+																	lights [1].SetColor (Color.Named ["yellow"]);
 
-															SetLight_Color (resulting_queue, LightSystem.LIGHT_INDEX_MIDDLE - 1, LightSystem.Color_MAX, LightSystem.Color_MIN, LightSystem.Color_MIN, false);
-															SetLight_Color (resulting_queue, LightSystem.LIGHT_INDEX_MIDDLE, LightSystem.Color_MAX, LightSystem.Color_MIN, LightSystem.Color_MAX, false);
-															SetLight_Color (resulting_queue, LightSystem.LIGHT_INDEX_MIDDLE + 1, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MAX, false);
-															SetLight_Color (resulting_queue, LightSystem.LIGHT_INDEX_MIDDLE + 2, LightSystem.Color_MIN, LightSystem.Color_MAX, LightSystem.Color_MAX, false);
+																	lights [LightSystem.LIGHT_INDEX_MIDDLE - 1]
+																		.SetColor (Color.Named ["yellow"]);
+																	lights [LightSystem.LIGHT_INDEX_MIDDLE]
+																		.SetColor (Color.Named ["purple"]);
+																	lights [LightSystem.LIGHT_INDEX_MIDDLE + 1]
+																		.SetColor (Color.Named ["blue"]);
+																	lights [LightSystem.LIGHT_INDEX_MIDDLE + 2]
+																		.SetColor (Color.Named ["yellow"]);
 
-															SetLight_Color (resulting_queue, LightSystem.LIGHT_COUNT - 2, LightSystem.Color_MAX, LightSystem.Color_MAX, LightSystem.Color_MIN, false);
-															SetLight_Color (resulting_queue, LightSystem.LIGHT_COUNT - 1, LightSystem.Color_MIN, LightSystem.Color_MAX, LightSystem.Color_MIN, false);
-															AddToAnimQueue (resulting_queue);
+																	lights [LightSystem.LIGHT_COUNT - 2]
+																		.SetColor (Color.Named ["yellow"]);
+																	lights [LightSystem.LIGHT_COUNT - 1]
+																		.SetColor (Color.Named ["green"]);
+																}
+															);
 														}
 													}
 													break;
@@ -980,8 +993,6 @@ namespace Actinic
 														if (Actinic_Lights_Overlay_Queues.ContainsKey (overlay_name)) {
 															LED_Queue queue_to_remove = GetQueueByName (overlay_name);
 															HaltActivity (queue_to_remove);
-															FillLights_Brightness (queue_to_remove, 0, false, true);
-															FillLights_Color (queue_to_remove, 0, 0, 0, true, true);
 															Actinic_Lights_Overlay_Queues.Remove (overlay_name);
 															Console.WriteLine ("(layer '{0}' removed)", overlay_name);
 															UpdateAllQueues ();
@@ -1009,8 +1020,12 @@ namespace Actinic
 								if (cmd_args.Count == 2) {
 									HaltActivity (false);
 									int Shift_Amount = Convert.ToByte (cmd_args [1]);
-									LightProcessing.ShiftLightsOutward (Actinic_Lights_Queue.Lights, Shift_Amount);
-									AddToAnimQueue (Actinic_Lights_Queue);
+									AddToAnimQueue (Actinic_Lights_Queue,
+										delegate(ref Layer lights) {
+											LightProcessing.ShiftLightsOutward (
+												lights, Shift_Amount);
+										}
+									);
 								} else {
 									Console.WriteLine ("> shift_outwards [number of times]");
 								}
@@ -1280,7 +1295,7 @@ namespace Actinic
 										Console.WriteLine ("(Actinic light queue cleared)");
 										break;
 									case "test":
-										FillLights_Color (Actinic_Lights_Queue, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MIN, false);
+										Actinic_Lights_Queue.Lights.Fill (Color.Named ["black"]);
 										Actinic_Lights_Queue.PushToQueue ();
 										WaitForQueue (Actinic_Lights_Queue);
 										Console.WriteLine ("(Actinic light queue test: synchronous)");
@@ -1312,8 +1327,7 @@ namespace Actinic
 										Console.WriteLine ("(Actinic light queue test complete)");
 										break;
 									case "spam":
-										FillLights_Color (Actinic_Lights_Queue, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MIN, false);
-										FillLights_Brightness (Actinic_Lights_Queue, LightSystem.Brightness_MAX, false);
+										Actinic_Lights_Queue.Lights.Fill (Color.Named ["black"]);
 										Actinic_Lights_Queue.PushToQueue ();
 										WaitForQueue (Actinic_Lights_Queue);
 										Console.WriteLine ("(Actinic light queue test: adding 1000 events)");
@@ -1759,10 +1773,13 @@ namespace Actinic
 						} else if ((QueueToModify.AnimationForceFrameRequest == true) &&
 						           (QueueToModify.SelectedAnimation.RequestSmoothCrossfade)) {
 							// Animation has a potentially-sharp change and requests a smooth cross-fade
-							// Get the next frame...
-							QueueToModify.Lights = QueueToModify.SelectedAnimation.GetNextFrame ();
-							// ...and insert it into the queue with an animated transition.
-							AddToAnimQueue (QueueToModify);
+							// Get the next frame and insert it into the queue
+							// with an animated transition.
+							AddToAnimQueue (QueueToModify,
+								delegate(ref Layer lights) {
+									lights = QueueToModify.SelectedAnimation.GetNextFrame ();
+								}
+							);
 						} else {
 							// Without smoothing, just directly add to the queue
 							QueueToModify.Lights = QueueToModify.SelectedAnimation.GetNextFrame ();
@@ -1775,8 +1792,7 @@ namespace Actinic
 						// TODO: Better method of fixing this?
 						//  For now, just stop the animation, and let it do whatever it was going to do.
 						Animation_Stop (QueueToModify);
-						FillLights_Color (QueueToModify, LightSystem.Color_MIN, LightSystem.Color_MIN, LightSystem.Color_MIN, false, true);
-						FillLights_Brightness (QueueToModify, LightSystem.Brightness_MIN, false, true);
+						QueueToModify.Lights.Fill (Color.Transparent);
 					}
 
 					QueueToModify.AnimationForceFrameRequest = false;
@@ -1843,46 +1859,62 @@ namespace Actinic
 		/// <summary>
 		/// Add the current Lights collection of LEDs to the queue, automatically smoothly transitioning into it.
 		/// </summary>
+		/// <param name="TransformLayer">Function applying modifications to the layer</param>
 		/// <param name="QueueToModify">Queue to add animation to</param>
-		private static void AddToAnimQueue (LED_Queue QueueToModify)
-		{
-			AddToAnimQueue (QueueToModify, QueueToModify.Lights);
-		}
-
-		/// <summary>
-		/// Add the collection of LEDs to the queue, automatically smoothly transitioning into it.
-		/// </summary>
-		/// <param name="QueueToModify">Queue to add animation to</param>
-		/// <param name="LED_Collection">Desired LED appearance</param>
 		private static void AddToAnimQueue (
-			LED_Queue QueueToModify, Layer LED_Collection)
+			LED_Queue QueueToModify, LayerTransformer TransformLayer)
 		{
-			if (QueueToModify.QueueCount > 0 && Command_ConflictsExpected == false)
-				Console.WriteLine ("(Warning: interrupting fade, appearance may vary.  If intended, prefix with '!')");
-			// Don't warn about clearing the output queue if it's expected by running multiple commands at once
+			if (TransformLayer == null) {
+				throw new ArgumentNullException ("TransformLayer");
+			}
 
-			QueueToModify.ClearQueue ();
+			// Get current lights
+			Layer CurrentLayer;
+			lock (QueueToModify.LightsLastProcessed) {
+				CurrentLayer = QueueToModify.LightsLastProcessed.Clone ();
+			}
+
+			// Copy the current layer...
+			Layer TargetLayer = CurrentLayer.Clone ();
+
+			// ...unless values exist in the queue - transform the last item
+			// from the queue if so.
+			while (QueueToModify.QueueCount > 0) {
+				// Clear all from queue, saving the last one
+				TargetLayer = QueueToModify.PopFromQueue ();
+			}
+
+			// Queue now cleared
+
+			// Apply transformation to end result
+			TransformLayer (ref TargetLayer);
+
 			if (Animation_Fading_Enabled) {
-				double Avg_OldPercent = Math.Min (Animation_Smoothing_Percentage_DEFAULT, 1);
-				double Avg_NewPercent = Math.Max (1 - Animation_Smoothing_Percentage_DEFAULT, 0);
-				Layer LED_Intermediate;
-				lock (QueueToModify.LightsLastProcessed) {
-					LED_Intermediate =
-						QueueToModify.LightsLastProcessed.Clone ();
-				}
-				for (int i_fades = 0; i_fades < Animation_Smoothing_Iterations_DEFAULT; i_fades++) {
-					for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
-						LED_Intermediate [i].R = (byte)((LED_Collection [i].R * Avg_NewPercent) + (LED_Intermediate [i].R * Avg_OldPercent));
-						LED_Intermediate [i].G = (byte)((LED_Collection [i].G * Avg_NewPercent) + (LED_Intermediate [i].G * Avg_OldPercent));
-						LED_Intermediate [i].B = (byte)((LED_Collection [i].B * Avg_NewPercent) + (LED_Intermediate [i].B * Avg_OldPercent));
-						LED_Intermediate [i].Brightness = (byte)((LED_Collection [i].Brightness * Avg_NewPercent) + (LED_Intermediate [i].Brightness * Avg_OldPercent));
+				// Interpolate from old values to new values within the time
+				// range
+				//
+				// TODO: Replace this with a real-time animation system that
+				// doesn't stuff the queue with precalculated interpolated
+				// values.
+
+				// Percentage change for each frame
+				double percentFrame =
+					ActiveOutputSystem.Configuration.FactorTime
+					/ Animation_Smoothing_Duration;
+
+				// Smoothly interpolate if able
+				if (percentFrame > 0) {
+					for (double percent = 0; percent < 1; percent += percentFrame) {
+						Layer LED_Frame = new Layer (CurrentLayer);
+						LED_Frame.Blend (TargetLayer, percent, true);
+						QueueToModify.PushToQueue (LED_Frame);
 					}
-					QueueToModify.PushToQueue (LED_Intermediate);
 				}
+
 				// Just in case the fade did not finish completely, ensure the desired state is sent, too
-				QueueToModify.PushToQueue (LED_Collection);
+				QueueToModify.PushToQueue (TargetLayer);
 			} else {
-				QueueToModify.PushToQueue (LED_Collection);
+				QueueToModify.PushToQueue (TargetLayer);
 			}
 		}
 
@@ -2052,97 +2084,6 @@ namespace Actinic
 
 
 		#endregion
-
-		private static void FillLights_Brightness (LED_Queue QueueToModify, byte Brightness)
-		{
-			FillLights_Brightness (QueueToModify, Brightness, true);
-		}
-
-		private static void FillLights_Brightness (LED_Queue QueueToModify, byte Brightness, bool ApplyNow)
-		{
-			FillLights_Brightness (QueueToModify, Brightness, ApplyNow, false);
-		}
-
-		private static void FillLights_Brightness (LED_Queue QueueToModify, byte Brightness, bool ApplyNow, bool SkipAnimationQueue)
-		{
-			for (int i = 0; i < QueueToModify.LightCount; i++) {
-				QueueToModify.Lights [i].Brightness = Brightness;
-			}
-			if (ApplyNow) {
-				if (SkipAnimationQueue) {
-					QueueToModify.PushToQueue ();
-				} else {
-					AddToAnimQueue (QueueToModify);
-				}
-			}
-		}
-
-		private static void FillLights_Color (LED_Queue QueueToModify, Color SelectedColor)
-		{
-			FillLights_Color (QueueToModify, SelectedColor, true);
-		}
-
-		private static void FillLights_Color (LED_Queue QueueToModify, Color SelectedColor, bool ApplyNow)
-		{
-			FillLights_Color (QueueToModify, SelectedColor, ApplyNow, false);
-		}
-
-		private static void FillLights_Color (LED_Queue QueueToModify, Color SelectedColor, bool ApplyNow, bool SkipAnimationQueue)
-		{
-			FillLights_Color (QueueToModify, SelectedColor.R, SelectedColor.G, SelectedColor.B, ApplyNow, SkipAnimationQueue);
-		}
-
-		private static void FillLights_Color (LED_Queue QueueToModify, byte R, byte G, byte B)
-		{
-			FillLights_Color (QueueToModify, R, G, B, true);
-		}
-
-		private static void FillLights_Color (LED_Queue QueueToModify, byte R, byte G, byte B, bool ApplyNow)
-		{
-			FillLights_Color (QueueToModify, R, G, B, ApplyNow, false);
-		}
-
-		private static void FillLights_Color (LED_Queue QueueToModify, byte R, byte G, byte B, bool ApplyNow, bool SkipAnimationQueue)
-		{
-			for (int i = 0; i < QueueToModify.LightCount; i++) {
-				QueueToModify.Lights [i].R = R;
-				QueueToModify.Lights [i].G = G;
-				QueueToModify.Lights [i].B = B;
-			}
-			if (ApplyNow) {
-				if (SkipAnimationQueue) {
-					QueueToModify.PushToQueue ();
-				} else {
-					AddToAnimQueue (QueueToModify);
-				}
-			}
-		}
-
-		private static void SetLight_Color (LED_Queue QueueToModify, int Index, byte R, byte G, byte B)
-		{
-			SetLight_Color (QueueToModify, Index, R, G, B, true);
-		}
-
-		private static void SetLight_Color (LED_Queue QueueToModify, int Index, byte R, byte G, byte B, bool ApplyNow)
-		{
-			SetLight_Color (QueueToModify, Index, R, G, B, ApplyNow, false);
-		}
-
-		private static void SetLight_Color (LED_Queue QueueToModify, int Index, byte R, byte G, byte B, bool ApplyNow, bool SkipAnimationQueue)
-		{
-			if (Index >= 0 & Index < QueueToModify.LightCount) {
-				QueueToModify.Lights [Index].R = R;
-				QueueToModify.Lights [Index].G = G;
-				QueueToModify.Lights [Index].B = B;
-			}
-			if (ApplyNow) {
-				if (SkipAnimationQueue) {
-					QueueToModify.PushToQueue ();
-				} else {
-					AddToAnimQueue (QueueToModify);
-				}
-			}
-		}
 
 		private static bool UpdateLights_Brightness (Layer Actinic_Light_Set)
 		{
