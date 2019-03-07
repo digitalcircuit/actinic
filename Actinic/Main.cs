@@ -1766,10 +1766,11 @@ namespace Actinic
 						// In all of the below, you must set QueueToModify to the new, intended output, otherwise
 						//  animation transitions will contain old values.
 						if (QueueToModify.SelectedAnimation.EnableSmoothing && Animation_Fading_Enabled) {
-							// Get the next frame, apply smoothing
-							ApplySmoothing (QueueToModify.SelectedAnimation.SmoothingAmount, true, QueueToModify.SelectedAnimation.GetNextFrame (), QueueToModify);
-							// ...and insert it into the queue.
-							QueueToModify.PushToQueue ();
+							// Get the next frame, filter it onto the current,
+							// frame, and add it to the queue
+							QueueToModify.PushToQueue (
+								QueueToModify.SelectedAnimation.GetNextFrameFiltered(QueueToModify.Lights)
+							);
 						} else if ((QueueToModify.AnimationForceFrameRequest == true) &&
 						           (QueueToModify.SelectedAnimation.RequestSmoothCrossfade)) {
 							// Animation has a potentially-sharp change and requests a smooth cross-fade
@@ -2049,39 +2050,6 @@ namespace Actinic
 
 			return success;
 		}
-
-		#endregion
-
-		#region Generic Light Processing
-
-		/// <summary>
-		/// Applies smoothing to the provided queue from colors specified.
-		/// </summary>
-		/// <param name='SmoothingAmount'>
-		/// Smoothing amount, percentage from 0 to 1, higher numbers = longer fade.
-		/// </param>
-		/// <param name='OnlySmoothBrightnessDecrease'>
-		/// Only smooth brightness when it is decreasing.
-		/// </param>
-		/// <param name='QueueToModify'>
-		/// Queue to apply the smoothed results to.
-		/// </param>
-		private static void ApplySmoothing (double SmoothingAmount, bool OnlySmoothBrightnessDecrease, Layer Lights_Unsmoothed, LED_Queue QueueToModify)
-		{
-			double Avg_OldPercent = Math.Min (SmoothingAmount, 1);
-			double Avg_NewPercent = Math.Max (1 - SmoothingAmount, 0);
-
-			for (int i = 0; i < QueueToModify.LightCount; i++) {
-				QueueToModify.Lights [i].R = (byte)((Lights_Unsmoothed [i].R * Avg_NewPercent) + (QueueToModify.Lights [i].R * Avg_OldPercent));
-				QueueToModify.Lights [i].G = (byte)((Lights_Unsmoothed [i].G * Avg_NewPercent) + (QueueToModify.Lights [i].G * Avg_OldPercent));
-				QueueToModify.Lights [i].B = (byte)((Lights_Unsmoothed [i].B * Avg_NewPercent) + (QueueToModify.Lights [i].B * Avg_OldPercent));
-				QueueToModify.Lights [i].Brightness = (byte)((Lights_Unsmoothed [i].Brightness * Avg_NewPercent) + (QueueToModify.Lights [i].Brightness * Avg_OldPercent));
-				if (OnlySmoothBrightnessDecrease) {
-					QueueToModify.Lights [i].Brightness = (byte)Math.Max (Lights_Unsmoothed [i].Brightness, QueueToModify.Lights [i].Brightness);
-				}
-			}
-		}
-
 
 		#endregion
 

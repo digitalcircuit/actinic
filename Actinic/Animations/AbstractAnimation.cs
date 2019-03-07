@@ -26,6 +26,7 @@ using Actinic.Output;
 
 // Rendering
 using Actinic.Rendering;
+using Actinic.Utilities;
 
 namespace Actinic.Animations
 {
@@ -49,17 +50,27 @@ namespace Actinic.Animations
 		}
 
 		/// <summary>
-		/// Default amount of smoothing; 0.7 provides a nice, mostly-seamless transition
+		/// Default amount of smoothing to provide a nice, mostly-seamless
+		/// transition
 		/// </summary>
-		protected const double SmoothingAmount_Default = 0.7;
+		protected const double SmoothingConstant_Default = 283;
 
 		/// <summary>
-		/// Amount of smoothing applied to the animation if enabled
+		/// Amount of smoothing applied to the animation if enabled.
+		/// <remarks>
+		/// The smoothing constant is represented as the time in milliseconds
+		/// after which the output will have 63% or more of the new frame
+		/// applied.
+		/// </remarks>
 		/// </summary>
-		/// <value>Value from 0 to 1 with lower values resulting in more gradual changes.</value>
-		public double SmoothingAmount {
-			get;
-			protected set;
+		/// <value>Value in milliseconds starting from 0, with lower values resulting in more gradual changes.</value>
+		public double SmoothingConstant {
+			get {
+				return smoothingFilter.TimeConstant;
+			}
+			protected set {
+				smoothingFilter.TimeConstant = value;
+			}
 		}
 
 
@@ -158,11 +169,12 @@ namespace Actinic.Animations
 		public AbstractAnimation (ReadOnlyDeviceConfiguration Configuration)
 		{
 			deviceConfig = Configuration;
+			smoothingFilter = new ScaledAverage (deviceConfig);
 			CurrentFrame = new Layer (deviceConfig.LightCount);
 			RequestedAnimationDelay = 0;
 			AnimationStyle = Style.Moderate;
-			if (SmoothingAmount == 0)
-				SmoothingAmount = SmoothingAmount_Default;
+			if (SmoothingConstant == 0)
+				SmoothingConstant = SmoothingConstant_Default;
 		}
 
 		public AbstractAnimation (
@@ -170,11 +182,12 @@ namespace Actinic.Animations
 			Layer PreviouslyShownFrame)
 		{
 			deviceConfig = Configuration;
+			smoothingFilter = new ScaledAverage (deviceConfig);
 			CurrentFrame = PreviouslyShownFrame.Clone ();
 			RequestedAnimationDelay = 0;
 			AnimationStyle = Style.Moderate;
-			if (SmoothingAmount == 0)
-				SmoothingAmount = SmoothingAmount_Default;
+			if (SmoothingConstant == 0)
+				SmoothingConstant = SmoothingConstant_Default;
 		}
 
 		/// <summary>
@@ -183,6 +196,49 @@ namespace Actinic.Animations
 		/// <returns>A list of LEDs that represent the next frame.</returns>
 		public abstract Layer GetNextFrame ();
 
+		/// <summary>
+		/// Gets the next frame of animation filtered atop the current frame.
+		/// </summary>
+		/// <returns>The next frame of animation, filtered.</returns>
+		/// <param name="DisplayedFrame">The currently displayed frame.</param>
+		/// <param name="SmoothBrightnessOnIncrease">If true, smooth brightness when it is increasing, otherwise brightness jumps are immediate.</param>
+		public Layer GetNextFrameFiltered (
+			Layer DisplayedFrame, bool SmoothBrightnessOnIncrease = false) {
+			// Get the next frame
+			Layer newFrame = GetNextFrame();
+
+			// Filter it atop the current frame
+			for (int i = 0; i < DisplayedFrame.PixelCount; i++) {
+				DisplayedFrame [i].R = smoothingFilter.Filter (
+					DisplayedFrame [i].R, newFrame [i].R
+				);
+				DisplayedFrame [i].G = smoothingFilter.Filter (
+					DisplayedFrame [i].G, newFrame [i].G
+				);
+				DisplayedFrame [i].B = smoothingFilter.Filter (
+					DisplayedFrame [i].B, newFrame [i].B
+				);
+				DisplayedFrame [i].Brightness = smoothingFilter.Filter (
+					DisplayedFrame [i].Brightness, newFrame [i].Brightness
+				);
+				if (!SmoothBrightnessOnIncrease) {
+					DisplayedFrame [i].Brightness = (byte)Math.Max (
+						DisplayedFrame [i].Brightness, newFrame [i].Brightness
+					);
+				}
+			}
+
+			return DisplayedFrame;
+		}
+
+		#region Internal
+
+		/// <summary>
+		/// The device-adjusted smoothing filter
+		/// </summary>
+		private ScaledAverage smoothingFilter;
+
+		#endregion
 	}
 }
 

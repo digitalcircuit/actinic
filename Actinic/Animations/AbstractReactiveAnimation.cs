@@ -357,8 +357,11 @@ namespace Actinic.Animations
 			Audio_Average_Intensity = MathUtilities.AverageValues (Audio_Average_Intensity, Audio_Realtime_Intensity, 0.3);
 
 			// How fast or slowly the lights will change
-			if (EnableAlgorithmicSmoothingControl)
-				SmoothingAmount = Math.Min (Math.Max ((1 - (Audio_Average_Intensity * 1.1)), 0.45), 0.75);
+			if (EnableAlgorithmicSmoothingControl) {
+				// Convert from old FPS-dependent values to independent values
+				double SmoothingAmount = Math.Min (Math.Max ((1 - (Audio_Average_Intensity * 1.1)), 0.45), 0.75);
+				SmoothingConstant = ((2 / (1 - SmoothingAmount)) - 1) * 50;
+			}
 			ColorShift_Amount = Convert.ToByte (Math.Max (Math.Min ((Audio_Average_Intensity * 16) + 5, 255), 0));
 
 		}

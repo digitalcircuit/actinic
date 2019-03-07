@@ -1039,9 +1039,10 @@ namespace Actinic.Animations
 			}
 
 			if (LightStrobeMode == ColorStrobe.SingleRainbow | LightStrobeMode == ColorStrobe.SingleWhite) {
-				SmoothingAmount = Math.Min (Math.Max ((1 - (Audio_Average_Intensity * 1.1)), 0.45), 0.75);
+				// Convert from old FPS-dependent values to independent values
+				double SmoothingAmount = Math.Min (Math.Max ((1 - (Audio_Average_Intensity * 1.1)), 0.45), 0.75);
 				SmoothingAmount = Math.Max (SmoothingAmount - (VU_Solid_Color_Single_Strobe_Smoothing_Decrease * Audio_Average_Intensity), 0);
-				//ApplySmoothing (Math.Max (VU_Smoothing_Percentage - (VU_Solid_Color_Single_Strobe_Smoothing_Decrease * VU_Average_Intensity), 0), true);
+				SmoothingConstant = ((2 / (1 - SmoothingAmount)) - 1) * 50;
 			}
 		}
 

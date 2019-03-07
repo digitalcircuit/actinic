@@ -81,14 +81,14 @@ namespace Actinic.Animations
 				}
 				switch (_selectedStrobeMode) {
 				case StrobeMode.Fireflies:
-					SmoothingAmount = 0.89;
+					SmoothingConstant = 859;
 					break;
 				case StrobeMode.Rain:
 				case StrobeMode.Thunderstorm:
-					SmoothingAmount = 0.86;
+					SmoothingConstant = 664;
 					break;
 				default:
-					SmoothingAmount = SmoothingAmount_Default;
+					SmoothingConstant = SmoothingConstant_Default;
 					break;
 				}
 			}
