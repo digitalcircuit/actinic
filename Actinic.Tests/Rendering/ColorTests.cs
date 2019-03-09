@@ -377,6 +377,14 @@ namespace Actinic.Tests.Rendering
 						1,
 						true
 					).Returns (new Color (64, 128, 255, 100));
+					// 0.985 opacity = mostly new color
+					// This catches rounding errors from loss of precision
+					yield return new TestCaseData (
+						new Color (0, 255, 200, 2),
+						new Color (0, 240, 200, 2),
+						0.93,
+						true
+					).Returns (new Color (0, 241, 200, 2));
 					// 0.75 opacity = 75% new, 25% old
 					yield return new TestCaseData (
 						new Color (65, 128, 64, 32),
@@ -391,6 +399,14 @@ namespace Actinic.Tests.Rendering
 						0.5,
 						true
 					).Returns (new Color (64, 128, 159, 66));
+					// 0.015 opacity = mostly current color
+					// This catches rounding errors from loss of precision
+					yield return new TestCaseData (
+						new Color (0, 255, 200, 2),
+						new Color (0, 240, 200, 2),
+						0.015,
+						true
+					).Returns (new Color (0, 254, 200, 2));
 					// 0 opacity = all current color
 					yield return new TestCaseData (
 						new Color (65, 128, 64, 32),

@@ -263,26 +263,30 @@ namespace Actinic.Rendering
 				throw new ArgumentNullException ("UpperColor");
 			}
 
-			// Reduce the intensity of the new color
-			Color opacifiedNewColor =
-				new Color ((byte)(UpperColor.R * Opacity),
-					(byte)(UpperColor.G * Opacity),
-					(byte)(UpperColor.B * Opacity),
-					(byte)(UpperColor.Brightness * Opacity));
-
 			if (Fade) {
 				// Reduce the current color by the inverse opacity of the new
 				// color.  This will have 0 as entirely current, 1 as entirely
 				// new, and 0.5 as half current, half new.
 				double inverseOpacity = 1 - Opacity;
 				// Sum the faded old and new colors
-				R = (byte)((R * inverseOpacity) + opacifiedNewColor.R);
-				G = (byte)((G * inverseOpacity) + opacifiedNewColor.G);
-				B = (byte)((B * inverseOpacity) + opacifiedNewColor.B);
+				// NOTE: Do not convert to byte until the end, otherwise loss of
+				// precision will affect the result.
+				R = (byte)((R * inverseOpacity) + (UpperColor.R * Opacity));
+				G = (byte)((G * inverseOpacity) + (UpperColor.G * Opacity));
+				B = (byte)((B * inverseOpacity) + (UpperColor.B * Opacity));
 				Brightness = (byte)(
-				    (Brightness * inverseOpacity) + opacifiedNewColor.Brightness
+					(Brightness * inverseOpacity)
+					+ (UpperColor.Brightness * Opacity)
 				);
 			} else {
+				// Reduce the intensity of the new color
+				Color opacifiedNewColor = new Color (
+					(byte)(UpperColor.R * Opacity),
+					(byte)(UpperColor.G * Opacity),
+					(byte)(UpperColor.B * Opacity),
+					(byte)(UpperColor.Brightness * Opacity)
+				);
+				
 				// Take the brightest colors
 				R = Math.Max (R, opacifiedNewColor.R);
 				G = Math.Max (G, opacifiedNewColor.G);
