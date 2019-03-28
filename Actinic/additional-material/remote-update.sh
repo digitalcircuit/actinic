@@ -28,8 +28,13 @@ if ! [ -d "$SERVER_LOCAL_GVFS_DIR" ]; then
 	if (whiptail --title "Update Actinic" --backtitle "Actinic SSH remote management" --yesno "'$ACTINIC_SSH_SERVER' SFTP not connected.\nMount it now?" 10 60 --yes-button "Mount" --no-button "Cancel"); then
 		echo "* Mounting directory..."
 		gvfs-mount "sftp://$ACTINIC_SSH_USER@$ACTINIC_SSH_SERVER:$ACTINIC_SSH_PORT${SERVER_DIR}"
-		echo "> Waiting for mount..."
-		sleep 10
+		# Wait for the filesystem mount to settle
+		echo -n "> Waiting for mount"
+		while ! [ -d "$SERVER_LOCAL_GVFS_DIR" ]; do
+			echo -n "."
+			sleep 0.5
+		done
+		echo " OK"
 	fi
 fi
 
