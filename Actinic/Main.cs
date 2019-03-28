@@ -52,6 +52,9 @@ namespace Actinic
 
 		private static AbstractOutput ActiveOutputSystem;
 
+		private static System.Threading.ManualResetEvent ActiveOutputSystemReadyEvent =
+			new System.Threading.ManualResetEvent(false);
+
 		/// <summary>
 		/// The amount of additional time allowed for rendering before
 		/// considering it an issue.  Used for debugging and performance tuning.
@@ -151,8 +154,6 @@ namespace Actinic
 		private const string VU_Legacy_Mode_Command_Help = "vu legacy_mode [auto_fast_beat, rainbow, rainbow_solid, rainbow_beat, rainbow_beat_bass, hueshift, hueshift_beat, moving_bars, moving_bars_spaced, stationary_bars, solid_rainbow_strobe, solid_white_strobe, solid_hueshift_strobe, single_rainbow_strobe, single_white_strobe]";
 		private const string Debug_Command_Help = "debug [display]";
 		private const string Queue_Command_Help = "queue [start, stop, clear, spam, test]";
-
-		private static bool SkipInput = false;
 
 		public static void Main (string[] args)
 		{
@@ -275,10 +276,16 @@ namespace Actinic
 
 				// Initialize the higher level system
 				Actinic_Light_Start_Queue ();
-				Actinic_Lights_Queue.Lights.Fill (Color.Named ["black"]);
-
-				Actinic_Lights_Queue.PushToQueue ();
+			} else {
+				// Clean up any existing animations as the output system has
+				// been recreated
+				HaltActivity (true);
 			}
+
+			// Set to a known state
+			Actinic_Lights_Queue.Lights.Fill (Color.Named ["black"]);
+			Actinic_Lights_Queue.PushToQueue ();
+
 			// Initialization successful!
 			return true;
 		}
@@ -313,7 +320,8 @@ namespace Actinic
 			List<string> commands = new List<string> ();
 
 			// Main menu
-			while (command != "quit") {
+			// Don't place anything after this loop
+			while (true) {
 				if (command != "") {
 					if (command.Contains ("&&")) {
 						commands = new List<string> (command.Replace ("@", "LITERAL_AT")
@@ -329,12 +337,22 @@ namespace Actinic
 					foreach (string current_command in commands) {
 						if (current_command == "")
 							continue;
+						// Ignore commands if output system isn't ready
+						if (!ActiveOutputSystemReady()) {
+							Console.Write (
+								"Waiting for output system to be ready...");
+							ActiveOutputSystemReadyEvent.WaitOne ();
+						}
+
 						List<string> cmd_args = new List<string> (current_command.Split (' '));
 						// Note: cmd_args will be modified by any parameter parsers.  If original count is needed, save
 						// it here.
 						if (cmd_args != null & cmd_args.Count > 0) {
 							// TODO: Combine the regular and overlay commands into one unified set
 							switch (cmd_args [0].ToLowerInvariant ()) {
+							case "quit":
+								// Exit from the menu function
+								return;
 							case "color":
 								// Command selected, remove it from the arguments
 								cmd_args.RemoveAt (0);
@@ -1417,12 +1435,8 @@ namespace Actinic
 								break;
 							case "reset":
 								Console.WriteLine ("(resetting output system...)");
-								// FIXME: Resetting the system should not require halting everything, but something deadlocks otherwise...
-								HaltActivity (true);
 								if (ResetOutputSystem ()) {
 									Console.WriteLine ("(reset succeeded)");
-									// Re-send the last displayed frame of lights
-									Actinic_Lights_Queue.PushToQueue ();
 								} else {
 									Console.WriteLine ("(reset failed!)");
 								}
@@ -1445,18 +1459,6 @@ namespace Actinic
 				}
 				if (command == null)
 					command = "";
-			}
-		}
-
-		/// <summary>
-		/// Clear out any keys stuck in the console input while the event loop was hung
-		/// </summary>
-		private static void FlushKeyboard ()
-		{
-			while (Console.In.Peek () != -1) {
-				Console.In.Read ();
-				if (SkipInput != true)
-					break;
 			}
 		}
 
@@ -1952,7 +1954,11 @@ namespace Actinic
 				throw new ArgumentNullException ("TransformLayer");
 			}
 
-			// Get current lights
+			if (ActiveOutputSystem?.Initialized != true) {
+				// Ignore if the output system isn't ready yet
+				return;
+			}
+;			// Get current lights
 			Layer CurrentLayer;
 			lock (QueueToModify.LightsLastProcessed) {
 				CurrentLayer = QueueToModify.LightsLastProcessed.Clone ();
@@ -2169,7 +2175,7 @@ namespace Actinic
 
 		private static bool ActiveOutputSystemReady ()
 		{
-			return (ActiveOutputSystem != null && ActiveOutputSystem.Initialized);
+			return (ActiveOutputSystem?.Initialized == true);
 		}
 
 		private static bool InitializeOutputSystem (AbstractOutput DesiredOutputSystem)
@@ -2178,11 +2184,6 @@ namespace Actinic
 				throw new ArgumentNullException ("DesiredOutputSystem", "DesiredOutputSystem must be specified to initialize the system");
 
 			bool success = false;
-
-			SkipInput = true;
-			System.Threading.Thread skip_input_buffer = new System.Threading.Thread (FlushKeyboard);
-			skip_input_buffer.IsBackground = true;
-			skip_input_buffer.Start ();
 
 			ActiveOutputSystem = DesiredOutputSystem;
 			success = ActiveOutputSystem.InitializeSystem ();
@@ -2199,25 +2200,25 @@ namespace Actinic
 					ActiveOutputSystem.Identifier,
 					ActiveOutputSystem.VersionIdentifier);
 
-				// Update number of lights, (re-)initalize the light queues
+				// Update number of lights, (re-)initialize the light queues
 				LightSystem.SetLightCount (
 					ActiveOutputSystem.Configuration.LightCount);
 				CreateLightQueues (LightSystem.LIGHT_COUNT);
+
+				ActiveOutputSystemReadyEvent.Set ();
 			} else {
 				Console.WriteLine ("- Could not connect to '{0}'", outputType);
 			}
-
-			SkipInput = false;
-			if (skip_input_buffer.IsAlive)
-				skip_input_buffer.Abort ();
 
 			return success;
 		}
 
 		private static bool ShutdownOutputSystem ()
 		{
-			if (ActiveOutputSystem != null)
+			if (ActiveOutputSystem != null) {
+				ActiveOutputSystemReadyEvent.Reset ();
 				return ActiveOutputSystem.ShutdownSystem ();
+			}
 			return false;
 		}
 
@@ -2226,6 +2227,7 @@ namespace Actinic
 			if (ActiveOutputSystem == null)
 				return false;
 
+			ActiveOutputSystemReadyEvent.Reset ();
 			if (ActiveOutputSystem.ResetSystem ()) {
 				string outputType = ActiveOutputSystem.GetType ().Name.Trim ();
 				if (outputType == "") {
@@ -2237,6 +2239,7 @@ namespace Actinic
 					ActiveOutputSystem.Identifier,
 					ActiveOutputSystem.VersionIdentifier);
 
+				ActiveOutputSystemReadyEvent.Set ();
 				return true;
 			} else {
 				return false;
