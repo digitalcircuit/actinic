@@ -211,7 +211,7 @@ namespace Actinic
 					)
 				);
 			lock (OutputQueue) {
-				OutputQueue.Enqueue (NextFrame.Clone ());
+				UnlockedPushToQueue (NextFrame);
 			}
 		}
 
@@ -221,10 +221,14 @@ namespace Actinic
 		/// <param name="UseLastFrame">If set to <c>true</c> use the last entry in the queue instead of the current state (useful if an animation is running).</param>
 		public void PushToQueue (bool UseLastFrame)
 		{
-			if (QueueEmpty || UseLastFrame == false) {
-				PushToQueue (Lights);
-			} else if (UseLastFrame) {
-				PushToQueue (OutputQueue.ToArray () [OutputQueue.Count - 1]);
+			lock (OutputQueue) {
+				if (QueueEmpty || UseLastFrame == false) {
+					UnlockedPushToQueue (Lights);
+				} else if (UseLastFrame) {
+					UnlockedPushToQueue (
+						OutputQueue.ToArray () [OutputQueue.Count - 1]
+					);
+				}
 			}
 		}
 
@@ -237,6 +241,30 @@ namespace Actinic
 				OutputQueue.Clear ();
 			}
 		}
+
+		#region Internal
+
+		/// <summary>
+		/// Adds a frame to the end of the output queue.
+		/// <remarks>
+		/// This does NOT lock the queue, and is only suitable for internal use
+		/// with a function that locks.
+		/// </remarks>
+		/// </summary>
+		/// <param name="NextFrame">A Layer representing the desired frame.</param>
+		private void UnlockedPushToQueue (Layer NextFrame)
+		{
+			if (NextFrame.PixelCount != LightCount)
+				throw new ArgumentOutOfRangeException ("NextFrame",
+					string.Format (
+						"NextFrame must contain same number of LEDs (has {0}," +
+						" expected {1})", NextFrame.PixelCount, LightCount
+					)
+				);
+			OutputQueue.Enqueue (NextFrame.Clone ());
+		}
+
+		#endregion
 	}
 }
 
