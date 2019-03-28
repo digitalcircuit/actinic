@@ -142,6 +142,9 @@ namespace Actinic.Outputs
 
 		public override ReadOnlyDeviceConfiguration Configuration {
 			get {
+				if (deviceConfig == null) {
+					return null;
+				}
 				if (deviceConfigRO == null) {
 					deviceConfigRO =
 						new ReadOnlyDeviceConfiguration (deviceConfig);
@@ -212,196 +215,209 @@ namespace Actinic.Outputs
 
 			ConnectionStatus = ConnectionState.Connecting;
 
-			USB_Serial = new SerialPort (Arduino_TTY);
-			USB_Serial.BaudRate = 115200;
-			USB_Serial.Parity = Parity.None;
-			USB_Serial.StopBits = StopBits.One;
-			USB_Serial.DataBits = 8;
-			USB_Serial.Handshake = Handshake.None;
+			lock (USB_Serial_Sync) {
+				USB_Serial = new SerialPort (Arduino_TTY);
+				USB_Serial.BaudRate = 115200;
+				USB_Serial.Parity = Parity.None;
+				USB_Serial.StopBits = StopBits.One;
+				USB_Serial.DataBits = 8;
+				USB_Serial.Handshake = Handshake.None;
 
-			// This is required on Windows for some Arduino boards.
-			// See https://stackoverflow.com/questions/26929153/c-sharp-serial-communcation-with-arduino#26929382
-			USB_Serial.DtrEnable = true;
-			USB_Serial.RtsEnable = true;
+				// This is required on Windows for some Arduino boards.
+				// See https://stackoverflow.com/questions/26929153/c-sharp-serial-communcation-with-arduino#26929382
+				USB_Serial.DtrEnable = true;
+				USB_Serial.RtsEnable = true;
 
-			try {
-				USB_Serial.Open ();
+				try {
+					USB_Serial.Open ();
 
-				System.Text.StringBuilder receiveBuffer = new System.Text.StringBuilder ();
-				string result = "";
-				const int bufSize = 20;
+					System.Text.StringBuilder receiveBuffer =
+						new System.Text.StringBuilder ();
+					string result = "";
+					const int bufSize = 20;
 
-				// Prepare query for information
-				Byte[] writeQueryBuffer = { Protocol_QUERY_INFO };
-				// Query for information
-				USB_Serial.Write (writeQueryBuffer, 0, writeQueryBuffer.Length);
+					// Prepare query for information
+					Byte[] writeQueryBuffer = { Protocol_QUERY_INFO };
+					// Query for information
+					USB_Serial.Write (
+						writeQueryBuffer, 0, writeQueryBuffer.Length);
 
-				// Check for a valid response twenty times; assume failed if no success
-				for (int retry = 0; retry < 20; retry++) {
-					System.Threading.Thread.Sleep (200);
-					if (USB_Serial.BytesToRead > 0) {
-						Byte[] dataBuffer = new Byte[bufSize];
+					// Check for a valid response twenty times; assume failed if
+					// no success
+					for (int retry = 0; retry < 20; retry++) {
+						System.Threading.Thread.Sleep (200);
+						if (USB_Serial.BytesToRead > 0) {
+							Byte[] dataBuffer = new Byte[bufSize];
 
-						USB_Serial.Read (dataBuffer, 0, bufSize);
-						string s = System.Text.ASCIIEncoding.ASCII.GetString (dataBuffer);
+							USB_Serial.Read (dataBuffer, 0, bufSize);
+							string s = System.Text.ASCIIEncoding.ASCII.GetString (dataBuffer);
 
-						receiveBuffer.Append (s);
-					}
-					result = receiveBuffer.ToString ();
-
-					switch (ConnectionStatus) {
-					case ConnectionState.Connecting:
-						if (result.Contains (Protocol_Firmware_Identifier) == true) {
-							ConnectionStatus = ConnectionState.FirmwareFound;
-						} else {
-							// Retry sending the query for information
-							USB_Serial.Write (writeQueryBuffer, 0, writeQueryBuffer.Length);
+							receiveBuffer.Append (s);
 						}
-						break;
-					case ConnectionState.FirmwareFound:
-						if (result.Contains (Protocol_Firmware_Compatible_Version_String) == true)
-							ConnectionStatus = ConnectionState.CompatibleVersionFound;
-						break;
-					case ConnectionState.CompatibleVersionFound:
-						if (result.Contains (Protocol_Firmware_Negotiation_End) == true)
-							ConnectionStatus = ConnectionState.ProtocolFound;
-						break;
-					default:
+						result = receiveBuffer.ToString ();
+
+						switch (ConnectionStatus) {
+						case ConnectionState.Connecting:
+							if (result.Contains (Protocol_Firmware_Identifier) == true) {
+								ConnectionStatus = ConnectionState.FirmwareFound;
+							} else {
+								// Retry sending the query for information
+								USB_Serial.Write (
+									writeQueryBuffer,
+									0, writeQueryBuffer.Length);
+							}
+							break;
+						case ConnectionState.FirmwareFound:
+							if (result.Contains (Protocol_Firmware_Compatible_Version_String) == true)
+								ConnectionStatus = ConnectionState.CompatibleVersionFound;
+							break;
+						case ConnectionState.CompatibleVersionFound:
+							if (result.Contains (Protocol_Firmware_Negotiation_End) == true)
+								ConnectionStatus = ConnectionState.ProtocolFound;
+							break;
+						default:
 						// Most likely still waiting for results
-						break;
+							break;
+						}
+
+						// Break down here, for otherwise it only exits the
+						// switch
+						if (ConnectionStatus == ConnectionState.ProtocolFound)
+							break;
 					}
 
-					// Break down here, for otherwise it only exits the switch
-					if (ConnectionStatus == ConnectionState.ProtocolFound)
-						break;
-				}
+					if (ConnectionStatus == ConnectionState.ProtocolFound && result != "") {
+						// Reset protocol values
+						Protocol_Version = 0;
+						Protocol_Light_Count = 0;
+						Protocol_Color_MAX = 0;
+						Protocol_Brightness_MAX = 0;
 
-				if (ConnectionStatus == ConnectionState.ProtocolFound && result != "") {
-					// Reset protocol values
-					Protocol_Version = 0;
-					Protocol_Light_Count = 0;
-					Protocol_Color_MAX = 0;
-					Protocol_Brightness_MAX = 0;
+						// Reset calculated values
+						measuredLatency = 0;
 
-					// Reset calculated values
-					measuredLatency = 0;
+						// Load protocol information
+						string[] negotiation_results = result.Split ('\n');
+						foreach (string protocol_entry in negotiation_results) {
+							if (protocol_entry.Trim () == "")
+								continue;
+							if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Version)) {
+								decimal.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Version.Length),
+									out Protocol_Version);
+							}
+							if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Light_Count)) {
+								int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Light_Count.Length),
+									out Protocol_Light_Count);
+							}
+							if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Strand_Length)) {
+								float.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Strand_Length.Length),
+									out Protocol_Strand_Length);
+							}
+							if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Color_Max)) {
+								int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Color_Max.Length),
+									out Protocol_Color_MAX);
+							}
+							if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Brightness_Max)) {
+								int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Brightness_Max.Length),
+									out Protocol_Brightness_MAX);
+							}
+						}
 
-					// Remove stale device configuration
-					deviceConfig = null;
-					deviceConfigRO = null;
+						if ((Protocol_Version <= 0)
+						    || (Protocol_Light_Count < 1)
+						    || (Protocol_Strand_Length <= 0)
+						    || (Protocol_Color_MAX < 1)
+						    || (Protocol_Brightness_MAX < 1)) {
+							// Something's wrong with the connection or the
+							// Arduino firmware's configuration.  Just treat
+							// this as a non-existent device, but print a
+							// warning
+							Console.Error.WriteLine (
+								"Arduino on '{0}' provided invalid " +
+								"configuration, ignoring device", Arduino_TTY);
+							UnlockedShutdownSystem ();
+							return false;
+						} else {
+							// Set up device configuration if missing or changed
+							if (deviceConfig == null
+							    || deviceConfig.LightCount != Protocol_Light_Count
+							    || deviceConfig.StrandLength != Protocol_Strand_Length) {
+								// Clear read-only copy
+								deviceConfigRO = null;
+								// Set device copy
+								deviceConfig = new DeviceConfiguration (
+									Protocol_Light_Count,
+									Protocol_Strand_Length
+								);
+							}
 
-					// Load protocol information
-					string[] negotiation_results = result.Split ('\n');
-					foreach (string protocol_entry in negotiation_results) {
-						if (protocol_entry.Trim () == "")
-							continue;
-						if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Version)) {
-							decimal.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Version.Length),
-								out Protocol_Version);
+							// Wait to connect DataReceived until now so others
+							// don't nom the protocol negotiation data
+							USB_Serial.DataReceived +=
+								new SerialDataReceivedEventHandler (DataReceivedHandler);
+							// All is good, mark system as ready
+							ConnectionStatus = ConnectionState.Ready;
+							return true;
 						}
-						if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Light_Count)) {
-							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Light_Count.Length),
-								out Protocol_Light_Count);
-						}
-						if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Strand_Length)) {
-							float.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Strand_Length.Length),
-								out Protocol_Strand_Length);
-						}
-						if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Color_Max)) {
-							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Color_Max.Length),
-								out Protocol_Color_MAX);
-						}
-						if (protocol_entry.StartsWith (Protocol_Firmware_Negotiation_Brightness_Max)) {
-							int.TryParse (protocol_entry.Substring (Protocol_Firmware_Negotiation_Brightness_Max.Length),
-								out Protocol_Brightness_MAX);
-						}
-					}
-
-					if ((Protocol_Version <= 0)
-					    || (Protocol_Light_Count < 1)
-					    || (Protocol_Strand_Length <= 0)
-					    || (Protocol_Color_MAX < 1)
-					    || (Protocol_Brightness_MAX < 1)) {
-						// Something's wrong with the connection or the Arduino firmware's configuration
-						// Just treat this as a non-existent device, but print a warning
-						Console.Error.WriteLine ("Arduino on '{0}' provided invalid configuration, ignoring device", Arduino_TTY);
-						ShutdownSystem ();
-						return false;
 					} else {
-						// Set up device configuration
-						deviceConfig = new DeviceConfiguration (
-							Protocol_Light_Count, Protocol_Strand_Length);
+						// Something went wrong, treat this as a non-existent
+						// device
 
-						// Wait to connect DataReceived until now so others don't nom the protocol negotiation data
-						USB_Serial.DataReceived += new SerialDataReceivedEventHandler (DataReceivedHandler);
-						// All is good, mark system as ready
-						ConnectionStatus = ConnectionState.Ready;
-						return true;
-					}
-				} else {
-					// Something went wrong, treat this as a non-existent device
-
-					// Connection state represents the last successful
-					// negotiation step
-					switch (ConnectionStatus) {
-					case ConnectionState.Disconnected:
-					case ConnectionState.Connecting:
+						// Connection state represents the last successful
+						// negotiation step
+						switch (ConnectionStatus) {
+						case ConnectionState.Disconnected:
+						case ConnectionState.Connecting:
 						// Don't warn for unexpected states; might be a random
 						// device
-						break;
-					case ConnectionState.FirmwareFound:
+							break;
+						case ConnectionState.FirmwareFound:
 						// Firmware found, but with an incompatible version
-						Console.Error.WriteLine (
-							"Arduino on '{0}' is not compatible with version " +
-							"{1}.x, ignoring device\n" +
-							"(Try upgrading Arduino firmware or Actinic " +
-							"software..?)",
-							Arduino_TTY,
-							Protocol_Firmware_Compatible_Version_Major);
-						break;
-					case ConnectionState.CompatibleVersionFound:
+							Console.Error.WriteLine (
+								"Arduino on '{0}' is not compatible with " +
+								"version {1}.x, ignoring device\n" +
+								"(Try upgrading Arduino firmware or Actinic " +
+								"software..?)",
+								Arduino_TTY,
+								Protocol_Firmware_Compatible_Version_Major);
+							break;
+						case ConnectionState.CompatibleVersionFound:
 						// Firmware version compatible, but negotiation didn't
 						// finish - interrupted connection?
-						Console.Error.WriteLine (
-							"Arduino on '{0}' has compatible version {1}.x, " +
-							"but negotiation didn't finish, ignoring device",
-							Arduino_TTY,
-							Protocol_Firmware_Compatible_Version_Major);
-						break;
-					case ConnectionState.ProtocolFound:
-					case ConnectionState.Ready:
+							Console.Error.WriteLine (
+								"Arduino on '{0}' has compatible version " +
+								"{1}.x, but negotiation didn't finish, " +
+								"ignoring device",
+								Arduino_TTY,
+								Protocol_Firmware_Compatible_Version_Major);
+							break;
+						case ConnectionState.ProtocolFound:
+						case ConnectionState.Ready:
 						// Something went really wrong - this shouldn't happen
-						Console.Error.WriteLine (
-							"Arduino on '{0}' has compatible version {1}.x, " +
-							"but something broke after negotiation, ignoring " +
-							"device",
-							Arduino_TTY,
-							Protocol_Firmware_Compatible_Version_Major);
-						break;
+							Console.Error.WriteLine (
+								"Arduino on '{0}' has compatible version " +
+								"{1}.x, but something broke after " +
+								"negotiation, ignoring device",
+								Arduino_TTY,
+								Protocol_Firmware_Compatible_Version_Major);
+							break;
+						}
+						UnlockedShutdownSystem ();
+						return false;
 					}
-					ShutdownSystem ();
+				} catch (System.IO.IOException) {
+					ConnectionStatus = ConnectionState.Disconnected;
 					return false;
 				}
-			} catch (System.IO.IOException) {
-				ConnectionStatus = ConnectionState.Disconnected;
-				return false;
 			}
 		}
 
 
 		public override bool ShutdownSystem ()
 		{
-			if (USB_Serial != null) {
-				ConnectionStatus = ConnectionState.Disconnected;
-				USB_Serial.Close ();
-				USB_Serial = null;
-
-				// Remove stale device configuration
-				deviceConfig = null;
-				deviceConfigRO = null;
-				return true;
-			} else {
-				return true;
+			lock (USB_Serial_Sync) {
+				// Try to shut down the output system
+				return UnlockedShutdownSystem ();
 			}
 		}
 
@@ -422,8 +438,15 @@ namespace Actinic.Outputs
 					);
 				}
 
-				USB_Serial.Write (output_all.ToArray (), 0, output_all.ToArray ().Length);
-				return USB_Serial_WaitAcknowledge (ProcessingOverhead);
+				lock (USB_Serial_Sync) {
+					if (USB_Serial == null) {
+						// System shut down
+						return false;
+					}
+					USB_Serial.Write (
+						output_all.ToArray (), 0, output_all.ToArray ().Length);
+					return USB_Serial_WaitAcknowledge (ProcessingOverhead);
+				}
 			} catch (System.TimeoutException ex) {
 				throw new System.IO.IOException ("Connection to output system lost (timeout)", ex);
 			} catch (System.InvalidOperationException ex) {
@@ -450,8 +473,15 @@ namespace Actinic.Outputs
 					output_all.AddRange (output);
 				}
 
-				USB_Serial.Write (output_all.ToArray (), 0, output_all.ToArray ().Length);
-				return USB_Serial_WaitAcknowledge (ProcessingOverhead);
+				lock (USB_Serial_Sync) {
+					if (USB_Serial == null) {
+						// System shut down
+						return false;
+					}
+					USB_Serial.Write (
+						output_all.ToArray (), 0, output_all.ToArray ().Length);
+					return USB_Serial_WaitAcknowledge (ProcessingOverhead);
+				}
 			} catch (System.TimeoutException ex) {
 				throw new System.IO.IOException ("Connection to output system lost (timeout)", ex);
 			} catch (System.InvalidOperationException ex) {
@@ -479,8 +509,15 @@ namespace Actinic.Outputs
 					output_all.AddRange (output);
 				}
 
-				USB_Serial.Write (output_all.ToArray (), 0, output_all.ToArray ().Length);
-				return USB_Serial_WaitAcknowledge (ProcessingOverhead);
+				lock (USB_Serial_Sync) {
+					if (USB_Serial == null) {
+						// System shut down
+						return false;
+					}
+					USB_Serial.Write (
+						output_all.ToArray (), 0, output_all.ToArray ().Length);
+					return USB_Serial_WaitAcknowledge (ProcessingOverhead);
+				}
 			} catch (System.TimeoutException ex) {
 				throw new System.IO.IOException ("Connection to output system lost (timeout)", ex);
 			} catch (System.InvalidOperationException ex) {
@@ -488,6 +525,7 @@ namespace Actinic.Outputs
 			}
 		}
 
+		#region Internal
 
 		private void DataReceivedHandler (object sender, SerialDataReceivedEventArgs e)
 		{
@@ -556,6 +594,31 @@ namespace Actinic.Outputs
 		}
 
 		/// <summary>
+		/// Shuts down the output system.
+		/// <remarks>
+		/// This does NOT lock the queue, and is only suitable for internal use
+		/// with a function that locks.
+		/// </remarks>
+		/// </summary>
+		/// <returns><c>true</c>, if system was successfully shutdown, <c>false</c> otherwise.</returns>
+		public bool UnlockedShutdownSystem ()
+		{
+			if (USB_Serial != null) {
+				ConnectionStatus = ConnectionState.Disconnected;
+				USB_Serial.Close ();
+				USB_Serial = null;
+
+				// Mark device configuration as stale if it exists
+				if (deviceConfig != null) {
+					deviceConfig.SetUpdateRate (0);
+				}
+				return true;
+			} else {
+				return true;
+			}
+		}
+
+		/// <summary>
 		/// Converts the given <see cref="Color"/> color component value to fit
 		/// within the range of the Arduino protocol.
 		/// </summary>
@@ -588,6 +651,13 @@ namespace Actinic.Outputs
 				Protocol_Brightness_MAX
 			);
 		}
+
+		/// <summary>
+		/// Synchronization object for the USB Serial device
+		/// </summary>
+		private readonly object USB_Serial_Sync = new object();
+
+		#endregion
 
 	}
 }
