@@ -112,8 +112,8 @@ namespace Actinic.Animations
 					Styled_BrightColor = 85; // (255÷60)×20
 					break;
 				default:
-					// TODO: Should something happen here..?
-					break;
+					throw new NotSupportedException (
+						"Unsupported Style type for AnimationStyle");
 				}
 			}
 		}
@@ -146,7 +146,8 @@ namespace Actinic.Animations
 					break;
 				default:
 					// This shouldn't ever happen
-					throw new NotImplementedException ();
+					throw new NotSupportedException (
+						"Unsupported Style type for AnimationStyle");
 				}
 				// Aim for the scale of baseShiftAmount at 50 ms
 				return baseShiftAmount * (deviceConfig.FactorTime / 50);
