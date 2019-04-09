@@ -128,7 +128,7 @@ namespace Actinic.Outputs
 		/// <summary>
 		/// Measured processing latency
 		/// </summary>
-		private float measuredLatency = 0;
+		private double measuredLatency = 0;
 
 		/// <summary>
 		/// Active device configuration
@@ -406,7 +406,8 @@ namespace Actinic.Outputs
 		}
 
 
-		public override bool UpdateLightsBrightness (Layer Actinic_Light_Set)
+		public override bool UpdateLightsBrightness (
+			Layer Actinic_Light_Set, double ProcessingOverhead = 0)
 		{
 			if (Initialized == false)
 				return false;
@@ -422,7 +423,7 @@ namespace Actinic.Outputs
 				}
 
 				USB_Serial.Write (output_all.ToArray (), 0, output_all.ToArray ().Length);
-				return USB_Serial_WaitAcknowledge ();
+				return USB_Serial_WaitAcknowledge (ProcessingOverhead);
 			} catch (System.TimeoutException ex) {
 				throw new System.IO.IOException ("Connection to output system lost (timeout)", ex);
 			} catch (System.InvalidOperationException ex) {
@@ -430,7 +431,8 @@ namespace Actinic.Outputs
 			}
 		}
 
-		public override bool UpdateLightsColor (Layer Actinic_Light_Set)
+		public override bool UpdateLightsColor (
+			Layer Actinic_Light_Set, double ProcessingOverhead = 0)
 		{
 			if (Initialized == false)
 				return false;
@@ -449,7 +451,7 @@ namespace Actinic.Outputs
 				}
 
 				USB_Serial.Write (output_all.ToArray (), 0, output_all.ToArray ().Length);
-				return USB_Serial_WaitAcknowledge ();
+				return USB_Serial_WaitAcknowledge (ProcessingOverhead);
 			} catch (System.TimeoutException ex) {
 				throw new System.IO.IOException ("Connection to output system lost (timeout)", ex);
 			} catch (System.InvalidOperationException ex) {
@@ -457,7 +459,8 @@ namespace Actinic.Outputs
 			}
 		}
 
-		public override bool UpdateLightsAll (Layer Actinic_Light_Set)
+		public override bool UpdateLightsAll (
+			Layer Actinic_Light_Set, double ProcessingOverhead = 0)
 		{
 			if (Initialized == false)
 				return false;
@@ -477,7 +480,7 @@ namespace Actinic.Outputs
 				}
 
 				USB_Serial.Write (output_all.ToArray (), 0, output_all.ToArray ().Length);
-				return USB_Serial_WaitAcknowledge ();
+				return USB_Serial_WaitAcknowledge (ProcessingOverhead);
 			} catch (System.TimeoutException ex) {
 				throw new System.IO.IOException ("Connection to output system lost (timeout)", ex);
 			} catch (System.InvalidOperationException ex) {
@@ -497,7 +500,7 @@ namespace Actinic.Outputs
 			OnSystemDataReceived (sender, e);
 		}
 
-		private bool USB_Serial_WaitAcknowledge ()
+		private bool USB_Serial_WaitAcknowledge (double ProcessingOverhead)
 		{
 			if (Initialized == false)
 				return false;
@@ -541,10 +544,13 @@ namespace Actinic.Outputs
 			}
 
 			commandAckStopwatch.Stop ();
-			measuredLatency = commandAckStopwatch.ElapsedMilliseconds;
-			deviceConfig.SetUpdateRate (measuredLatency);
+			measuredLatency = commandAckStopwatch.Elapsed.TotalMilliseconds;
+			// Add in any processing delays to the total update rate
+			deviceConfig.SetUpdateRate (measuredLatency, ProcessingOverhead);
 #if DEBUG_USB_PERFORMANCE
-			Console.WriteLine ("[Arduino] Acknowledged in {0} ms", measuredLatency);
+			Console.WriteLine (
+				"[Arduino] Acknowledged in {0,6:F2} ms ({1,6:F2} ms total)",
+				measuredLatency, ProcessingOverhead + measuredLatency);
 #endif
 			return result;
 		}

@@ -33,7 +33,7 @@ namespace Actinic.Outputs
 		public DummyOutput ()
 		{
 			// Set update rate to something sensible
-			deviceConfig.SetUpdateRate (5);
+			deviceConfig.SetUpdateRate (sampleUpdateRate);
 		}
 
 		public override bool Initialized {
@@ -87,24 +87,35 @@ namespace Actinic.Outputs
 			return true;
 		}
 
-		public override bool UpdateLightsBrightness (Layer Actinic_Light_Set)
+		public override bool UpdateLightsBrightness (
+			Layer Actinic_Light_Set, double ProcessingOverhead = 0)
 		{
 			ValidateLightSet (Actinic_Light_Set);
+			deviceConfig.SetUpdateRate (sampleUpdateRate + ProcessingOverhead);
 			return true;
 		}
 
-		public override bool UpdateLightsColor (Layer Actinic_Light_Set)
+		public override bool UpdateLightsColor (
+			Layer Actinic_Light_Set, double ProcessingOverhead = 0)
 		{
 			ValidateLightSet (Actinic_Light_Set);
+			deviceConfig.SetUpdateRate (sampleUpdateRate + ProcessingOverhead);
 			return true;
 		}
 
-		public override bool UpdateLightsAll (Layer Actinic_Light_Set)
+		public override bool UpdateLightsAll (
+			Layer Actinic_Light_Set, double ProcessingOverhead = 0)
 		{
 			ValidateLightSet (Actinic_Light_Set);
+			deviceConfig.SetUpdateRate (sampleUpdateRate + ProcessingOverhead);
 			return true;
 		}
 
+		#region Internal
+
+		private const double sampleUpdateRate = 5;
+
+		#endregion
 	}
 }
 

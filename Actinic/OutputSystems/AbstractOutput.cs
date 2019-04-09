@@ -137,21 +137,27 @@ namespace Actinic.Outputs
 		/// </summary>
 		/// <returns><c>true</c>, if brightness was updated, <c>false</c> otherwise.</returns>
 		/// <param name="Actinic_Light_Set">LED list representing desired state of lights, ignoring the color component.</param>
-		public abstract bool UpdateLightsBrightness (Layer Actinic_Light_Set);
+		/// <param name="ProcessingOverhead">Any time spent processing before calling this function, used to provide consistent timing.</param>
+		public abstract bool UpdateLightsBrightness (
+			Layer Actinic_Light_Set, double ProcessingOverhead = 0);
 
 		/// <summary>
 		/// Updates the color of the lights.
 		/// </summary>
 		/// <returns><c>true</c>, if color was updated, <c>false</c> otherwise.</returns>
 		/// <param name="Actinic_Light_Set">LED list representing desired state of lights, ignoring the brightness components.</param>
-		public abstract bool UpdateLightsColor (Layer Actinic_Light_Set);
+		/// <param name="ProcessingOverhead">Any time spent processing before calling this function, used to provide consistent timing.</param>
+		public abstract bool UpdateLightsColor (
+			Layer Actinic_Light_Set, double ProcessingOverhead = 0);
 
 		/// <summary>
 		/// Updates both color and brightness of the lights.
 		/// </summary>
 		/// <returns><c>true</c>, if color and brightness was updated, <c>false</c> otherwise.</returns>
 		/// <param name="Actinic_Light_Set">LED list representing desired state of lights.</param>
-		public abstract bool UpdateLightsAll (Layer Actinic_Light_Set);
+		/// <param name="ProcessingOverhead">Any time spent processing before calling this function, used to provide consistent timing.</param>
+		public abstract bool UpdateLightsAll (
+			Layer Actinic_Light_Set, double ProcessingOverhead = 0);
 
 		/// <summary>
 		/// Raises the system data received event.

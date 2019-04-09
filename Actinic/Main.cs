@@ -67,6 +67,22 @@ namespace Actinic
 		// of a target.  Trying 49 ms...
 
 		/// <summary>
+		/// If true, display average latency, otherwise hide it.
+		/// </summary>
+		private static bool Debug_Display_Latency = false;
+
+		/// <summary>
+		/// How often to print the average performance value.
+		/// </summary>
+		private static TimeSpan Debug_Perf_PrintInterval =
+			new TimeSpan(0, 0, 1);
+
+		/// <summary>
+		/// The last time the average performance value was printed.
+		/// </summary>
+		private static DateTime Debug_Perf_LastPrint = DateTime.UtcNow;
+
+		/// <summary>
 		/// The current delay when idle in ms.
 		/// </summary>
 		private static int Actinic_Light_Queue_CurrentIdleWait = 1;
@@ -126,13 +142,14 @@ namespace Actinic
 		// And don't spam the console about it; only notify when reached, then when fixed
 
 		private static AbstractAnimation.Style Animation_AnimationStyle = AbstractAnimation.Style.Moderate;
-		private const string Main_Command_Help = "color, brightness, white, black, identify, anim, overlay, shift_outwards, vu, clear, queue, reset, quit\n(tip: use '&&' to combine commands)";
+		private const string Main_Command_Help = "color, brightness, white, black, identify, anim, overlay, shift_outwards, vu, clear, queue, debug, reset, quit\n(tip: use '&&' to combine commands)";
 		private const string Anim_Command_Help = "anim [play, seek, stop, fade, style]";
 		private const string Overlay_Command_Help = "overlay [name_of_layer 'command', OR list, clear_all]";
 		private const string Overlay_Layer_Command_Help = "overlay name_of_layer [color, brightness, identify, play, exists, blending, clear]";
 		private const string VU_Command_Help = "vu [run, legacy_mode, OR display, hide, set_low, set_mid, set_high]";
 		private const string VU_Run_Command_Help = "vu run [beat_pulse, rave_mood, spinner]";
 		private const string VU_Legacy_Mode_Command_Help = "vu legacy_mode [auto_fast_beat, rainbow, rainbow_solid, rainbow_beat, rainbow_beat_bass, hueshift, hueshift_beat, moving_bars, moving_bars_spaced, stationary_bars, solid_rainbow_strobe, solid_white_strobe, solid_hueshift_strobe, single_rainbow_strobe, single_white_strobe]";
+		private const string Debug_Command_Help = "debug [display]";
 		private const string Queue_Command_Help = "queue [start, stop, clear, spam, test]";
 
 		private static bool SkipInput = false;
@@ -1353,6 +1370,51 @@ namespace Actinic
 									Console.WriteLine ("> " + Queue_Command_Help);
 								}
 								break;
+							case "debug":
+								if (cmd_args.Count > 1 && cmd_args [1] != null) {
+									switch (cmd_args [1].ToLowerInvariant ()) {
+									case "display":
+										if (cmd_args.Count > 2 && cmd_args [2] != null) {
+											switch (cmd_args [2].ToLowerInvariant ()) {
+											case "latency":
+												if (cmd_args.Count > 3 && cmd_args [3] != null) {
+													switch (cmd_args [3].ToLowerInvariant ()) {
+													case "show":
+														Debug_Display_Latency = true;
+														break;
+													case "hide":
+														Debug_Display_Latency = false;
+														break;
+													default:
+														Debug_Display_Latency = !Debug_Display_Latency;
+														Console.WriteLine ("(Toggled debug latency; for specific control, debug display latency [show, hide])");
+														break;
+													}
+												} else {
+													Debug_Display_Latency = !Debug_Display_Latency;
+													Console.WriteLine ("(Toggled debug latency; for specific control, debug display latency [show, hide])");
+												}
+												break;
+											default:
+												Console.WriteLine ("> debug display [latency]");
+												break;
+											}
+										} else {
+											Console.WriteLine ("> debug display [latency]");
+										}
+										break;
+									case "hide":
+										Debug_Display_Latency = false;
+										Console.WriteLine ("(All debug display output hidden)");
+										break;
+									default:
+										Console.WriteLine ("> " + Debug_Command_Help);
+										break;
+									}
+								} else {
+									Console.WriteLine ("> " + Debug_Command_Help);
+								}
+								break;
 							case "reset":
 								Console.WriteLine ("(resetting output system...)");
 								// FIXME: Resetting the system should not require halting everything, but something deadlocks otherwise...
@@ -1547,7 +1609,7 @@ namespace Actinic
 					VU_Processing_PerfStopwatch.Restart ();
 					#endif
 					#if DEBUG_PERFORMANCE
-					Console.WriteLine ("{0} ms - updating audio snapshot", Queue_PerfStopwatch.ElapsedMilliseconds);
+					Console.WriteLine ("{0,6:F2} ms - updating audio snapshot", Queue_PerfStopwatch.Elapsed.TotalMilliseconds);
 					#endif
 					// Grab a snapshot of the current audio volumes
 					if (ActiveAudioInputSystem.Running) {
@@ -1567,14 +1629,14 @@ namespace Actinic
 					selected_reactive_animation.UpdateAudioSnapshot (Audio_Volumes_Snapshot);
 					ReactiveSystem.PrintAudioInformationToConsole (selected_reactive_animation);
 					#if DEBUG_VU_PERFORMANCE
-					Console.WriteLine ("# Time until acknowledged: {0}", VU_Processing_PerfStopwatch.ElapsedMilliseconds);
+					Console.WriteLine ("# Time until acknowledged: {0,6:F2}", VU_Processing_PerfStopwatch.Elapsed.TotalMilliseconds);
 					#endif
 				}
 
 				// -- Animation-specific queue management --
 				foreach (KeyValuePair <string, LED_Queue> queue in GetAllQueues ()) {
 					if (queue.Value.AnimationActive) {
-						UpdateAnimationStackForQueue (queue.Value, Queue_PerfStopwatch.ElapsedMilliseconds, queue.Key);
+						UpdateAnimationStackForQueue (queue.Value, Queue_PerfStopwatch.Elapsed.TotalMilliseconds, queue.Key);
 					}
 				}
 
@@ -1594,13 +1656,13 @@ namespace Actinic
 						QueueLightSnapshot = queue.Value.PopFromQueue ();
 						if (QueueLightSnapshot != null) {
 							#if DEBUG_PERFORMANCE
-							Console.WriteLine ("{0} ms - grabbing snapshot from light queue ({1})", Queue_PerfStopwatch.ElapsedMilliseconds, queue.Key);
+							Console.WriteLine ("{0,6:F2} ms - grabbing snapshot from light queue ({1})", Queue_PerfStopwatch.Elapsed.TotalMilliseconds, queue.Key);
 							#endif
 							Light_Snapshots.Add (QueueLightSnapshot);
 							queue.Value.QueueIdleTime = 0;
 							queue.Value.Lights = QueueLightSnapshot;
 							#if DEBUG_PERFORMANCE
-							Console.WriteLine ("{0} ms - updating last processed ({1})", Queue_PerfStopwatch.ElapsedMilliseconds, queue.Key);
+							Console.WriteLine ("{0,6:F2} ms - updating last processed ({1})", Queue_PerfStopwatch.Elapsed.TotalMilliseconds, queue.Key);
 							#endif
 							queue.Value.MarkAsProcessed ();
 						} else if (update_needed) {
@@ -1647,7 +1709,7 @@ namespace Actinic
 
 					foreach (string key in EmptyQueues) {
 						#if DEBUG_OVERLAY_MANAGEMENT
-						Console.WriteLine (" {0} ms - removing overlay '{1}' as it is empty", Queue_PerfStopwatch.ElapsedMilliseconds, key);
+						Console.WriteLine (" {0,6:F2} ms - removing overlay '{1}' as it is empty", Queue_PerfStopwatch.Elapsed.TotalMilliseconds, key);
 						#endif
 						Actinic_Lights_Overlay_Queues.Remove (key);
 					}
@@ -1670,7 +1732,7 @@ namespace Actinic
 					// Reset the idle counter, used for implementing interval animations
 
 					#if DEBUG_PERFORMANCE
-					Console.WriteLine ("{0} ms - frame generated", Queue_PerfStopwatch.ElapsedMilliseconds);
+					Console.WriteLine ("{0,6:F2} ms - frame generated", Queue_PerfStopwatch.Elapsed.TotalMilliseconds);
 					#endif
 					int retriesSinceLastSuccess = 0;
 					while (true) {
@@ -1678,7 +1740,11 @@ namespace Actinic
 							throw new System.IO.IOException ("Could not reconnect to output system in background after 5 tries, giving up");
 						}
 						try {
-							if (UpdateLights_All (Light_Snapshot) == false) {
+							bool success = UpdateLights_All (
+								Light_Snapshot,
+								Queue_PerfStopwatch.Elapsed.TotalMilliseconds
+							);
+							if (success == false) {
 								Console.WriteLine ("(Error while updating lights in the animation queue!)");
 							}
 							// It at least didn't throw an exception...
@@ -1702,18 +1768,35 @@ namespace Actinic
 							// Try again by nature of not calling break
 						}
 					}
+
+					if (Debug_Display_Latency &&
+						DateTime.UtcNow > (Debug_Perf_LastPrint + Debug_Perf_PrintInterval)) {
+						Console.WriteLine (
+							"Avg: {0,6:F2} ms = {1,6:F2} render + {2,6:F2} " +
+							"device ({3})",
+							ActiveOutputSystem.Configuration.AverageLatency,
+							ActiveOutputSystem.Configuration.AverageRenderLatency,
+							ActiveOutputSystem.Configuration.AverageDeviceLatency,
+							DateTime.Now.ToLongTimeString ()
+						);
+						Debug_Perf_LastPrint = DateTime.UtcNow;
+					}
+
 					#if DEBUG_BRIEF_PERFORMANCE
-					double allowedLatency =
-						ActiveOutputSystem.Configuration.AverageLatency
-						+ Render_MaxLatency;
-					if (Queue_PerfStopwatch.ElapsedMilliseconds > allowedLatency)
-						Console.WriteLine ("# {0} ms - frame finished ({1})", Queue_PerfStopwatch.ElapsedMilliseconds, DateTime.Now.ToLongTimeString ());
+					double allowedLatency = Render_MaxLatency +
+						ActiveOutputSystem.Configuration.AverageDeviceLatency;
+					if (ActiveOutputSystem.Configuration.AverageLatency > allowedLatency)
+						Console.WriteLine ("Avg: {0,6:F2} ms total - {1,6:F2} ms render, exceeds {2} ms ({3})",
+							ActiveOutputSystem.Configuration.AverageLatency,
+							ActiveOutputSystem.Configuration.AverageRenderLatency,
+							Render_MaxLatency,
+							DateTime.Now.ToLongTimeString ());
 					#endif
 					#if DEBUG_PERFORMANCE
-					Console.WriteLine ("# {0} ms - frame finished", Queue_PerfStopwatch.ElapsedMilliseconds);
+					Console.WriteLine ("# {0,6:F2} ms - frame finished", Queue_PerfStopwatch.Elapsed.TotalMilliseconds);
 					#endif
 					#if DEBUG_VU_PERFORMANCE
-					Console.WriteLine ("# {0} ms - frame finished", VU_Processing_PerfStopwatch.ElapsedMilliseconds);
+					Console.WriteLine ("# {0,6:F2} ms - frame finished", VU_Processing_PerfStopwatch.Elapsed.TotalMilliseconds);
 					VU_Processing_PerfStopwatch.Stop ();
 					#endif
 				} else {
@@ -1751,7 +1834,7 @@ namespace Actinic
 			}
 		}
 
-		private static void UpdateAnimationStackForQueue (LED_Queue QueueToModify, long PerfTracking_TimeElapsed, string PerfTracking_QueueName)
+		private static void UpdateAnimationStackForQueue (LED_Queue QueueToModify, double PerfTracking_TimeElapsed, string PerfTracking_QueueName)
 		{
 			if (QueueToModify.AnimationActive && QueueToModify.QueueEmpty) {
 				// Only add an animation frame if enabled, and the queue is empty
@@ -1760,7 +1843,7 @@ namespace Actinic
 				    (QueueToModify.AnimationForceFrameRequest == true)) {
 					// Only add an animation frame if default delay is requested, or enough time elapsed in idle
 					#if DEBUG_PERFORMANCE
-					Console.WriteLine ("{0} ms - queuing frame from active animation ({1})", PerfTracking_TimeElapsed, PerfTracking_QueueName);
+					Console.WriteLine ("{0,6:F2} ms - queuing frame from active animation ({1})", PerfTracking_TimeElapsed, PerfTracking_QueueName);
 					#endif
 					try {
 						// In all of the below, you must set QueueToModify to the new, intended output, otherwise
@@ -2053,28 +2136,34 @@ namespace Actinic
 
 		#endregion
 
-		private static bool UpdateLights_Brightness (Layer Actinic_Light_Set)
+		private static bool UpdateLights_Brightness (
+			Layer Actinic_Light_Set, double ProcessingOverhead = 0)
 		{
 			if (ActiveOutputSystemReady () == false)
 				return false;
 
-			return ActiveOutputSystem.UpdateLightsBrightness (Actinic_Light_Set);
+			return ActiveOutputSystem.UpdateLightsBrightness (
+				Actinic_Light_Set, ProcessingOverhead);
 		}
 
-		private static bool UpdateLights_Color (Layer Actinic_Light_Set)
+		private static bool UpdateLights_Color (
+			Layer Actinic_Light_Set, double ProcessingOverhead = 0)
 		{
 			if (ActiveOutputSystemReady () == false)
 				return false;
 
-			return ActiveOutputSystem.UpdateLightsColor (Actinic_Light_Set);
+			return ActiveOutputSystem.UpdateLightsColor (
+				Actinic_Light_Set, ProcessingOverhead);
 		}
 
-		private static bool UpdateLights_All (Layer Actinic_Light_Set)
+		private static bool UpdateLights_All (
+			Layer Actinic_Light_Set, double ProcessingOverhead = 0)
 		{
 			if (ActiveOutputSystemReady () == false)
 				return false;
 
-			return ActiveOutputSystem.UpdateLightsAll (Actinic_Light_Set);
+			return ActiveOutputSystem.UpdateLightsAll (
+				Actinic_Light_Set, ProcessingOverhead);
 		}
 
 
