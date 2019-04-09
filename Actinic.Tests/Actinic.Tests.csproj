@@ -38,6 +38,8 @@
   <ItemGroup>
     <Compile Include="Rendering\ColorTests.cs" />
     <Compile Include="Rendering\LayerTests.cs" />
+    <Compile Include="Output\DeviceConfigurationTests.cs" />
+    <Compile Include="Output\ReadOnlyDeviceConfigurationTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -48,5 +50,8 @@
       <Project>{662328B8-5DAE-4AB0-9C8F-083DAFCA0431}</Project>
       <Name>Actinic</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Output\" />
   </ItemGroup>
 </Project>

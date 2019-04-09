@@ -80,6 +80,8 @@
     <Compile Include="Utilities\Randomizer.cs" />
     <Compile Include="Rendering\Color.cs" />
     <Compile Include="Rendering\Layer.cs" />
+    <Compile Include="Output\DeviceConfiguration.cs" />
+    <Compile Include="Output\ReadOnlyDeviceConfiguration.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
@@ -92,6 +94,7 @@
     <Folder Include="AudioInputSystems\" />
     <Folder Include="Parsing\" />
     <Folder Include="Rendering\" />
+    <Folder Include="Output\" />
   </ItemGroup>
   <ProjectExtensions>
     <MonoDevelop>
