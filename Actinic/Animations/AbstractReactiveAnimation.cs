@@ -27,6 +27,7 @@ using Actinic.Output;
 
 // Rendering
 using Actinic.Rendering;
+using Actinic.Utilities;
 
 namespace Actinic.Animations
 {
@@ -276,6 +277,13 @@ namespace Actinic.Animations
 
 		private void InitializeProperties ()
 		{
+			// Set up audio averaging
+			audioSmoothingFilter = new ScaledAverage (deviceConfig);
+			// Audio averaging is equivalent to 0.3 at 50 ms per frame
+			// ms = ((2÷0.3)−1)×50
+			// ms = 283.333333333
+			audioSmoothingFilter.TimeConstant = 283;
+
 			EnableSmoothing = true;
 			// Most animations look better with smoothing applied.  Specific animations can turn this back off if needed
 
@@ -340,7 +348,10 @@ namespace Actinic.Animations
 
 			Audio_Frequency_Distribution_Percentage = Math.Max (Math.Min ((((1 - Audio_Volume_Low) + (Audio_Volume_Mid * 0.3 + Audio_Volume_High * 0.6)) / 2), 1), 0);
 			Audio_Delta_Frequency_Distribution_Percentage = (Audio_Frequency_Distribution_Percentage - Audio_Average_Frequency_Distribution_Percentage);
-			Audio_Average_Frequency_Distribution_Percentage = MathUtilities.AverageValues (Audio_Average_Frequency_Distribution_Percentage, Audio_Frequency_Distribution_Percentage, 0.3);
+			Audio_Average_Frequency_Distribution_Percentage = audioSmoothingFilter.Filter (
+				Audio_Average_Frequency_Distribution_Percentage,
+				Audio_Frequency_Distribution_Percentage
+			);
 			if (Audio_Average_Frequency_Distribution_Percentage > 0.5) {
 				ColorShift_HighBoost = Convert.ToByte (Math.Max (Math.Min ((((Audio_Average_Frequency_Distribution_Percentage - 0.5) * 2) * 128), 255), 0));
 				ColorShift_LowBoost = 0;
@@ -354,7 +365,9 @@ namespace Actinic.Animations
 
 			Audio_Realtime_Intensity = Math.Max (Math.Min ((Audio_Volume_Low * 0.25 + Audio_Volume_Mid * 0.45 + Audio_Volume_High * 0.5), 1), 0);
 			Audio_Delta_Intensity = (Audio_Realtime_Intensity - Audio_Average_Intensity);
-			Audio_Average_Intensity = MathUtilities.AverageValues (Audio_Average_Intensity, Audio_Realtime_Intensity, 0.3);
+			Audio_Average_Intensity = audioSmoothingFilter.Filter (
+				Audio_Average_Intensity, Audio_Realtime_Intensity
+			);
 
 			// How fast or slowly the lights will change
 			if (EnableAlgorithmicSmoothingControl) {
@@ -442,6 +455,14 @@ namespace Actinic.Animations
 
 		#endregion
 
+		#region Internal
+
+		/// <summary>
+		/// The device-adjusted smoothing filter for audio averaging
+		/// </summary>
+		private ScaledAverage audioSmoothingFilter;
+
+		#endregion
 	}
 }
 
