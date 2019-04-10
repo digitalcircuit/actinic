@@ -83,6 +83,7 @@
     <Compile Include="Output\DeviceConfiguration.cs" />
     <Compile Include="Output\ReadOnlyDeviceConfiguration.cs" />
     <Compile Include="Utilities\IntFraction.cs" />
+    <Compile Include="Utilities\ScaledAverage.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

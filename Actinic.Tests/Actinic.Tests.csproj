@@ -41,6 +41,7 @@
     <Compile Include="Output\DeviceConfigurationTests.cs" />
     <Compile Include="Output\ReadOnlyDeviceConfigurationTests.cs" />
     <Compile Include="Utilities\IntFractionTests.cs" />
+    <Compile Include="Utilities\ScaledAverageTests.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
