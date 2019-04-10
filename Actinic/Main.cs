@@ -523,7 +523,10 @@ namespace Actinic
 																strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.Color;
 																break;
 															case "single":
-																strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.Single;
+																strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.SingleWhite;
+																break;
+															case "single_color":
+																strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.SingleColor;
 																break;
 															case "fireflies":
 																strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.Fireflies;
@@ -535,13 +538,13 @@ namespace Actinic
 																strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.Thunderstorm;
 																break;
 															default:
-																Console.WriteLine ("> anim play simple strobe [white, color, single, fireflies, rain, thunderstorm]");
+																Console.WriteLine ("> anim play simple strobe [white, color, single, single_color, fireflies, rain, thunderstorm]");
 																break;
 															}
 															strobe_animator.AnimationStyle = Animation_AnimationStyle;
 															Animation_Play (Actinic_Lights_Queue, strobe_animator);
 														} else {
-															Console.WriteLine ("> anim play simple strobe [white, color, single, fireflies, rain, thunderstorm]");
+															Console.WriteLine ("> anim play simple strobe [white, color, single, single_color, fireflies, rain, thunderstorm]");
 														}
 														break;
 													case "spinner":
@@ -871,7 +874,10 @@ namespace Actinic
 																					strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.Color;
 																					break;
 																				case "single":
-																					strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.Single;
+																					strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.SingleWhite;
+																					break;
+																				case "single_color":
+																					strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.SingleColor;
 																					break;
 																				case "fireflies":
 																					strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.Fireflies;
@@ -883,13 +889,13 @@ namespace Actinic
 																					strobe_animator.SelectedStrobeMode = SimpleStrobeAnimation.StrobeMode.Thunderstorm;
 																					break;
 																				default:
-																					Console.WriteLine ("> overlay {0} play simple strobe [white, color, single, fireflies, rain, thunderstorm]", overlay_name);
+																					Console.WriteLine ("> overlay {0} play simple strobe [white, color, single, single_color, fireflies, rain, thunderstorm]", overlay_name);
 																					break;
 																				}
 																				strobe_animator.AnimationStyle = Animation_AnimationStyle;
 																				Animation_Play (resulting_queue, strobe_animator);
 																			} else {
-																				Console.WriteLine ("> overlay {0} play simple strobe [white, color, single, fireflies, rain, thunderstorm]", overlay_name);
+																				Console.WriteLine ("> overlay {0} play simple strobe [white, color, single, single_color, fireflies, rain, thunderstorm]", overlay_name);
 																			}
 																			break;
 																		case "spinner":
