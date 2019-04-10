@@ -94,7 +94,6 @@ namespace Actinic.Animations
 					Styled_SoftColor = 100;
 					Styled_ModerateColor = 150;
 					Styled_BrightColor = 255;
-					Styled_ColorShiftAmount = 15;
 					break;
 				case Style.Moderate:
 					Styled_SoftBrightness = 5;
@@ -103,7 +102,6 @@ namespace Actinic.Animations
 					Styled_SoftColor = 60;
 					Styled_ModerateColor = 128;
 					Styled_BrightColor = 255;
-					Styled_ColorShiftAmount = 12;
 					break;
 				case Style.Soft:
 					Styled_SoftBrightness = 2;
@@ -112,7 +110,6 @@ namespace Actinic.Animations
 					Styled_SoftColor = 20; // 60 -> 20
 					Styled_ModerateColor = 43; // 85 / 2
 					Styled_BrightColor = 85; // (255÷60)×20
-					Styled_ColorShiftAmount = 3;
 					break;
 				default:
 					// TODO: Should something happen here..?
@@ -128,7 +125,33 @@ namespace Actinic.Animations
 		protected byte Styled_SoftColor = 0;
 		protected byte Styled_ModerateColor = 0;
 		protected byte Styled_BrightColor = 0;
-		protected byte Styled_ColorShiftAmount = 0;
+
+		/// <summary>
+		/// Gets how many values to shift color hue per frame.
+		/// </summary>
+		/// <value>The decimal value of color shift per frame.</value>
+		protected double Styled_ColorShiftAmount
+		{
+			get {
+				double baseShiftAmount;
+				switch (AnimationStyle) {
+				case Style.Bright:
+					baseShiftAmount = 30;
+					break;
+				case Style.Moderate:
+					baseShiftAmount = 12;
+					break;
+				case Style.Soft:
+					baseShiftAmount = 3;
+					break;
+				default:
+					// This shouldn't ever happen
+					throw new NotImplementedException ();
+				}
+				// Aim for the scale of baseShiftAmount at 50 ms
+				return baseShiftAmount * (deviceConfig.FactorTime / 50);
+			}
+		}
 
 		/// <summary>
 		/// Gets the requested animation delay for this <see cref="Actinic.GenericAnimation"/> animation

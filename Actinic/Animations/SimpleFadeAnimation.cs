@@ -26,6 +26,7 @@ using Actinic.Output;
 
 // Rendering
 using Actinic.Rendering;
+using Actinic.Utilities;
 
 namespace Actinic.Animations
 {
@@ -76,10 +77,30 @@ namespace Actinic.Animations
 
 		protected void Anim_Update_ColorShift ()
 		{
+			// Keep track of partial values, too
+			trackColorChange += Styled_ColorShiftAmount;
+
+			// Check if the color been set at least once
+			bool colorInitialized =
+				(
+				    Anim_ColorShift_Red != 0
+				    || Anim_ColorShift_Green != 0
+				    || Anim_ColorShift_Blue != 0
+				);
+
+			if (trackColorChange.IntValue <= 0 && colorInitialized) {
+				// No change yet and existing colors initialized, ignore this
+				// round
+				return;
+			}
+
+			// Fetch how much color to change
+			byte colorShiftAmount = (byte)trackColorChange.TakeInt ();
+
 			switch (Anim_LastColorShift_Mode) {
 			case ColorShift_Mode.ShiftingRed:
-				Anim_ColorShift_Red = (byte)Math.Max (Anim_ColorShift_Red - Styled_ColorShiftAmount, LightSystem.Color_MIN);
-				Anim_ColorShift_Green = (byte)Math.Min (Anim_ColorShift_Green + Styled_ColorShiftAmount, LightSystem.Color_MAX);
+				Anim_ColorShift_Red = (byte)Math.Max (Anim_ColorShift_Red - colorShiftAmount, LightSystem.Color_MIN);
+				Anim_ColorShift_Green = (byte)Math.Min (Anim_ColorShift_Green + colorShiftAmount, LightSystem.Color_MAX);
 				if (Anim_ColorShift_Red == LightSystem.Color_MIN & Anim_ColorShift_Green == LightSystem.Color_MAX) {
 					Anim_LastColorShift_Mode = ColorShift_Mode.ShiftingGreen;
 					Anim_ColorShift_Red = LightSystem.Color_MIN;
@@ -87,8 +108,8 @@ namespace Actinic.Animations
 				}
 				break;
 			case ColorShift_Mode.ShiftingGreen:
-				Anim_ColorShift_Green = (byte)Math.Max (Anim_ColorShift_Green - Styled_ColorShiftAmount, LightSystem.Color_MIN);
-				Anim_ColorShift_Blue = (byte)Math.Min (Anim_ColorShift_Blue + Styled_ColorShiftAmount, LightSystem.Color_MAX);
+				Anim_ColorShift_Green = (byte)Math.Max (Anim_ColorShift_Green - colorShiftAmount, LightSystem.Color_MIN);
+				Anim_ColorShift_Blue = (byte)Math.Min (Anim_ColorShift_Blue + colorShiftAmount, LightSystem.Color_MAX);
 				if (Anim_ColorShift_Green == LightSystem.Color_MIN & Anim_ColorShift_Blue == LightSystem.Color_MAX) {
 					Anim_LastColorShift_Mode = ColorShift_Mode.ShiftingBlue;
 					Anim_ColorShift_Green = LightSystem.Color_MIN;
@@ -96,8 +117,8 @@ namespace Actinic.Animations
 				}
 				break;
 			case ColorShift_Mode.ShiftingBlue:
-				Anim_ColorShift_Blue = (byte)Math.Max (Anim_ColorShift_Blue - Styled_ColorShiftAmount, LightSystem.Color_MIN);
-				Anim_ColorShift_Red = (byte)Math.Min (Anim_ColorShift_Red + Styled_ColorShiftAmount, LightSystem.Color_MAX);
+				Anim_ColorShift_Blue = (byte)Math.Max (Anim_ColorShift_Blue - colorShiftAmount, LightSystem.Color_MIN);
+				Anim_ColorShift_Red = (byte)Math.Min (Anim_ColorShift_Red + colorShiftAmount, LightSystem.Color_MAX);
 				if (Anim_ColorShift_Blue == LightSystem.Color_MIN & Anim_ColorShift_Red == LightSystem.Color_MAX) {
 					Anim_LastColorShift_Mode = ColorShift_Mode.ShiftingRed;
 					Anim_ColorShift_Blue = LightSystem.Color_MIN;
@@ -108,6 +129,15 @@ namespace Actinic.Animations
 				break;
 			}
 		}
+
+		#region Internal
+
+		/// <summary>
+		/// Tracking amount of color change shift per frame
+		/// </summary>
+		private IntFraction trackColorChange = new IntFraction ();
+
+		#endregion
 
 	}
 }

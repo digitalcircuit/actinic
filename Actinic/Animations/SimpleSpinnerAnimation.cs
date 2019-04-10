@@ -26,6 +26,7 @@ using Actinic.Output;
 
 // Rendering
 using Actinic.Rendering;
+using Actinic.Utilities;
 
 namespace Actinic.Animations
 {
@@ -46,6 +47,19 @@ namespace Actinic.Animations
 			// Inherited class SimpleFadeAnimation sets this to true; so reset it back to false
 		}
 
+		/// <summary>
+		/// Gets how many pixels to shift forwards per frame.
+		/// </summary>
+		/// <value>The decimal value to shift forwards per frame.</value>
+		protected double Scale_ShiftForward {
+			get {
+				// Shift brightness out the entire strand in 2.5 seconds
+				return (
+				    (deviceConfig.FactorTime / 2500)
+				    * deviceConfig.FactorScaledSize
+				);
+			}
+		}
 
 		public override Layer GetNextFrame ()
 		{
@@ -55,7 +69,13 @@ namespace Actinic.Animations
 			CurrentFrame [0].B = Anim_ColorShift_Blue;
 			CurrentFrame [0].Brightness = LightSystem.Brightness_MAX;
 
-			ShiftLightsForwards (CurrentFrame, 1);
+			trackShiftForward += Scale_ShiftForward;
+			if (trackShiftForward.IntValue > 0) {
+				// Shift by the integer pixel value
+				int shiftAmount = trackShiftForward.TakeInt ();
+				// Shift color and brightness due to desaturation colors
+				ShiftLightsForwards (CurrentFrame, shiftAmount);
+			}
 
 			return CurrentFrame;
 		}
@@ -81,6 +101,15 @@ namespace Actinic.Animations
 				}
 			}
 		}
+
+		#region Internal
+
+		/// <summary>
+		/// Tracking color shift outwards per frame
+		/// </summary>
+		private IntFraction trackShiftForward = new IntFraction ();
+
+		#endregion
 	}
 }
 
