@@ -200,7 +200,23 @@ namespace Actinic.Animations
 		private const byte VU_Stationary_Bar_Flicker_Primary_Color = LightSystem.Color_MAX;
 		private const byte VU_Stationary_Bar_Flicker_Secondary_Color = 70;
 		private const byte VU_Stationary_Bar_Flicker_Brightness = 75;
-		private const double VU_Stationary_Bar_Flicker_Chance = 0.06;
+
+		/// <summary>
+		/// Gets the probability of triggering a flicker per LED, per frame in
+		/// the StationaryBar mode.
+		/// </summary>
+		/// <value>The probability of triggering a flicker per LED, per frame.</value>
+		private double VU_Stationary_Bar_Flicker_Chance {
+			get {
+				// Decrease flicker chance with faster updates and larger LED
+				// strands
+				return (
+				    0.06 * (deviceConfig.FactorTime / 50)
+				    * (50 / deviceConfig.FactorScaledSize)
+				);
+			}
+		}
+
 		private const double VU_Stationary_Bar_Color_Multiplier = 550 * 1.5;
 		// Make it twice as noticable as in VU_Hueshift
 
@@ -771,11 +787,15 @@ namespace Actinic.Animations
 
 		private void AudioMeter_Extended_Stationary_Bars ()
 		{
-			// Clear the past set of colors
+			// Reduce the past set of colors
+			byte reduceAmount = (byte)(4 * deviceConfig.FactorTime);
 			for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
-				CurrentFrame [i].R = 0;
-				CurrentFrame [i].G = 0;
-				CurrentFrame [i].B = 0;
+				CurrentFrame [i].R =
+					(byte)Math.Max (0, CurrentFrame [i].R - reduceAmount);
+				CurrentFrame [i].G =
+					(byte)Math.Max (0, CurrentFrame [i].G - reduceAmount);
+				CurrentFrame [i].B =
+					(byte)Math.Max (0, CurrentFrame [i].B - reduceAmount);
 			}
 
 
