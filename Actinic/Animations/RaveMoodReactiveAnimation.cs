@@ -41,34 +41,126 @@ namespace Actinic.Animations
 		/// <summary>
 		/// Maximum number of a single array of LEDs to strobe at once
 		/// </summary>
-		private const int Strobe_Size_Maximum = 12;
-		// For non-mirrored, 10
-		// For mirrored, 12
+		protected int Strobe_Size_Maximum {
+			get {
+				// Take up at most 0.24 of the strand
+				return (int)(0.24 * deviceConfig.FactorScaledSize);
+			}
+		}
 
 		/// <summary>
 		/// Minimum number of a single array of LEDs to strobe at once
 		/// </summary>
-		private const int Strobe_Size_Minimum = 3;
+		protected int Strobe_Size_Minimum {
+			get {
+				// Take up at least 0.06 of the strand
+				return (int)(0.06 * deviceConfig.FactorScaledSize);
+			}
+		}
 
 		/// <summary>
-		/// Highest number of qualifying frames before a strobe will happen
+		/// Gets the maximum number of qualifying frames before a strobe will
+		/// happen
 		/// </summary>
-		private const double Single_Strobe_Max_Delay = 10;
+		/// <value>The maximum number of qualifying frames before strobe.</value>
+		protected double Single_Strobe_Max_Delay {
+			get {
+				// 0.5 seconds
+				// This represents number of frames, not amount to change
+				return (500 / deviceConfig.FactorTime);
+			}
+		}
+
 		/// <summary>
-		/// Lowest number of qualifying frames before a strobe will happen.
-		/// Delay is * 50 ms.
+		/// Gets the minimum number of qualifying frames before a strobe will
+		/// happen
 		/// </summary>
-		private const double Single_Strobe_Min_Delay = 0;
+		/// <value>The minimum number of qualifying frames before strobe.</value>
+		protected double Single_Strobe_Min_Delay {
+			get {
+				// 0 seconds
+				return 0;
+			}
+		}
+
 		/// <summary>
 		/// When this number is greater than the above, call for LEDs to strobe,
-		/// then reset to zero.  Delay is * 50 ms.
+		/// then reset to zero.
 		/// </summary>
 		private double Single_Strobe_Off_Count = 0;
 
 		/// <summary>
-		/// How many frames a strobe will last
+		/// The duration before a strobe effect will fade quickly.
 		/// </summary>
-		private const int Single_Strobe_Linger_Cycles = 2;
+		private const int Strobe_Lifetime_Linger = 50;
+
+		/// <summary>
+		/// The minimum duration of a strobe effect after lingering.  See
+		/// <see cref="Strobe_Lifetime_Linger"/>.
+		/// </summary>
+		private const int Strobe_Lifetime_Fade_Min = 10;
+
+		/// <summary>
+		/// The maximum duration of a strobe effect after lingering.  See
+		/// <see cref="Strobe_Lifetime_Linger"/>.
+		/// </summary>
+		private const int Strobe_Lifetime_Fade_Max = 50;
+
+		/// <summary>
+		/// Gets the minimum brightness at which a strobe will shift from fading
+		/// out slowly (1 unit per frame) to quickly
+		/// </summary>
+		/// <value>The minimum brightness before a strobe fades out quickly.</value>
+		protected byte Single_Strobe_Linger_Min_Brightness {
+			get {
+				// This represents number of frames, not amount to change
+				return (byte)Math.Min (LightSystem.Brightness_MAX,
+					LightSystem.Brightness_MAX - (Strobe_Lifetime_Linger / deviceConfig.FactorTime)
+				);
+			}
+		}
+
+		/// <summary>
+		/// Gets the minimum amount to fade out a strobe per frame
+		/// </summary>
+		/// <value>The minimum amount to fade out a strobe per frame.</value>
+		protected byte Single_Strobe_Fade_MinRate {
+			get {
+				// Fade out to minimum brightness by the end of the strobe
+				// (Max - end goal) / (number of frames for strobe)
+				return (byte)Math.Min (
+					LightSystem.Brightness_MAX,
+					Math.Max (1,
+						(Single_Strobe_Linger_Min_Brightness)
+						* (deviceConfig.FactorTime / Strobe_Lifetime_Fade_Min)
+					)
+				);
+			}
+		}
+
+		/// <summary>
+		/// Gets the maximum amount to fade out a strobe per frame
+		/// </summary>
+		/// <value>The maximum amount to fade out a strobe per frame.</value>
+		protected byte Single_Strobe_Fade_MaxRate {
+			get {
+				// Fade out to minimum brightness by the end of the strobe
+				// (Max - end goal) / (number of frames for strobe)
+				return (byte)Math.Min (
+					LightSystem.Brightness_MAX,
+					Math.Max (1,
+						(Single_Strobe_Linger_Min_Brightness)
+						* (deviceConfig.FactorTime / Strobe_Lifetime_Fade_Max)
+					)
+				);
+			}
+		}
+
+		/// <summary>
+		/// The minimum brightness for a strobe to be considered visible.
+		/// </summary>
+		private const byte Strobe_Min_Visible =
+			LightSystem.Brightness_MIN_VISIBLE;
 
 		/// <summary>
 		/// Maximum number of times to try to place a strobe so it will not overlap an existing strobe
@@ -114,10 +206,21 @@ namespace Actinic.Animations
 
 		public override Layer GetNextFrame ()
 		{
-
+			// Fade faster at higher intensities
+			byte fadeBeginBrightness = Single_Strobe_Linger_Min_Brightness;
+			byte fadeRateAdjusted =
+				(byte)MathUtilities.ConvertRange (
+					Math.Max (Audio_Average_Intensity - Strobe_Flicker_Minimum_Intensity, 0),
+					0, 1 - Strobe_Flicker_Minimum_Intensity,
+					Single_Strobe_Fade_MaxRate, Single_Strobe_Fade_MinRate
+				);
 			for (int i = 0; i < LightSystem.LIGHT_INDEX_MAX; i++) {
-				if (CurrentFrame_Strobe [i].Brightness > (LightSystem.Brightness_MAX - Single_Strobe_Linger_Cycles)) {
+				if (CurrentFrame_Strobe [i].Brightness > fadeBeginBrightness) {
 					CurrentFrame_Strobe [i].Brightness -= 1;
+				} else if (CurrentFrame_Strobe [i].Brightness > Strobe_Min_Visible) {
+					CurrentFrame_Strobe [i].Brightness = (byte)Math.Max (
+						0, CurrentFrame_Strobe [i].Brightness - fadeRateAdjusted
+					);
 				} else {
 					CurrentFrame_Strobe [i].SetColor (
 						LightSystem.Color_MIN,
@@ -134,7 +237,7 @@ namespace Actinic.Animations
 			if (Single_Strobe_Off_Count > MathUtilities.ConvertRange (converted_Audio_Average_Intensity, 0, 1, Single_Strobe_Max_Delay, Single_Strobe_Min_Delay)) {
 				for (int attemptNumber = 0; attemptNumber < Single_Strobe_Max_Tries_For_Darkness; attemptNumber++) {
 					start_index = Randomizer.RandomProvider.Next (0, LightSystem.LIGHT_INDEX_MAX);
-					if (LightProcessing.Is_LED_Dark_Brightness (CurrentFrame_Strobe, start_index, LightSystem.Color_DARK))
+					if (LightProcessing.Is_LED_Dark_Brightness (CurrentFrame_Strobe, start_index, Strobe_Min_Visible))
 						break;
 				}
 				strobe_width = (int)(MathUtilities.ConvertRange (converted_Audio_Average_Intensity, 0, 1, Strobe_Size_Minimum, Strobe_Size_Maximum) / 2);

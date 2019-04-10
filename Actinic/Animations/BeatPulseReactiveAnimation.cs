@@ -27,6 +27,7 @@ using Actinic.Output;
 
 // Rendering
 using Actinic.Rendering;
+using Actinic.Utilities;
 
 namespace Actinic.Animations
 {
@@ -36,12 +37,70 @@ namespace Actinic.Animations
 		protected const double Pause_Fading_Intensity_Floor = 0.73;
 		// Intensity * this
 
-		protected const double Pause_Fading_Max_Delay = 16;
-		// * 50 ms
-		protected const double Pause_Fading_Min_Delay = 0;
-		// * 50 ms
+		/// <summary>
+		/// Gets the maximum number of frames to pause fading colors.
+		/// </summary>
+		/// <value>The maximum number of frames to pause fading colors.</value>
+		protected double Pause_Fading_Max_Delay {
+			get {
+				// 0.8 seconds
+				// This represents number of frames, not amount to change
+				return (800 / deviceConfig.FactorTime);
+			}
+		}
+
+		/// <summary>
+		/// Gets the minimum number of frames to pause fading colors
+		/// </summary>
+		/// <value>The minimum number of frames to pause fading colors.</value>
+		protected double Pause_Fading_Min_Delay {
+			get {
+				// 0 seconds
+				return 0;
+			}
+		}
+
+		/// <summary>
+		/// How many frames fading color has been paused, or zero if none
+		/// </summary>
 		protected double Pause_Fading_Off_Count = 0;
-		// when this number greater than above, will update and reset to zero
+
+		/// <summary>
+		/// Gets how many pixels of brightness shift per frame.
+		/// </summary>
+		/// <value>The decimal value of brightness shift per frame.</value>
+		protected double Scale_ShiftOutBrightness {
+			get {
+				// Shift brightness out the entire strand over 0.4 seconds
+				// Divide by 2 to account for mirroring the frame
+				return (
+				    (deviceConfig.FactorTime / 400)
+				    * deviceConfig.FactorScaledSize / 2
+				);
+			}
+		}
+
+		/// <summary>
+		/// Gets how many pixels of color shift per frame.
+		/// </summary>
+		/// <value>The decimal value of color shift per frame.</value>
+		protected double Scale_ShiftOutColor {
+			get {
+				// Shift color twice as fast as brightness
+				return Scale_ShiftOutBrightness * 2;
+			}
+		}
+
+		/// <summary>
+		/// Gets how many values to shift color hue per frame.
+		/// </summary>
+		/// <value>The decimal value of color shift per frame.</value>
+		protected double Scale_ColorShiftMultiplier {
+			get {
+				// Aim for the scale of 1 at 10 ms
+				return (deviceConfig.FactorTime / 10);
+			}
+		}
 
 		/// <summary>
 		/// Red component of the unprocessed current shifting color
@@ -134,12 +193,30 @@ namespace Actinic.Animations
 			Color pulseColorAdditive = new Color (desaturationAdded, desaturationAdded, desaturationAdded, beatBrightness);
 			CurrentFrame_Pulse [LightSystem.LIGHT_INDEX_MIDDLE].SetColor (pulseColorAdditive);
 			CurrentFrame_Pulse [LightSystem.LIGHT_INDEX_MIDDLE - 1].SetColor (pulseColorAdditive);
+
 			// > Shift the pulse effect outwards
-			LightProcessing.ShiftLightsBrightnessOutward (CurrentFrame_Pulse, 2);
+			trackShiftOutBrightness += Scale_ShiftOutBrightness;
+			if (trackShiftOutBrightness.IntValue > 0) {
+				// Shift by the integer pixel value
+				int shiftAmount = trackShiftOutBrightness.TakeInt ();
+				// Shift color and brightness due to desaturation colors
+				LightProcessing.ShiftLightsOutward (
+					CurrentFrame_Pulse, shiftAmount, true);
+			}
 
 			// Mid frequency controls how quickly the colors fade
-			ColorShift_Amount = Convert.ToByte (Math.Max (Math.Min ((Audio_Mid_Intensity * 16) + 5, LightSystem.Color_MAX), 0));
-			AnimationUpdateColorShift ();
+			trackColorChange += (
+			    Scale_ColorShiftMultiplier *
+			    Math.Max (1,
+				    Math.Min ((Audio_Mid_Intensity * 6), LightSystem.Color_MAX)
+			    )
+			);
+			if (trackColorChange.IntValue > 0) {
+				// Shift by the integer pixel value
+				ColorShift_Amount = (byte)trackColorChange.TakeInt ();
+				AnimationUpdateColorShift ();
+			}
+
 
 			// Mid frequency also controls whether or not the color fade freezes
 			if (Pause_Fading_Off_Count >= MathUtilities.ConvertRange (Math.Max (Audio_Mid_Intensity - Pause_Fading_Intensity_Floor, 0), 0, 1 - Pause_Fading_Intensity_Floor, Pause_Fading_Min_Delay, Pause_Fading_Max_Delay)) {
@@ -160,7 +237,12 @@ namespace Actinic.Animations
 			CurrentFrame_Backdrop [LightSystem.LIGHT_INDEX_MIDDLE - 1].SetColor (backdropColor);
 
 			// Ripple the colors outwards more quickly than brightness
-			LightProcessing.ShiftLightsOutward (CurrentFrame_Backdrop, 4);
+			trackShiftOutColor += Scale_ShiftOutColor;
+			if (trackShiftOutColor.IntValue > 0) {
+				// Shift by the integer pixel value
+				LightProcessing.ShiftLightsOutward (
+					CurrentFrame_Backdrop, trackShiftOutColor.TakeInt ());
+			}
 
 			// Reset the current frame with the backdrop
 			CurrentFrame.Blend (CurrentFrame_Backdrop, Color.BlendMode.Replace);
@@ -180,6 +262,25 @@ namespace Actinic.Animations
 
 			return CurrentFrame;
 		}
+
+		#region Internal
+
+		/// <summary>
+		/// Tracking brightness shift outwards per frame
+		/// </summary>
+		private IntFraction trackShiftOutBrightness = new IntFraction ();
+
+		/// <summary>
+		/// Tracking color shift outwards per frame
+		/// </summary>
+		private IntFraction trackShiftOutColor = new IntFraction ();
+
+		/// <summary>
+		/// Tracking amount of color change shift per frame
+		/// </summary>
+		private IntFraction trackColorChange = new IntFraction ();
+
+		#endregion
 	}
 }
 
