@@ -27,6 +27,7 @@ using Actinic.Output;
 
 // Rendering
 using Actinic.Rendering;
+using Actinic.Utilities;
 
 namespace Actinic.Animations
 {
@@ -62,8 +63,74 @@ namespace Actinic.Animations
 		private byte CustomColorShift_Blue = LightSystem.Color_MIN;
 
 		private const double VU_ColorShift_Brightness_Multiplier = 1.2;
-		private const int VU_Extended_MaxUpdateCount = 6 + 4;
-		//Previously 6 * 4
+
+		/// <summary>
+		/// Gets the amount of time elapsed per frame
+		/// </summary>
+		/// <value>The amount of time elapsed per frame.</value>
+		private double FrameTimeElapsed {
+			get {
+				// FactorTime amount of time elapsed per frame
+				return deviceConfig.FactorTime;
+			}
+		}
+
+		/// <summary>
+		/// Tracks lingering time of individual lights.
+		/// </summary>
+		private double[] Linger_Tracker;
+
+		/// <summary>
+		/// Tracks if the individual lights have been modified outside of
+		/// normal iteration (e.g. generating a strobe).
+		/// </summary>
+		private bool[] Linger_Modified;
+
+		/// <summary>
+		/// Tracks whether or not the linger tracker was in use.
+		/// </summary>
+		private bool Linger_Tracker_Used = false;
+
+		/// <summary>
+		/// Gets how many values to shift light brightness out per frame.
+		/// </summary>
+		/// <value>The decimal value of brightness outward shift per frame.</value>
+		protected double ShiftOutBrightnessPerFrame {
+			get {
+				// Shift brightness out the entire strand over 0.4 seconds
+				// Divide by 2 to account for mirroring the frame
+				return (
+				    (deviceConfig.FactorTime / 400)
+				    * deviceConfig.FactorScaledSize / 2
+				);
+			}
+		}
+
+		/// <summary>
+		/// Gets how many values to shift light color out per frame.
+		/// </summary>
+		/// <value>The decimal value of color outward shift per frame.</value>
+		protected double ShiftOutColorPerFrame {
+			get {
+				// Shift brightness out the entire strand over 0.8 seconds
+				// Divide by 2 to account for mirroring the frame
+				return (
+				    (deviceConfig.FactorTime / 800)
+				    * deviceConfig.FactorScaledSize / 2
+				);
+			}
+		}
+
+		/// <summary>
+		/// Gets how many values to shift color hue per frame.
+		/// </summary>
+		/// <value>The decimal value of color shift per frame.</value>
+		protected double Scale_ColorShiftMultiplier {
+			get {
+				// Aim for the scale of 1 at 10 ms
+				return (deviceConfig.FactorTime / 10);
+			}
+		}
 
 		#region VU Meter: Auto Management
 
@@ -71,17 +138,41 @@ namespace Actinic.Animations
 		private const double VU_Intensity_Threshold_MAX = 0.95;
 		private const double VU_Intensity_Threshold_HEAVY = 0.73;
 		private const double VU_Intensity_Threshold_MEDIUM = 0.4;
-		private int VU_Intensity_Hysterisis_THRESHOLD = 5;
-		//Must be different at least this many consecutive times in a row
+
+		/// <summary>
+		/// The number of frames a new intensity threshold must be maintained
+		/// before the intensity will be considered changed.  This avoids brief
+		/// flickering.
+		/// </summary>
+		/// <value>Number of frames before an intensity change is applied.</value>
+		private int VU_Intensity_Hysterisis_THRESHOLD {
+			get {
+				// Require at least 250 ms worth of frames
+				return (int)Math.Round (250 / deviceConfig.FactorTime);
+			}
+		}
+
 		private int VU_Intensity_Hysterisis = 0;
 		private bool VU_Intensity_Hysterisis_HasReachedZero = true;
 		private int VU_Intensity_Last_Random_Choice = 0;
-		private const double VU_Auto_Force_Change_Max_Delay = 500;
-		// * 50 ms
-		private const double VU_Auto_Force_Change_Min_Delay = 150;
-		// * 50 ms
-		private double VU_Auto_Force_Change_Count = 0;
-		// when this number greater than above, will change color and reset to zero
+
+
+		/// <summary>
+		/// Maximum delay in milliseconds before the automatic mode will force a
+		/// change.
+		/// </summary>
+		private const double VU_Auto_Force_Change_Max_Delay = 25 * 1000;
+
+		/// <summary>
+		/// Minimum delay in milliseconds before the automatic mode will force a
+		/// change.
+		/// </summary>
+		private const double VU_Auto_Force_Change_Min_Delay = 7.5 * 1000;
+
+		/// <summary>
+		/// Time in milliseconds since the automatic mode has forced a change.
+		/// </summary>
+		private double VU_Auto_Force_Change_Delay = 0;
 
 		private enum Intensities
 		{
@@ -98,13 +189,6 @@ namespace Actinic.Animations
 
 		private const double VU_Hueshift_Color_Multiplier = 550;
 		//Originally 400, then 600, now 550 with new frequency processing code
-		private const byte VU_Hueshift_Flicker_Color = LightSystem.Color_MAX;
-		private const byte VU_Hueshift_Flicker_Brightness = 75;
-		//Originally 50 copied from Moving Bars
-		private const double VU_Hueshift_Flicker_Chance = 0.017;
-		//Originally 0.07 copied from Moving Bars
-		//Originally LightSystem.LIGHT_COUNT / 2.7 copied from Moving Bars, but too long to avoid saturating the lights
-		// Since the bars grow outwards from the middle, length / 2 * mirrored = desired value
 
 		#endregion
 
@@ -113,43 +197,160 @@ namespace Actinic.Animations
 		private const double VU_Hueshift_Beat_Pause_Fading_Intensity_Floor = 0.73;
 		// Intensity * this
 
-		private const double VU_Hueshift_Beat_Pause_Fading_Max_Delay = 16;
-		// * 50 ms
+		/// <summary>
+		/// Maximum delay in milliseconds before fading will resume after
+		/// pausing.
+		/// </summary>
+		private const double VU_Hueshift_Beat_Pause_Fading_Max_Delay = 800;
+
+		/// <summary>
+		/// Minimum delay in milliseconds before fading will resume after
+		/// pausing.
+		/// </summary>
 		private const double VU_Hueshift_Beat_Pause_Fading_Min_Delay = 0;
-		// * 50 ms
-		private double VU_Hueshift_Beat_Pause_Fading_Off_Count = 0;
-		// when this number greater than above, will update and reset to zero
+
+		/// <summary>
+		/// Time in milliseconds that fading has been paused.
+		/// </summary>
+		private double VU_Hueshift_Beat_Pause_Fading_Off_Delay = 0;
 
 		#endregion
 
 		#region VU Meter: Rainbow Solid
 
 		// Rainbow_Solid_Color_Change
-		private const double VU_Rainbow_Solid_Color_Change_Max_Delay = 100;
-		// * 50 ms
-		private const double VU_Rainbow_Solid_Color_Change_Min_Delay = 2;
-		// * 50 ms
-		private double VU_Rainbow_Solid_Color_Change_Count = 0;
-		// when this number greater than above, will change color and reset to zero
-		//Original: Decrease = 0.99, Increase = 1.4
-		private const double VU_ShiftSpeed_Multiplier = 7;
+
+		/// <summary>
+		/// Maximum delay in milliseconds before picking another solid color.
+		/// </summary>
+		private const double VU_Rainbow_Solid_Color_Change_Max_Delay = 500;
+
+		/// <summary>
+		/// Minimum delay in milliseconds before picking another solid color.
+		/// </summary>
+		private const double VU_Rainbow_Solid_Color_Change_Min_Delay = 100;
+
+		/// <summary>
+		/// Time in milliseconds since a solid color was picked.
+		/// </summary>
+		private double VU_Rainbow_Solid_Color_Change_Delay = 0;
+
+		/// <summary>
+		/// Gets multiplier for how many values to shift light color out per
+		/// frame.
+		/// </summary>
+		/// <value>The decimal multiplier of color outward shift per frame.</value>
+		protected double VU_ShiftSpeed_Multiplier {
+			get {
+				// Shift brightness out the entire strand over 0.25 seconds
+				// at most (highest intensity)
+				// Divide by 2 to account for mirroring the frame
+				return (
+				    (deviceConfig.FactorTime / 250)
+				    * deviceConfig.FactorScaledSize / 2
+				);
+			}
+		}
+
 		private double VU_ShiftSpeed = 1;
 
 		#endregion
 
 		#region VU Meter: Solid Strobe
 
-		private const double VU_Solid_Color_Strobe_Flicker_Chance = 0.035;
-		private const double VU_Solid_Color_Strobe_Hueshift_Flicker_Chance = VU_Solid_Color_Strobe_Flicker_Chance / 1.5;
+		//private const double VU_Solid_Color_Strobe_Flicker_Chance = 0.035;
 
-		//private const double VU_Solid_Color_Single_Strobe_Flicker_Chance = VU_Solid_Color_Strobe_Flicker_Chance * 9;
+		/// <summary>
+		/// Gets the probability an individual color pixel starts strobing for
+		/// each frame, multiplied by audio intensity
+		/// </summary>
+		/// <value>Probability an individual color pixel starts strobing.</value>
+		private double VU_Solid_Color_Strobe_Flicker_Chance {
+			get {
+				// This is called per pixel, per frame, so scale by size and
+				// time.  Every millisecond, there's a 0.035 (3.5%) probability
+				// that a new strobe will be created.
+				return (
+				    0.035
+				    * deviceConfig.FactorTime
+				    * (1 / deviceConfig.FactorScaledSize)
+				);
+			}
+		}
+
+		/// <summary>
+		/// Gets the probability an individual hueshift color pixel starts
+		/// strobing for each frame
+		/// </summary>
+		/// <value>Probability an individual hueshift color pixel starts strobing.</value>
+		private double VU_Solid_Color_Strobe_Hueshift_Flicker_Chance {
+			get {
+				// Make this 1.5x less likely than solid colors, to account for
+				// three sets of colors strobing
+				return VU_Solid_Color_Strobe_Flicker_Chance / 1.5;
+			}
+		}
+
+		/// <summary>
+		/// The minimum size in pixels for a single strobe.
+		/// </summary>
+		private double VU_Solid_Color_Strobe_Size_Min {
+			get {
+				// At minimum, a solid strobe can take up either 1 pixel,
+				// or 1/75th of the strand
+				return Math.Max (1,
+					(1 / 75.0) * deviceConfig.FactorScaledSize
+				);
+			}
+		}
+
+		/// <summary>
+		/// The maximum size in pixels for a single strobe.
+		/// </summary>
+		private double VU_Solid_Color_Strobe_Size_Max {
+			get {
+				// At maximum, a solid strobe can take up either 1 pixel,
+				// or 1/30th of the strand
+				return Math.Max (1,
+					(1 / 30.0) * deviceConfig.FactorScaledSize
+				);
+			}
+		}
+
+		/// <summary>
+		/// The minimum duration in milliseconds before a strobe will
+		/// end.
+		/// </summary>
+		private const int VU_Solid_Color_Strobe_Linger_Time_Min = 25;
+
+		/// <summary>
+		/// The maximum duration in milliseconds before a strobe will
+		/// end.
+		/// </summary>
+		private const int VU_Solid_Color_Strobe_Linger_Time_Max = 50;
+
+		/// <summary>
+		/// Amount to decrease smoothing for solid color strobing.
+		/// </summary>
 		private const double VU_Solid_Color_Single_Strobe_Smoothing_Decrease = 0.3;
-		private const double VU_Solid_Color_Single_Strobe_Max_Delay = 20;
-		// * 50 ms
-		private const double VU_Solid_Color_Single_Strobe_Min_Delay = 0;
-		// * 50 ms
-		private double VU_Solid_Color_Single_Strobe_Off_Count = 0;
-		// when this number greater than above, will strobe and reset to zero
+
+		/// <summary>
+		/// Maximum delay in milliseconds before starting another strobe.
+		/// </summary>
+		private const double VU_Solid_Color_Single_Strobe_Max_Delay = 500;
+		// Original: 1000
+
+		/// <summary>
+		/// Minimum delay in milliseconds before starting another strobe.
+		/// </summary>
+		private const double VU_Solid_Color_Single_Strobe_Min_Delay = 10;
+		// Original: 100
+
+		/// <summary>
+		/// Time in milliseconds since a solid color strobe happened.
+		/// </summary>
+		private double VU_Solid_Color_Single_Strobe_Off_Delay = 0;
+
 		private enum ColorStrobe
 		{
 			White,
@@ -170,17 +371,59 @@ namespace Actinic.Animations
 		private int VU_Moving_Bar_Half_Max_Length = -1;
 		// See InitializeLayersAndVariables ()
 		// Since the bars grow outwards from the middle, length / 2 * mirrored = desired value
-		private const double VU_Moving_Bar_Max_Position_Change = 1.3;
+
+		/// <summary>
+		/// Gets the maximum amount of position change in pixels for the moving
+		/// VU bars per frame
+		/// </summary>
+		/// <value>Maximum position change in pixels for the moving VU bars.</value>
+		private double VU_Moving_Bar_Max_Position_Change {
+			get {
+				return (
+				    1.3 * (deviceConfig.FactorTime / 50)
+				    * (deviceConfig.FactorScaledSize / 50)
+				);
+			}
+		}
+
 		//Above was originally 1.5, but it seemed too fast
 		private const byte VU_Moving_Bar_Red_Other_Color_Boost = 55;
 		private const byte VU_Moving_Bar_Green_Other_Color_Boost = 75;
 		private const byte VU_Moving_Bar_Blue_Other_Color_Boost = 75;
 		// How much other colors should be mixed in for red, green, and blue
-		private const double VU_Moving_Bar_Max_Position_Change_Equally_Spaced = VU_Moving_Bar_Max_Position_Change / 2;
+
+		/// <summary>
+		/// Gets the maximum amount of position change in pixels for the
+		/// equally-spaced moving VU bars per frame
+		/// </summary>
+		/// <value>Maximum position change in pixels for the equally-spaced moving VU bars.</value>
+		private double VU_Moving_Bar_Max_Position_Change_Equally_Spaced {
+			get {
+				// Halve the normal speed
+				return VU_Moving_Bar_Max_Position_Change / 2;
+			}
+		}
+
 		private const byte VU_Moving_Bar_Min_Brightness = 128;
 		private const byte VU_Moving_Bar_Flicker_Color = LightSystem.Color_MAX;
 		private const byte VU_Moving_Bar_Flicker_Brightness = 50;
-		private const double VU_Moving_Bar_Flicker_Chance = 0.07;
+
+		/// <summary>
+		/// Gets the probability of triggering a flicker per LED, per frame in
+		/// the MovingBar mode.
+		/// </summary>
+		/// <value>The probability of triggering a flicker per LED, per frame.</value>
+		private double VU_Moving_Bar_Flicker_Chance {
+			get {
+				// Decrease flicker chance with faster updates and larger LED
+				// strands
+				return (
+				    0.07 * (deviceConfig.FactorTime / 50)
+				    * (50 / deviceConfig.FactorScaledSize)
+				);
+			}
+		}
+
 		private double VU_Moving_Bar_Low_Position = 0;
 		private double VU_Moving_Bar_Mid_Position = 0;
 		private double VU_Moving_Bar_High_Position = 0;
@@ -241,6 +484,10 @@ namespace Actinic.Animations
 
 		private void InitializeLayersAndVariables ()
 		{
+			// Prepare tracking for as many lights as are available
+			Linger_Tracker = new double[Light_Count];
+			Linger_Modified = new bool[Light_Count];
+
 			Actinic_Lights_Unprocessed = new Layer (CurrentFrame.PixelCount);
 			// When LIGHT_COUNT was made a property, these could no longer be calculated at compile-time.  Do it here.
 			VU_Moving_Bar_Half_Max_Length = (int)(VU_Moving_Bar_Max_Length / 2);
@@ -250,6 +497,9 @@ namespace Actinic.Animations
 		{
 			// Disable algorithmic control of smoothing for these two modes, as the mode sets it manually
 			EnableAlgorithmicSmoothingControl = !(VU_Selected_Mode == VU_Meter_Mode.SolidSingleWhiteStrobe || VU_Selected_Mode == VU_Meter_Mode.SolidSingleRainbowStrobe);
+
+			// Default to enabling smoothing (specific modes override as needed)
+			EnableSmoothing = true;
 
 			switch (VU_Selected_Mode) {
 			case VU_Meter_Mode.AutomaticFastBeat:
@@ -298,8 +548,10 @@ namespace Actinic.Animations
 				AudioMeter_Extended_Solid_Color_Strobe (ColorStrobe.SingleWhite);
 				break;
 			default:
-				Console.WriteLine ("Unknown VU_Meter_Mode '{0}'.  This should never happen!", VU_Selected_Mode);
-				break;
+				throw new NotSupportedException (string.Format (
+					"Unknown VU_Meter_Mode '{0}'",
+					VU_Selected_Mode
+				));
 			}
 
 			return CurrentFrame;
@@ -308,7 +560,7 @@ namespace Actinic.Animations
 
 
 
-		#region Compability
+		#region Compatibility
 
 		private void FillLights_Color (byte R, byte G, byte B)
 		{
@@ -362,12 +614,12 @@ namespace Actinic.Animations
 
 		private void VU_Update_RandomColor ()
 		{
-			if (VU_Rainbow_Solid_Color_Change_Count > MathUtilities.ConvertRange (Audio_Average_Intensity, 0, 1, VU_Rainbow_Solid_Color_Change_Max_Delay, VU_Rainbow_Solid_Color_Change_Min_Delay)) {
-				VU_Rainbow_Solid_Color_Change_Count = 0;
+			if (VU_Rainbow_Solid_Color_Change_Delay > MathUtilities.ConvertRange (Audio_Average_Intensity, 0, 1, VU_Rainbow_Solid_Color_Change_Max_Delay, VU_Rainbow_Solid_Color_Change_Min_Delay)) {
+				VU_Rainbow_Solid_Color_Change_Delay = 0;
 				VU_RandomColor = RandomColorGenerator.GetRandomColor ();
 				VU_ShiftSpeed = Audio_Average_Intensity * VU_ShiftSpeed_Multiplier;
 			} else {
-				VU_Rainbow_Solid_Color_Change_Count++;
+				VU_Rainbow_Solid_Color_Change_Delay += FrameTimeElapsed;
 			}
 //			if (ReactiveSystem.Processing_Show_Analysis) {
 //				Console.WriteLine ("Intensity delta ceiling: " + Math.Round (MathUtilities.ConvertRange (VU_Average_Intensity, 0, 1, VU_Rainbow_Solid_Color_Change_Max_Delay, VU_Rainbow_Solid_Color_Change_Min_Delay), 3).ToString ().PadRight (5) + "  Shift speed: " + Math.Round (VU_ShiftSpeed, 3).ToString ().PadRight (5).ToString () + "  Current color: " + VU_RandomColor.Name);
@@ -418,8 +670,8 @@ namespace Actinic.Animations
 						VU_Moving_Bar_Low_Position = Math.Max (VU_Moving_Bar_Low_Position - (Audio_Low_Intensity * VU_Moving_Bar_Max_Position_Change_Equally_Spaced), 0);
 					}
 				}
-				VU_Moving_Bar_Mid_Position = MathUtilities.WrapAround (VU_Moving_Bar_Low_Position + VU_Moving_Bar_Split_Distance, 0, 49);
-				VU_Moving_Bar_High_Position = MathUtilities.WrapAround (VU_Moving_Bar_Mid_Position + VU_Moving_Bar_Split_Distance, 0, 49);
+				VU_Moving_Bar_Mid_Position = MathUtilities.WrapAround (VU_Moving_Bar_Low_Position + VU_Moving_Bar_Split_Distance, 0, LightSystem.LIGHT_INDEX_MAX);
+				VU_Moving_Bar_High_Position = MathUtilities.WrapAround (VU_Moving_Bar_Mid_Position + VU_Moving_Bar_Split_Distance, 0, LightSystem.LIGHT_INDEX_MAX);
 			} else {
 				if (VU_Moving_Bar_Low_Position_Increasing == true & (VU_Moving_Bar_Low_Position >= LightSystem.LIGHT_INDEX_MAX)) {
 					VU_Moving_Bar_Low_Position = LightSystem.LIGHT_INDEX_MAX;
@@ -520,16 +772,15 @@ namespace Actinic.Animations
 				//				VU_Auto_Force_Change_Count = 0;
 				// Note: I don't -think- Smoothing needs to be reset after each
 				//				ResetSmoothing ();
-			} else if (VU_Auto_Force_Change_Count > MathUtilities.ConvertRange (Audio_Average_Intensity, 0, 1, VU_Auto_Force_Change_Max_Delay, VU_Auto_Force_Change_Min_Delay)) {
+			} else if (VU_Auto_Force_Change_Delay > MathUtilities.ConvertRange (Audio_Average_Intensity, 0, 1, VU_Auto_Force_Change_Max_Delay, VU_Auto_Force_Change_Min_Delay)) {
 				// Force a new random pattern to be chosen
 				VU_Intensity_Last_Random_Choice = -1;
-				VU_Auto_Force_Change_Count = 0;
+				VU_Auto_Force_Change_Delay = 0;
 				// Note: I don't -think- Smoothing needs to be reset after each
 				//ResetSmoothing ();
 			} else {
-				VU_Auto_Force_Change_Count++;
+				VU_Auto_Force_Change_Delay += FrameTimeElapsed;
 			}
-
 
 			switch (Intensity_Rating) {
 			case Intensities.Max:
@@ -543,10 +794,11 @@ namespace Actinic.Animations
 					AudioMeter_Extended_Solid_Color_Strobe (ColorStrobe.SingleWhite);
 					break;
 				default:
-					// Show that something is up - this shouldn't ever happen
-					FillLights_Brightness (255);
-					FillLights_Color (255, 0, 0);
-					break;
+					throw new NotSupportedException (string.Format (
+						"Invalid VU_Intensity_Last_Random_Choice {0} for" +
+						"Intensities.Max",
+						VU_Intensity_Last_Random_Choice
+					));
 				}
 				break;
 			case Intensities.Heavy:
@@ -563,10 +815,11 @@ namespace Actinic.Animations
 					AudioMeter_Extended_Solid_Color_Strobe (ColorStrobe.Hueshift);
 					break;
 				default:
-					// Show that something is up - this shouldn't ever happen
-					FillLights_Brightness (255);
-					FillLights_Color (255, 0, 0);
-					break;
+					throw new NotSupportedException (string.Format (
+						"Invalid VU_Intensity_Last_Random_Choice {0} for" +
+						"Intensities.Heavy",
+						VU_Intensity_Last_Random_Choice
+					));
 				}
 				break;
 			case Intensities.Medium:
@@ -586,10 +839,11 @@ namespace Actinic.Animations
 					AudioMeter_Extended_Moving_Bars (false);
 					break;
 				default:
-					// Show that something is up - this shouldn't ever happen
-					FillLights_Brightness (255);
-					FillLights_Color (255, 0, 0);
-					break;
+					throw new NotSupportedException (string.Format (
+						"Invalid VU_Intensity_Last_Random_Choice {0} for" +
+						"Intensities.Medium",
+						VU_Intensity_Last_Random_Choice
+					));
 				}
 				break;
 			case Intensities.Light:
@@ -603,14 +857,18 @@ namespace Actinic.Animations
 					AudioMeter_Extended_Hueshift_Beat ();
 					break;
 				default:
-					// Show that something is up - this shouldn't ever happen
-					FillLights_Brightness (255);
-					FillLights_Color (255, 0, 0);
-					break;
+					throw new NotSupportedException (string.Format (
+						"Invalid VU_Intensity_Last_Random_Choice {0} for" +
+						"Intensities.Light",
+						VU_Intensity_Last_Random_Choice
+					));
 				}
 				break;
 			default:
-				break;
+				throw new NotSupportedException (string.Format (
+					"Unsupported Intensity_Rating {0}",
+					Intensity_Rating
+				));
 			}
 
 			VU_LastIntensity_Rating = Intensity_Rating;
@@ -618,10 +876,22 @@ namespace Actinic.Animations
 
 		private void AudioMeter_Extended_Rainbow (bool UseSolidColors)
 		{
+			// Mark linger tracker as not used
+			Linger_Tracker_Used = false;
+
 			if (UseSolidColors) {
 				VU_Update_RandomColor ();
 			} else {
-				AnimationUpdateColorShift ();
+				// Average intensity controls how quickly the colors fade
+				trackColorChange += (
+				    Scale_ColorShiftMultiplier
+				    * Math.Max (1, Math.Min ((Audio_Average_Intensity * 6), LightSystem.Color_MAX))
+				);
+				if (trackColorChange.IntValue > 0) {
+					// Shift by the integer pixel value
+					ColorShift_Amount = (byte)trackColorChange.TakeInt ();
+					AnimationUpdateColorShift ();
+				}
 			}
 
 			if (UseSolidColors) {
@@ -637,9 +907,23 @@ namespace Actinic.Animations
 			}
 
 			if (UseSolidColors) {
-				LightProcessing.ShiftLightsOutward (Actinic_Lights_Unprocessed, (int)VU_ShiftSpeed);
+				// > Shift the pulse effect outwards
+				trackShiftOutColor += VU_ShiftSpeed;
+				if (trackShiftOutColor.IntValue > 0) {
+					// Shift by the integer pixel value
+					int shiftAmount = trackShiftOutColor.TakeInt ();
+					LightProcessing.ShiftLightsOutward (
+						Actinic_Lights_Unprocessed, shiftAmount);
+				}
 			} else {
-				LightProcessing.ShiftLightsOutward (Actinic_Lights_Unprocessed, 1);
+				// > Shift the pulse effect outwards
+				trackShiftOutColor += ShiftOutColorPerFrame;
+				if (trackShiftOutColor.IntValue > 0) {
+					// Shift by the integer pixel value
+					int shiftAmount = trackShiftOutColor.TakeInt ();
+					LightProcessing.ShiftLightsOutward (
+						Actinic_Lights_Unprocessed, shiftAmount);
+				}
 			}
 
 			for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
@@ -672,6 +956,9 @@ namespace Actinic.Animations
 
 		private void AudioMeter_Extended_RainbowBeat (bool BeatBasedBrightness)
 		{
+			// Mark linger tracker as not used
+			Linger_Tracker_Used = false;
+
 			if (BeatBasedBrightness) {
 				Actinic_Lights_Unprocessed [LightSystem.LIGHT_INDEX_MIDDLE].Brightness = (byte)MathUtilities.ConvertRange (Audio_Low_Intensity, 0, 1, LightSystem.Color_MID, 255);
 				Actinic_Lights_Unprocessed [LightSystem.LIGHT_INDEX_MIDDLE - 1].Brightness = (byte)MathUtilities.ConvertRange (Audio_Low_Intensity, 0, 1, LightSystem.Color_MID, 255);
@@ -705,6 +992,9 @@ namespace Actinic.Animations
 
 		private void AudioMeter_Extended_Hueshift ()
 		{
+			// Mark linger tracker as not used
+			Linger_Tracker_Used = false;
+
 			if (Audio_Average_Frequency_Distribution_Percentage > 0.5) {
 				CustomColorShift_Red = Convert.ToByte (Math.Max (Math.Min ((((Audio_Average_Frequency_Distribution_Percentage - 0.5) * 2) * VU_Hueshift_Color_Multiplier), LightSystem.Color_MAX), LightSystem.Color_MIN));
 				CustomColorShift_Blue = LightSystem.Color_MIN;
@@ -743,29 +1033,49 @@ namespace Actinic.Animations
 
 		private void AudioMeter_Extended_Hueshift_Beat ()
 		{
+			// Mark linger tracker as not used
+			Linger_Tracker_Used = false;
+
 			// Low frequency controls the brightness for all of the lights
 			Actinic_Lights_Unprocessed [LightSystem.LIGHT_INDEX_MIDDLE].Brightness = (byte)MathUtilities.ConvertRange (Audio_Low_Intensity, 0, 1, LightSystem.Color_DARK, 255);
 			Actinic_Lights_Unprocessed [LightSystem.LIGHT_INDEX_MIDDLE - 1].Brightness = Actinic_Lights_Unprocessed [LightSystem.LIGHT_INDEX_MIDDLE].Brightness;
 
-			LightProcessing.ShiftLightsBrightnessOutward (Actinic_Lights_Unprocessed, 2);
+			// > Shift the pulse effect outwards
+			trackShiftOutBrightness += ShiftOutBrightnessPerFrame;
+			if (trackShiftOutBrightness.IntValue > 0) {
+				// Shift by the integer pixel value
+				int shiftAmount = trackShiftOutBrightness.TakeInt ();
+				LightProcessing.ShiftLightsBrightnessOutward (
+					Actinic_Lights_Unprocessed, shiftAmount);
+			}
 
 			// Mid frequency controls how quickly the colors fade
 			//VU_ColorShift_Amount = Convert.ToByte (Math.Max (Math.Min ((Audio_Mid_Intensity * 16) + 5, 255), 0));
 			// EDIT: Seems the average intensity works better, and it makes this easier to deal with
-			AnimationUpdateColorShift ();
+
+			// Average intensity controls how quickly the colors fade
+			trackColorChange += (
+			    Scale_ColorShiftMultiplier
+			    * Math.Max (1, Math.Min ((Audio_Average_Intensity * 6), LightSystem.Color_MAX))
+			);
+			if (trackColorChange.IntValue > 0) {
+				// Shift by the integer pixel value
+				ColorShift_Amount = (byte)trackColorChange.TakeInt ();
+				AnimationUpdateColorShift ();
+			}
 
 			//Console.WriteLine ("DEBUG:  Unupdated count: {0}, requirement: {1}", VU_Hueshift_Beat_Pause_Fading_Off_Count, MathUtilities.ConvertRange (Math.Max(VU_Volume_Mid_Intensity - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, 0), 0, 1 - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, VU_Hueshift_Beat_Pause_Fading_Min_Delay, VU_Hueshift_Beat_Pause_Fading_Max_Delay));
 
 			// Mid frequency also controls whether or not the color fade freezes
-			if (VU_Hueshift_Beat_Pause_Fading_Off_Count >= MathUtilities.ConvertRange (Math.Max (Audio_Mid_Intensity - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, 0), 0, 1 - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, VU_Hueshift_Beat_Pause_Fading_Min_Delay, VU_Hueshift_Beat_Pause_Fading_Max_Delay)) {
-				VU_Hueshift_Beat_Pause_Fading_Off_Count = 0;
+			if (VU_Hueshift_Beat_Pause_Fading_Off_Delay >= MathUtilities.ConvertRange (Math.Max (Audio_Mid_Intensity - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, 0), 0, 1 - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, VU_Hueshift_Beat_Pause_Fading_Min_Delay, VU_Hueshift_Beat_Pause_Fading_Max_Delay)) {
+				VU_Hueshift_Beat_Pause_Fading_Off_Delay = 0;
 				for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
 					Actinic_Lights_Unprocessed [i].R = ColorShift_Red;
 					Actinic_Lights_Unprocessed [i].G = ColorShift_Green;
 					Actinic_Lights_Unprocessed [i].B = ColorShift_Blue;
 				}
 			} else {
-				VU_Hueshift_Beat_Pause_Fading_Off_Count++;
+				VU_Hueshift_Beat_Pause_Fading_Off_Delay += FrameTimeElapsed;
 			}
 
 			for (int i = 0; i < (LightSystem.LIGHT_COUNT / 2); i++) {
@@ -787,6 +1097,9 @@ namespace Actinic.Animations
 
 		private void AudioMeter_Extended_Stationary_Bars ()
 		{
+			// Mark linger tracker as not used
+			Linger_Tracker_Used = false;
+
 			// Reduce the past set of colors
 			byte reduceAmount = (byte)(4 * deviceConfig.FactorTime);
 			for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
@@ -884,6 +1197,9 @@ namespace Actinic.Animations
 
 		private void AudioMeter_Extended_Moving_Bars (bool EquallySpaced)
 		{
+			// Mark linger tracker as not used
+			Linger_Tracker_Used = false;
+
 			VU_Update_MovingBars (EquallySpaced);
 
 			int Moving_Bar_Low_Index = (int)Math.Round (VU_Moving_Bar_Low_Position);
@@ -960,8 +1276,27 @@ namespace Actinic.Animations
 			AudioMeter_Extended_Solid_Color_Strobe (ColorStrobe.Rainbow);
 		}
 
-		private void AudioMeter_Extended_Solid_Color_Strobe (ColorStrobe LightStrobeMode)
+		private void AudioMeter_Extended_Solid_Color_Strobe (ColorStrobe LightStrobeMode, bool PersistentAudioOverlay = false)
 		{
+			if ((LightStrobeMode == ColorStrobe.White
+			    || LightStrobeMode == ColorStrobe.Rainbow
+			    || LightStrobeMode == ColorStrobe.Hueshift
+			    )) {
+				if (Linger_Tracker_Used == false) {
+					// Mark linger tracker as used
+					Linger_Tracker_Used = true;
+					// Clear linger tracker
+					Array.Clear (Linger_Tracker, 0, Linger_Tracker.Length);
+					// Clear brightness
+					for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
+						CurrentFrame [i].Brightness = 0;
+					}
+				}
+			} else {
+				// Mark linger tracker as not used
+				Linger_Tracker_Used = false;
+			}
+
 			switch (LightStrobeMode) {
 			case ColorStrobe.White:
 			case ColorStrobe.SingleWhite:
@@ -973,7 +1308,16 @@ namespace Actinic.Animations
 				break;
 			case ColorStrobe.Rainbow:
 			case ColorStrobe.SingleRainbow:
-				AnimationUpdateColorShift ();
+				// Average intensity controls how quickly the colors fade
+				trackColorChange += (
+				    Scale_ColorShiftMultiplier
+				    * Math.Max (1, Math.Min ((Audio_Average_Intensity * 6), LightSystem.Color_MAX))
+				);
+				if (trackColorChange.IntValue > 0) {
+					// Shift by the integer pixel value
+					ColorShift_Amount = (byte)trackColorChange.TakeInt ();
+					AnimationUpdateColorShift ();
+				}
 				for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
 					CurrentFrame [i].R = ColorShift_Red;
 					CurrentFrame [i].G = ColorShift_Green;
@@ -996,75 +1340,184 @@ namespace Actinic.Animations
 
 			double CurrentLight_VU_Max = 0;
 
+			int LightMaxIndex = LightSystem.LIGHT_COUNT - 1;
+			if (PersistentAudioOverlay) {
+				// Mirror for audio effect
+				LightMaxIndex = LightSystem.LIGHT_INDEX_MIDDLE;
+			}
+
 			if (LightStrobeMode != ColorStrobe.SingleRainbow & LightStrobeMode != ColorStrobe.SingleWhite) {
-				for (int i = 0; i < (LightSystem.LIGHT_COUNT / 2); i++) {
-					if (i < AudioProcessedSnapshot.Count) {
+				// Clear collection of modified pixels
+				Array.Clear (Linger_Modified, 0, Linger_Modified.Length);
+
+				for (int i = 0; i <= LightMaxIndex; i++) {
+					if (PersistentAudioOverlay && (i < AudioProcessedSnapshot.Count)) {
 						CurrentLight_VU_Max = AudioProcessedSnapshot [Math.Min (((LightSystem.LIGHT_COUNT / 2 - 1) - i), AudioProcessedSnapshot.Count - 1)];
 					}
+					if (Linger_Modified [i]) {
+						// Ignore pixels that were already modified
+						continue;
+					}
 					if (LightStrobeMode == ColorStrobe.Hueshift) {
-						if (LightProcessing.Is_LED_Dark_Brightness (CurrentFrame, i, LightSystem.Color_DARK)) {
-							if ((Randomizer.RandomProvider.NextDouble () < Audio_Low_Intensity * VU_Solid_Color_Strobe_Hueshift_Flicker_Chance)) {
-								CurrentFrame [i].B = 255;
-								CurrentFrame [i].Brightness = 255;
-							} else if ((Randomizer.RandomProvider.NextDouble () < Audio_Mid_Intensity * VU_Solid_Color_Strobe_Hueshift_Flicker_Chance)) {
-								CurrentFrame [i].G = 255;
-								CurrentFrame [i].Brightness = 255;
-							} else if ((Randomizer.RandomProvider.NextDouble () < Audio_High_Intensity * VU_Solid_Color_Strobe_Hueshift_Flicker_Chance)) {
-								CurrentFrame [i].R = 255;
-								CurrentFrame [i].Brightness = 255;
-							} else {
+						if (Linger_Tracker [i] > 0) {
+							// Strobe exists, decrease strobe lifetime
+							Linger_Tracker [i] -=
+								FrameTimeElapsed;
+
+							if (Linger_Tracker [i] <= 0) {
+								// Strobe reached end, fade out brightness
+								// (Slower fade than fading out colors, too)
 								CurrentFrame [i].Brightness = 0;
 							}
 						} else {
-							CurrentFrame [i].Brightness = 0;
+							if ((Randomizer.RandomProvider.NextDouble () < Audio_Low_Intensity * VU_Solid_Color_Strobe_Hueshift_Flicker_Chance)) {
+								// Blue
+								GenerateStrobe (i, new Color (0, 0, 255));
+							} else if ((Randomizer.RandomProvider.NextDouble () < Audio_Mid_Intensity * VU_Solid_Color_Strobe_Hueshift_Flicker_Chance)) {
+								// Green
+								GenerateStrobe (i, new Color (0, 255, 0));
+							} else if ((Randomizer.RandomProvider.NextDouble () < Audio_High_Intensity * VU_Solid_Color_Strobe_Hueshift_Flicker_Chance)) {
+								// Red
+								GenerateStrobe (i, new Color (255, 0, 0));
+							}
 						}
 					} else {
-						if ((Randomizer.RandomProvider.NextDouble () < Audio_Average_Intensity * VU_Solid_Color_Strobe_Flicker_Chance) && LightProcessing.Is_LED_Dark_Brightness (CurrentFrame, i, LightSystem.Color_DARK)) {
-							CurrentFrame [i].R = LightSystem.Color_MAX;
-							CurrentFrame [i].G = LightSystem.Color_MAX;
-							CurrentFrame [i].B = LightSystem.Color_MAX;
-							CurrentFrame [i].Brightness = 255;
-							//Strobe mode overrides the standard VU-based flickering
-						} else {
-							if (CurrentLight_VU_Max > 0.5) {
-								CurrentFrame [i].Brightness = (byte)(255 * (CurrentLight_VU_Max - 0.5) * VU_ColorShift_Brightness_Multiplier);
-							} else {
+						if (Linger_Tracker [i] > 0) {
+							// Strobe exists, decrease strobe lifetime
+							Linger_Tracker [i] -=
+								FrameTimeElapsed;
+
+							if (Linger_Tracker [i] <= 0) {
+								// Strobe reached end, fade out brightness
+								// (Slower fade than fading out colors, too)
 								CurrentFrame [i].Brightness = 0;
 							}
+						} else if ((Randomizer.RandomProvider.NextDouble () < Audio_Average_Intensity * VU_Solid_Color_Strobe_Flicker_Chance)) {
+							GenerateStrobe (i, new Color (255, 255, 255));
+							//Strobe mode overrides the standard VU-based flickering
+						} else if (PersistentAudioOverlay && CurrentLight_VU_Max > 0.5) {
+							// Set brightness to audio overlay
+							CurrentFrame [i].Brightness = (byte)(255 * (CurrentLight_VU_Max - 0.5) * VU_ColorShift_Brightness_Multiplier);
 						}
 					}
 				}
 
-				//Clone upper half to lower half
-				int i_source = 0;
-				for (int i = LightSystem.LIGHT_INDEX_MAX; i > (LightSystem.LIGHT_INDEX_MIDDLE); i--) {
-					i_source = (LightSystem.LIGHT_INDEX_MAX - i);
-					CurrentFrame [i].R = CurrentFrame [i_source].R;
-					CurrentFrame [i].G = CurrentFrame [i_source].G;
-					CurrentFrame [i].B = CurrentFrame [i_source].B;
-					CurrentFrame [i].Brightness = CurrentFrame [i_source].Brightness;
+				if (PersistentAudioOverlay) {
+					// Clone upper half to lower half
+					int i_source = 0;
+					for (int i = LightSystem.LIGHT_INDEX_MAX; i > (LightSystem.LIGHT_INDEX_MIDDLE); i--) {
+						i_source = (LightSystem.LIGHT_INDEX_MAX - i);
+						CurrentFrame [i].R = CurrentFrame [i_source].R;
+						CurrentFrame [i].G = CurrentFrame [i_source].G;
+						CurrentFrame [i].B = CurrentFrame [i_source].B;
+						CurrentFrame [i].Brightness = CurrentFrame [i_source].Brightness;
+					}
 				}
 			} else if (LightStrobeMode == ColorStrobe.SingleRainbow | LightStrobeMode == ColorStrobe.SingleWhite) {
-				if (VU_Solid_Color_Single_Strobe_Off_Count > MathUtilities.ConvertRange (Audio_Average_Intensity, 0, 1, VU_Solid_Color_Single_Strobe_Max_Delay, VU_Solid_Color_Single_Strobe_Min_Delay)) {
-					VU_Solid_Color_Single_Strobe_Off_Count = 0;
+				if (VU_Solid_Color_Single_Strobe_Off_Delay > MathUtilities.ConvertRange (Audio_Average_Intensity, 0, 1, VU_Solid_Color_Single_Strobe_Max_Delay, VU_Solid_Color_Single_Strobe_Min_Delay)) {
+					VU_Solid_Color_Single_Strobe_Off_Delay = 0;
 					for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
 						CurrentFrame [i].Brightness = 255;
 					}
 				} else {
-					VU_Solid_Color_Single_Strobe_Off_Count++;
+					VU_Solid_Color_Single_Strobe_Off_Delay += FrameTimeElapsed;
 					for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
 						CurrentFrame [i].Brightness = 0;
 					}
 				}
-			}
 
-			if (LightStrobeMode == ColorStrobe.SingleRainbow | LightStrobeMode == ColorStrobe.SingleWhite) {
-				// Convert from old FPS-dependent values to independent values
-				double SmoothingAmount = Math.Min (Math.Max ((1 - (Audio_Average_Intensity * 1.1)), 0.45), 0.75);
-				SmoothingAmount = Math.Max (SmoothingAmount - (VU_Solid_Color_Single_Strobe_Smoothing_Decrease * Audio_Average_Intensity), 0);
-				SmoothingConstant = ((2 / (1 - SmoothingAmount)) - 1) * 50;
+				// Adjust smoothing for single strobe
+				if (Audio_Average_Intensity > VU_Intensity_Threshold_HEAVY) {
+					// Above the threshold for heavy intensity, disable
+					// smoothing
+					EnableSmoothing = false;
+					// To keep smoothing disabled for flashier effect, turn it
+					// off all the time with 'anim fade disable'
+				} else {
+					// Enable smoothing, but decrease smoothing amount according
+					// to intensity.  Convert from old FPS-dependent values to
+					// independent values.
+					EnableSmoothing = true;
+					double SmoothingAmount = Math.Min (Math.Max ((1 - (Audio_Average_Intensity * 1.1)), 0.45), 0.75);
+					SmoothingAmount = Math.Max (SmoothingAmount - (VU_Solid_Color_Single_Strobe_Smoothing_Decrease * Audio_Average_Intensity), 0);
+					SmoothingConstant = ((2 / (1 - SmoothingAmount)) - 1) * 50;
+				}
 			}
 		}
+
+		/// <summary>
+		/// Generates and applies a strobe centered on the specified middle
+		/// index.
+		/// </summary>
+		/// <param name="Middle">Middle of the strobe.</param>
+		/// <param name="ChosenColor">Color of the strobe.</param>
+		private void GenerateStrobe (int Middle, Color ChosenColor)
+		{
+			// Pick a duration according to inverse intensity
+			double strobeDuration =
+				MathUtilities.ConvertRange (
+					Audio_Average_Intensity, 0, 1,
+					VU_Solid_Color_Strobe_Linger_Time_Max,
+					VU_Solid_Color_Strobe_Linger_Time_Min
+				);
+
+			// Pick a size according to intensity
+			int strobeSize =
+				(int)Math.Round (MathUtilities.ConvertRange (
+					Audio_Average_Intensity, 0, 1,
+					VU_Solid_Color_Strobe_Size_Min,
+					VU_Solid_Color_Strobe_Size_Max
+				));
+
+			// Start halfway before current index
+			int strobeStart =
+				deviceConfig.ClipIndex (Middle - (strobeSize / 2));
+			// End halfway past current index
+			int strobeEnd =
+				deviceConfig.ClipIndex (Middle + (strobeSize / 2));
+
+			if (strobeStart == strobeEnd) {
+				// Increment strobeEnd to ensure at least one pixel gets set
+				strobeEnd++;
+			}
+
+			// Build a strobe along the entire array
+			for (int strobeIndex = strobeStart; strobeIndex < strobeEnd; strobeIndex++) {
+				// Set color (blending with existing)
+				CurrentFrame [strobeIndex].Blend (
+					ChosenColor, Color.BlendMode.Combine
+				);
+				// Set duration
+				Linger_Tracker [strobeIndex] = strobeDuration;
+				// Mark as modified
+				Linger_Modified [strobeIndex] = true;
+			}
+
+			//Console.WriteLine (
+			//	"[Generated strobe.  Middle: {0}, size: {1}, duration: {2}, " +
+			//	"start: {3}, end: {4}]",
+			//	Middle, strobeSize, strobeDuration, strobeStart, strobeEnd
+			//);
+		}
+
+		#endregion
+
+		#region Internal
+
+		/// <summary>
+		/// Tracking brightness shift outwards per frame
+		/// </summary>
+		private IntFraction trackShiftOutBrightness = new IntFraction ();
+
+		/// <summary>
+		/// Tracking color shift outwards per frame
+		/// </summary>
+		private IntFraction trackShiftOutColor = new IntFraction ();
+
+		/// <summary>
+		/// Tracking amount of color change shift per frame
+		/// </summary>
+		private IntFraction trackColorChange = new IntFraction ();
 
 		#endregion
 
