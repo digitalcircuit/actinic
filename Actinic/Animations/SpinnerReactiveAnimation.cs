@@ -60,12 +60,13 @@ namespace Actinic.Animations
 
 			// Get it to run once, so the following loop continues
 			CalculuatedHues.Add (new Color (ColorShift_Red, ColorShift_Green, ColorShift_Blue, LightSystem.Brightness_MAX));
-			ColorShift_Amount = (byte)((LightSystem.Color_MAX * 3) / CurrentFrame.PixelCount);
+			byte fixedColorShiftAmount =
+				(byte)((LightSystem.Color_MAX * 3) / CurrentFrame.PixelCount);
 			// (Max color * three stages) / light count
-			AnimationUpdateColorShift ();
+			AnimationUpdateColorShift (fixedColorShiftAmount);
 			while (!(ColorShift_LastMode == ColorShift_Mode.ShiftingRed && ColorShift_Blue == LightSystem.Color_MIN & ColorShift_Red == LightSystem.Color_MAX)) {
 				CalculuatedHues.Add (new Color (ColorShift_Red, ColorShift_Green, ColorShift_Blue, LightSystem.Brightness_MAX));
-				AnimationUpdateColorShift ();
+				AnimationUpdateColorShift (fixedColorShiftAmount);
 			}
 		}
 

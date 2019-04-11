@@ -213,8 +213,7 @@ namespace Actinic.Animations
 			);
 			if (trackColorChange.IntValue > 0) {
 				// Shift by the integer pixel value
-				ColorShift_Amount = (byte)trackColorChange.TakeInt ();
-				AnimationUpdateColorShift ();
+				AnimationUpdateColorShift ((byte)trackColorChange.TakeInt ());
 			}
 
 

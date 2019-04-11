@@ -150,36 +150,6 @@ namespace Actinic.Animations
 			private set;
 		}
 
-		/// <summary>
-		/// Inversion of the Red component of the current shifting color
-		/// </summary>
-		/// <value>Number from 0 to 255</value>
-		protected byte ColorShift_Red_Invert {
-			get {
-				return (byte)(LightSystem.Color_MAX - ColorShift_Red);
-			}
-		}
-
-		/// <summary>
-		/// Inversion of the Green component of the current shifting color
-		/// </summary>
-		/// <value>Number from 0 to 255</value>
-		protected byte ColorShift_Green_Invert {
-			get {
-				return (byte)(LightSystem.Color_MAX - ColorShift_Green);
-			}
-		}
-
-		/// <summary>
-		/// Inversion of the Blue component of the current shifting color
-		/// </summary>
-		/// <value>Number from 0 to 255</value>
-		protected byte ColorShift_Blue_Invert {
-			get {
-				return (byte)(LightSystem.Color_MAX - ColorShift_Blue);
-			}
-		}
-
 		protected enum ColorShift_Mode
 		{
 			ShiftingRed,
@@ -192,33 +162,6 @@ namespace Actinic.Animations
 		/// </summary>
 		/// <value>One of <see cref="ColorShift_Mode"/>.</value>
 		protected ColorShift_Mode ColorShift_LastMode {
-			get;
-			private set;
-		}
-
-		/// <summary>
-		/// Rate at which each color component is shifted
-		/// </summary>
-		/// <value>Number from 0 to 255</value>
-		public byte ColorShift_Amount {
-			get;
-			protected set;
-		}
-
-		/// <summary>
-		/// Amount by which the warm (red) color is increased
-		/// </summary>
-		/// <value>Number from 0 to 255</value>
-		public byte ColorShift_HighBoost {
-			get;
-			private set;
-		}
-
-		/// <summary>
-		/// Amount by which the cool (blue) color is increased
-		/// </summary>
-		/// <value>Number from 0 to 255</value>
-		public byte ColorShift_LowBoost {
 			get;
 			private set;
 		}
@@ -299,7 +242,6 @@ namespace Actinic.Animations
 			ColorShift_Green = LightSystem.Color_MIN;
 			ColorShift_Blue = LightSystem.Color_MIN;
 			ColorShift_LastMode = ColorShift_Mode.ShiftingRed;
-			ColorShift_Amount = 5;
 			// Prepare the color-shifting system with a good set of defaults
 		}
 
@@ -352,16 +294,6 @@ namespace Actinic.Animations
 				Audio_Average_Frequency_Distribution_Percentage,
 				Audio_Frequency_Distribution_Percentage
 			);
-			if (Audio_Average_Frequency_Distribution_Percentage > 0.5) {
-				ColorShift_HighBoost = Convert.ToByte (Math.Max (Math.Min ((((Audio_Average_Frequency_Distribution_Percentage - 0.5) * 2) * 128), 255), 0));
-				ColorShift_LowBoost = 0;
-			} else if (Audio_Average_Frequency_Distribution_Percentage < 0.5) {
-				ColorShift_HighBoost = 0;
-				ColorShift_LowBoost = Convert.ToByte (Math.Max (Math.Min ((((0.5 - Audio_Average_Frequency_Distribution_Percentage) * 2) * 128), 255), 0));
-			} else {
-				ColorShift_HighBoost = 0;
-				ColorShift_LowBoost = 0;
-			}
 
 			Audio_Realtime_Intensity = Math.Max (Math.Min ((Audio_Volume_Low * 0.25 + Audio_Volume_Mid * 0.45 + Audio_Volume_High * 0.5), 1), 0);
 			Audio_Delta_Intensity = (Audio_Realtime_Intensity - Audio_Average_Intensity);
@@ -375,8 +307,9 @@ namespace Actinic.Animations
 				double SmoothingAmount = Math.Min (Math.Max ((1 - (Audio_Average_Intensity * 1.1)), 0.45), 0.75);
 				SmoothingConstant = ((2 / (1 - SmoothingAmount)) - 1) * 50;
 			}
-			ColorShift_Amount = Convert.ToByte (Math.Max (Math.Min ((Audio_Average_Intensity * 16) + 5, 255), 0));
-
+			// ColorShift_Amount is deprecated, replaced by calculating on
+			// demand in individual animations
+			//ColorShift_Amount = Convert.ToByte (Math.Max (Math.Min ((Audio_Average_Intensity * 16) + 5, 255), 0));
 		}
 
 		private void UpdateVolumes (List<double> Current_Audio_Volumes)
@@ -418,7 +351,8 @@ namespace Actinic.Animations
 		/// <summary>
 		/// Rotates the hue of the color-shift colors based on the color-shift amount
 		/// </summary>
-		protected void AnimationUpdateColorShift ()
+		/// <param name="ColorShift_Amount">Amount to shift colors.</param>
+		protected void AnimationUpdateColorShift (byte ColorShift_Amount)
 		{
 			switch (ColorShift_LastMode) {
 			case ColorShift_Mode.ShiftingRed:
@@ -426,8 +360,6 @@ namespace Actinic.Animations
 				ColorShift_Green = (byte)Math.Min (ColorShift_Green + ColorShift_Amount, LightSystem.Color_MAX);
 				if (ColorShift_Red == LightSystem.Color_MIN & ColorShift_Green == LightSystem.Color_MAX) {
 					ColorShift_LastMode = ColorShift_Mode.ShiftingGreen;
-					//ColorShift_Red = LightSystem.Color_MIN;
-					//ColorShift_Green = LightSystem.Color_MAX;
 				}
 				break;
 			case ColorShift_Mode.ShiftingGreen:
@@ -435,8 +367,6 @@ namespace Actinic.Animations
 				ColorShift_Blue = (byte)Math.Min (ColorShift_Blue + ColorShift_Amount, LightSystem.Color_MAX);
 				if (ColorShift_Green == LightSystem.Color_MIN & ColorShift_Blue == LightSystem.Color_MAX) {
 					ColorShift_LastMode = ColorShift_Mode.ShiftingBlue;
-					//ColorShift_Green = LightSystem.Color_MIN;
-					//ColorShift_Blue = LightSystem.Color_MAX;
 				}
 				break;
 			case ColorShift_Mode.ShiftingBlue:
@@ -444,12 +374,13 @@ namespace Actinic.Animations
 				ColorShift_Red = (byte)Math.Min (ColorShift_Red + ColorShift_Amount, LightSystem.Color_MAX);
 				if (ColorShift_Blue == LightSystem.Color_MIN & ColorShift_Red == LightSystem.Color_MAX) {
 					ColorShift_LastMode = ColorShift_Mode.ShiftingRed;
-					//ColorShift_Blue = LightSystem.Color_MIN;
-					//ColorShift_Red = LightSystem.Color_MAX;
 				}
 				break;
 			default:
-				break;
+				throw new NotSupportedException (string.Format (
+					"Unsupported ColorShift_Mode {0}",
+					ColorShift_LastMode
+				));
 			}
 		}
 

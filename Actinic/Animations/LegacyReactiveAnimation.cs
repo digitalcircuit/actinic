@@ -889,8 +889,8 @@ namespace Actinic.Animations
 				);
 				if (trackColorChange.IntValue > 0) {
 					// Shift by the integer pixel value
-					ColorShift_Amount = (byte)trackColorChange.TakeInt ();
-					AnimationUpdateColorShift ();
+					AnimationUpdateColorShift (
+						(byte)trackColorChange.TakeInt ());
 				}
 			}
 
@@ -924,6 +924,20 @@ namespace Actinic.Animations
 					LightProcessing.ShiftLightsOutward (
 						Actinic_Lights_Unprocessed, shiftAmount);
 				}
+			}
+
+			// Amount by which the warm (red) color is increased
+			byte ColorShift_HighBoost = 0;
+			// Amount by which the cool (blue) color is increased
+			byte ColorShift_LowBoost = 0;
+
+			// Find low and high frequency boost
+			if (Audio_Average_Frequency_Distribution_Percentage > 0.5) {
+				ColorShift_HighBoost =
+					Convert.ToByte (Math.Max (Math.Min ((((Audio_Average_Frequency_Distribution_Percentage - 0.5) * 2) * 128), 255), 0));
+			} else if (Audio_Average_Frequency_Distribution_Percentage < 0.5) {
+				ColorShift_LowBoost =
+					Convert.ToByte (Math.Max (Math.Min ((((0.5 - Audio_Average_Frequency_Distribution_Percentage) * 2) * 128), 255), 0));
 			}
 
 			for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
@@ -1060,8 +1074,7 @@ namespace Actinic.Animations
 			);
 			if (trackColorChange.IntValue > 0) {
 				// Shift by the integer pixel value
-				ColorShift_Amount = (byte)trackColorChange.TakeInt ();
-				AnimationUpdateColorShift ();
+				AnimationUpdateColorShift ((byte)trackColorChange.TakeInt ());
 			}
 
 			//Console.WriteLine ("DEBUG:  Unupdated count: {0}, requirement: {1}", VU_Hueshift_Beat_Pause_Fading_Off_Count, MathUtilities.ConvertRange (Math.Max(VU_Volume_Mid_Intensity - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, 0), 0, 1 - VU_Hueshift_Beat_Pause_Fading_Intensity_Floor, VU_Hueshift_Beat_Pause_Fading_Min_Delay, VU_Hueshift_Beat_Pause_Fading_Max_Delay));
@@ -1315,8 +1328,8 @@ namespace Actinic.Animations
 				);
 				if (trackColorChange.IntValue > 0) {
 					// Shift by the integer pixel value
-					ColorShift_Amount = (byte)trackColorChange.TakeInt ();
-					AnimationUpdateColorShift ();
+					AnimationUpdateColorShift (
+						(byte)trackColorChange.TakeInt ());
 				}
 				for (int i = 0; i < LightSystem.LIGHT_COUNT; i++) {
 					CurrentFrame [i].R = ColorShift_Red;
