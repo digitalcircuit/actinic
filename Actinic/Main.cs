@@ -112,6 +112,11 @@ namespace Actinic
 		private static System.Threading.Thread Actinic_Light_Queue_Thread;
 
 		/// <summary>
+		/// The number of animations making use of the audio input system.
+		/// </summary>
+		private static int Animation_Audio_Users = 0;
+
+		/// <summary>
 		/// Function that takes in a given layer and modifies it.
 		/// </summary>
 		delegate void LayerTransformer(ref Layer lights);
@@ -1082,19 +1087,22 @@ namespace Actinic
 											//  Animation_Play will automatically enable the VU system
 											switch (cmd_args [2]) {
 											case "beat_pulse":
-												HaltActivity (false);
+												// Keep audio input active
+												HaltActivity (false, true);
 												BeatPulseReactiveAnimation beatpulse_animator = new BeatPulseReactiveAnimation (ActiveOutputSystem.Configuration, Actinic_Lights_Queue.LightsLastProcessed);
 												beatpulse_animator.AnimationStyle = Animation_AnimationStyle;
 												Animation_Play (Actinic_Lights_Queue, beatpulse_animator);
 												break;
 											case "spinner":
-												HaltActivity (false);
+												// Keep audio input active
+												HaltActivity (false, true);
 												SpinnerReactiveAnimation spinner_animator = new SpinnerReactiveAnimation (ActiveOutputSystem.Configuration, Actinic_Lights_Queue.LightsLastProcessed);
 												spinner_animator.AnimationStyle = Animation_AnimationStyle;
 												Animation_Play (Actinic_Lights_Queue, spinner_animator);
 												break;
 											case "rave_mood":
-												HaltActivity (false);
+												// Keep audio input active
+												HaltActivity (false, true);
 												RaveMoodReactiveAnimation ravemood_animator = new RaveMoodReactiveAnimation (ActiveOutputSystem.Configuration, Actinic_Lights_Queue.LightsLastProcessed);
 												ravemood_animator.AnimationStyle = Animation_AnimationStyle;
 												Animation_Play (Actinic_Lights_Queue, ravemood_animator);
@@ -1113,7 +1121,8 @@ namespace Actinic
 											if (Actinic_Lights_Queue.AnimationActive == false || !(Actinic_Lights_Queue.SelectedAnimation is LegacyReactiveAnimation)) {
 												Console.WriteLine ("(Starting legacy VU animation...)");
 
-												HaltActivity (false);
+												// Keep audio input active
+												HaltActivity (false, true);
 												LegacyReactiveAnimation legacy_animator = new LegacyReactiveAnimation (ActiveOutputSystem.Configuration, Actinic_Lights_Queue.LightsLastProcessed);
 												legacy_animator.AnimationStyle = Animation_AnimationStyle;
 												Animation_Play (Actinic_Lights_Queue, legacy_animator);
@@ -1524,21 +1533,36 @@ namespace Actinic
 			}
 		}
 
-		private static void HaltActivity (bool IncludeOverlayQueues)
+		/// <summary>
+		/// Halts the animation activity, cleaning up.
+		/// </summary>
+		/// <param name="IncludeOverlayQueues">If set to <c>true</c> include overlay queues.</param>
+		/// <param name="KeepAudioInput">If set to <c>true</c> keep audio input system active if already running.</param>
+		private static void HaltActivity (
+			bool IncludeOverlayQueues, bool KeepAudioInput = false)
 		{
 			// As some animations depend partially on the VU volume system, the animation framework should be shut down first.
 			//  That will also disable the VU volume system if the animation had requested it.
 			if (IncludeOverlayQueues) {
 				foreach (KeyValuePair <string, LED_Queue> queue in GetAllQueues ()) {
-					HaltActivity (queue.Value);
+					HaltActivity (queue.Value, KeepAudioInput);
 				}
 			} else {
 				if (Actinic_Lights_Queue != null)
-					HaltActivity (Actinic_Lights_Queue);
+					HaltActivity (Actinic_Lights_Queue, KeepAudioInput);
 			}
 		}
 
-		private static void HaltActivity (LED_Queue QueueToModify, bool ForceQueueCleanup = false)
+		/// <summary>
+		/// Halts the animation activity, cleaning up.
+		/// </summary>
+		/// <param name="QueueToModify">Queue to modify.</param>
+		/// <param name="KeepAudioInput">If set to <c>true</c> keep audio input system active if already running.</param>
+		/// <param name="ForceQueueCleanup">If set to <c>true</c> fully clear the layer queue.</param>
+		private static void HaltActivity (
+			LED_Queue QueueToModify,
+			bool KeepAudioInput = false,
+			bool ForceQueueCleanup = false)
 		{
 			if (Actinic_Lights_Queue == null)
 				return;
@@ -1546,7 +1570,7 @@ namespace Actinic
 				QueueToModify.ClearQueue ();
 			}
 			if (QueueToModify.AnimationActive)
-				Animation_Stop (QueueToModify);
+				Animation_Stop (QueueToModify, KeepAudioInput);
 		}
 
 		/// <summary>
@@ -1695,7 +1719,7 @@ namespace Actinic
 						if (queue.Value.BlendMode == Color.BlendMode.Mask || queue.Value.BlendMode == Color.BlendMode.Replace)
 							queueWithMaskBlendingActive = true;
 						if ((queue.Value.LightsHaveNoEffect) || (selected_oneshot_animation != null && selected_oneshot_animation.AnimationFinished)) {
-							HaltActivity (queue.Value, true);
+							HaltActivity (queue.Value, false, true);
 							EmptyQueues.Add (queue.Key);
 							deletionRequested = true;
 						}
@@ -2032,23 +2056,56 @@ namespace Actinic
 
 			if (QueueToModify.SelectedAnimation is AbstractReactiveAnimation) {
 				// If animation reacts to music, start up the VU system
-				if (!ActiveAudioInputSystem.StartAudioCapture ()) {
-					Console.Error.WriteLine ("(Something went wrong while starting the audio capture system)");
+				if (!ActiveAudioInputSystem.Running) {
+					if (!ActiveAudioInputSystem.StartAudioCapture ()) {
+						Console.Error.WriteLine (
+							"(Something went wrong while starting the audio " +
+							"capture system)"
+						);
+					}
 				}
+				// Increase the count of audio users
+				Animation_Audio_Users++;
 			}
 		}
 
-		private static void Animation_Stop (LED_Queue QueueToModify)
+		/// <summary>
+		/// Stop the active animation on the given queue.
+		/// </summary>
+		/// <param name="QueueToModify">Queue to modify.</param>
+		/// <param name="KeepAudioInput">If set to <c>true</c> keep audio input system active if already running.</param>
+		private static void Animation_Stop (LED_Queue QueueToModify, bool KeepAudioInput = false)
 		{
 			WaitForQueue (QueueToModify);
 			if (QueueToModify.SelectedAnimation is AudioBitmapAnimation)
 				(QueueToModify.SelectedAnimation as AudioBitmapAnimation).StopAudioSystem ();
-			if (QueueToModify.SelectedAnimation is AbstractReactiveAnimation || ActiveAudioInputSystem.Running) {
-				// If animation reacts to music, shut down the VU system
-				if (!ActiveAudioInputSystem.StopAudioCapture ()) {
-					Console.Error.WriteLine ("(Something went wrong while stopping the audio capture system)");
+			if (QueueToModify.SelectedAnimation is AbstractReactiveAnimation) {
+				// Decrease the number of users
+				Animation_Audio_Users--;
+			}
+
+			// Check if audio system should be stopped
+			if (Animation_Audio_Users < 0) {
+				// Validate user count
+				throw new ArgumentOutOfRangeException (
+					"Animation_Audio_Users",
+					"Animation_Audio_Users should not be less than zero."
+				);
+			} else if (Animation_Audio_Users == 0) {
+				// No more audio users
+				if (!KeepAudioInput && ActiveAudioInputSystem.Running) {
+					// If audio input system is running and not requested to be
+					// kept, shut it down
+					if (!ActiveAudioInputSystem.StopAudioCapture ()) {
+						Console.Error.WriteLine (
+							"(Something went wrong while stopping the audio " +
+							"capture system)"
+						);
+					}
 				}
 			}
+
+			// Clear selected animation
 			QueueToModify.SelectedAnimation = null;
 		}
 
