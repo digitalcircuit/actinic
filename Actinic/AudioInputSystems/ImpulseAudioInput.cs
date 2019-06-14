@@ -48,21 +48,6 @@ namespace Actinic.AudioInputs
 
 		#endregion
 
-		/// <summary>
-		/// Priority of this system to other output systems, lower numbers result in higher priority.
-		/// </summary>
-		private const int Impulse_Priority = 36943;
-		// Feel free to change this as desired
-
-		private bool SystemActive = false;
-
-		private System.Threading.Thread AudioCaptureThread;
-		private double[] AudioVolumesBuffered = new double[Impulse_VOLUME_COUNT];
-
-		#if DEBUG_IMPULSE_PERFORMANCE
-		private System.Diagnostics.Stopwatch Impulse_PerfStopwatch = new System.Diagnostics.Stopwatch ();
-		#endif
-
 		public override bool Running {
 			get {
 				return (ResettingSystem == false && SystemActive == true);
@@ -122,51 +107,10 @@ namespace Actinic.AudioInputs
 
 			IM_Start ();
 			// Start audio capture before starting the thread
-			ClearAudioBuffer ();
+			ClearAllAudio ();
 			AudioCaptureThread.Start ();
 			SystemActive = true;
 			return true;
-		}
-
-		/// <summary>
-		/// Runs the audio capture.
-		/// </summary>
-		private void RunAudioCapture ()
-		{
-#if DEBUG_IMPULSE_PERFORMANCE
-			int update_count = 0;
-			const int MAX_UPDATE_COUNT = 1000;
-#endif
-			while (AudioCaptureThread.IsAlive && SystemActive) {
-#if DEBUG_IMPULSE_PERFORMANCE
-				if (update_count > MAX_UPDATE_COUNT) {
-					update_count = 0;
-					Console.WriteLine ("# Impulse performance (average {0} runs): {1} ms", MAX_UPDATE_COUNT,
-					                   Impulse_PerfStopwatch.ElapsedMilliseconds / (float)MAX_UPDATE_COUNT);
-					Impulse_PerfStopwatch.Restart ();
-				} else {
-					++update_count;
-				}
-#endif
-				IntPtr result = IM_GetSnapshot (Impulse_ENABLE_FFT);
-				System.Runtime.InteropServices.Marshal.Copy (result, AudioVolumesInstantaneous, 0, AudioVolumesInstantaneous.Length);
-				lock (AudioVolumesBuffered) {
-					for (int i = 0; i < AudioVolumesInstantaneous.Length; i++) {
-						AudioVolumesBuffered [i] = Math.Max (AudioVolumesBuffered [i], AudioVolumesInstantaneous [i]);
-					}
-				}
-			}
-		}
-
-		/// <summary>
-		/// Clears the audio buffer.
-		/// </summary>
-		/// <remarks>Does NOT acquire a lock; you might need to lock AudioVolumesBuffered before calling this.</remarks>
-		private void ClearAudioBuffer ()
-		{
-			for (int i = 0; i < AudioVolumesBuffered.Length; i++) {
-				AudioVolumesBuffered [i] = 0;
-			}
 		}
 
 		public override bool StopAudioCapture ()
@@ -177,20 +121,209 @@ namespace Actinic.AudioInputs
 
 			IM_Stop ();
 			// Stop audio capture after ending the thread
-			ClearAudioBuffer ();
+			ClearAllAudio ();
 			SystemActive = false;
 			return true;
 		}
 
 		public override double[] GetSnapshot ()
 		{
-			double[] audioSnapshot = new double[Impulse_VOLUME_COUNT];
-			lock (AudioVolumesBuffered) {
-				Array.Copy (AudioVolumesBuffered, audioSnapshot, Impulse_VOLUME_COUNT);
-				ClearAudioBuffer ();
+			// Take a rolling maximum that includes the current value
+			double[] audioCurrent = new double[Impulse_VOLUME_COUNT];
+			lock (AudioVolumesSync) {
+				// Copy the current volume
+				Array.Copy (AudioVolumesBuffered, audioCurrent, Impulse_VOLUME_COUNT);
+				// Take the maximum values from current and each snapshot chunk
+				// of the rolling window
+				foreach (var rollingChunk in AudioVolumesRolling) {
+					// Take individual maximum of each current and rolling
+					// volume within the list
+					for (int i = 0; i < audioCurrent.Length; i++) {
+						audioCurrent [i] =
+							Math.Max (rollingChunk [i], audioCurrent [i]);
+					}
+				}
 			}
-			return audioSnapshot;
+			// Return the final maxima
+			return audioCurrent;
 		}
+
+		#region Internal
+
+		/// <summary>
+		/// Runs the audio capture.
+		/// </summary>
+		private void RunAudioCapture ()
+		{
+			#if DEBUG_IMPULSE_PERFORMANCE
+			int update_count = 0;
+			const int MAX_UPDATE_COUNT = 1000;
+			Impulse_PerfStopwatch.Start ();
+			#endif
+			// Track timing for rolling snapshots, start immediately
+			System.Diagnostics.Stopwatch rollingVolumesStopwatch =
+				System.Diagnostics.Stopwatch.StartNew ();
+
+			// Run as long as the system is active
+			while (AudioCaptureThread.IsAlive && SystemActive) {
+				#if DEBUG_IMPULSE_PERFORMANCE
+				if (update_count > MAX_UPDATE_COUNT) {
+					update_count = 0;
+					Console.WriteLine (
+						"# Impulse performance (average {0} runs): {1,6:F3} ms",
+						MAX_UPDATE_COUNT,
+						Impulse_PerfStopwatch.Elapsed.TotalMilliseconds / (float)MAX_UPDATE_COUNT
+					);
+					Impulse_PerfStopwatch.Restart ();
+				} else {
+					++update_count;
+				}
+				#endif
+				IntPtr result = IM_GetSnapshot (Impulse_ENABLE_FFT);
+				System.Runtime.InteropServices.Marshal.Copy (result, AudioVolumesInstantaneous, 0, AudioVolumesInstantaneous.Length);
+				lock (AudioVolumesSync) {
+					// Take the maximum of the input and buffered volumes
+					for (int i = 0; i < AudioVolumesInstantaneous.Length; i++) {
+						AudioVolumesBuffered [i] = Math.Max (AudioVolumesBuffered [i], AudioVolumesInstantaneous [i]);
+					}
+
+					if (rollingVolumesStopwatch.ElapsedMilliseconds >= AudioRollingSampleInterval) {
+						// Move the buffered volumes into a rolling snapshot
+						AppendAudioRolling (AudioVolumesBuffered);
+						ClearAudioBuffer ();
+						// Reset timer
+						rollingVolumesStopwatch.Restart ();
+					}
+				}
+			}
+
+			// Stop tracking timing
+			rollingVolumesStopwatch.Stop ();
+
+			#if DEBUG_IMPULSE_PERFORMANCE
+			Impulse_PerfStopwatch.Stop ();
+			#endif
+		}
+
+		/// <summary>
+		/// Appends the audio snapshot to the rolling audio volumes list.
+		/// <remarks>
+		/// This does NOT lock the audio volume list, and is only suitable for
+		/// internal use with a function that locks.
+		/// </remarks>
+		/// </summary>
+		/// <param name="AudioVolumes">Current audio volumes.</param>
+		private void AppendAudioRolling (double[] AudioVolumes)
+		{
+			if (AudioVolumes.Length != Impulse_VOLUME_COUNT) {
+				throw new ArgumentOutOfRangeException ("AudioVolumes",
+					string.Format (
+						"AudioVolumes.Length does not match {0}",
+						Impulse_VOLUME_COUNT
+					)
+				);
+			}
+
+			// Make a copy (to avoid clearing later)
+			double[] audioSnapshot = new double[AudioVolumes.Length];
+			Array.Copy (AudioVolumes, audioSnapshot, AudioVolumes.Length);
+
+			// Add to the beginning as a copy
+			AudioVolumesRolling.AddFirst (audioSnapshot);
+
+			// Prune snapshots if needed
+			while (AudioVolumesRolling.Count > AudioVolumesRollingSize) {
+				AudioVolumesRolling.RemoveLast ();
+			}
+		}
+
+		/// <summary>
+		/// Clears the audio buffer.
+		/// <remarks>
+		/// This does NOT lock the audio volume list, and is only suitable for
+		/// internal use with a function that locks.
+		/// </remarks>
+		/// </summary>
+		private void ClearAudioBuffer ()
+		{
+			Array.Clear (AudioVolumesBuffered, 0, AudioVolumesBuffered.Length);
+		}
+
+		/// <summary>
+		/// Clears all audio tracking and buffers.
+		/// <remarks>
+		/// This does NOT lock the audio volume list, and is only suitable for
+		/// internal use with a function that locks.
+		/// </remarks>
+		/// </summary>
+		private void ClearAllAudio ()
+		{
+			ClearAudioBuffer ();
+			AudioVolumesRolling.Clear ();
+		}
+
+		/// <summary>
+		/// Priority of this system to other output systems, lower numbers result in higher priority.
+		/// </summary>
+		private const int Impulse_Priority = 36943;
+		// Feel free to change this as desired
+
+		/// <summary>
+		/// Set to true if the audio capture system is active, otherwise false.
+		/// </summary>
+		private bool SystemActive = false;
+
+		/// <summary>
+		/// The Impulse audio input capturing thread.
+		/// </summary>
+		private System.Threading.Thread AudioCaptureThread;
+
+		/// <summary>
+		/// Synchronization object for access to audio volumes.
+		/// </summary>
+		private object AudioVolumesSync = new object ();
+
+		/// <summary>
+		/// Current array of audio volumes.
+		/// </summary>
+		private double[] AudioVolumesBuffered = new double[Impulse_VOLUME_COUNT];
+
+		/// <summary>
+		/// List of audio volumes in a rolling list, with newest first.
+		/// </summary>
+		private LinkedList<double[]> AudioVolumesRolling =
+			new LinkedList<double[]> ();
+
+		/// <summary>
+		/// The interval in milliseconds of how often to snapshot a rolling
+		/// value of the audio volumes.
+		/// </summary>
+		private const long AudioRollingSampleInterval = 10;
+
+		/// <summary>
+		/// The duration of the window for tracking rolling audio volumes.
+		/// Any input volumes older than this will no longer have any effect.
+		/// <remarks>
+		/// This should be large enough that slower lighting systems have time
+		/// to react to all peak values, e.g. greater than average latency.
+		/// Note that adjusting this affects the apparent intensity of input
+		/// audio.  Changing this may require changes to the reactive animations
+		/// to keep the same look and feel.
+		/// </remarks>
+		/// </summary>
+		private const long AudioRollingWindowDuration = 50;
+
+		/// <summary>
+		/// The desired size of the rolling audio volume list.
+		/// </summary>
+		private const long AudioVolumesRollingSize =
+			AudioRollingWindowDuration / AudioRollingSampleInterval;
+
+		#if DEBUG_IMPULSE_PERFORMANCE
+		private System.Diagnostics.Stopwatch Impulse_PerfStopwatch = new System.Diagnostics.Stopwatch ();
+		#endif
+
+		#endregion
 	}
 }
 
