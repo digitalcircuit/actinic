@@ -61,7 +61,7 @@ namespace Actinic.Tests.Rendering
 					yield return new TestCaseData ("pink")
 						.Returns (new Color (255, 0, 128));
 					yield return new TestCaseData ("ambient")
-						.Returns (new Color (255, 130, 20));
+						.Returns (new Color (255, 100, 30));
 				}
 			}
 		}

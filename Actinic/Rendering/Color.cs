@@ -50,7 +50,7 @@ namespace Actinic.Rendering
 				{ "orange", new Color (255, 100, 0) },
 				{ "pink", new Color (255, 0, 128) },
 				// Accent
-				{ "ambient", new Color (255, 130, 20) }
+				{ "ambient", new Color (255, 100, 30) }
 			};
 
 		/// <summary>
