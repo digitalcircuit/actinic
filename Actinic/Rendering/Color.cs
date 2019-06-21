@@ -275,17 +275,18 @@ namespace Actinic.Rendering
 				G = (byte)((G * inverseOpacity) + (UpperColor.G * Opacity));
 				B = (byte)((B * inverseOpacity) + (UpperColor.B * Opacity));
 				Brightness = (byte)(
-					(Brightness * inverseOpacity)
-					+ (UpperColor.Brightness * Opacity)
+				    (Brightness * inverseOpacity)
+				    + (UpperColor.Brightness * Opacity)
 				);
 			} else {
 				// Reduce the intensity of the new color
-				Color opacifiedNewColor = new Color (
-					(byte)(UpperColor.R * Opacity),
-					(byte)(UpperColor.G * Opacity),
-					(byte)(UpperColor.B * Opacity),
-					(byte)(UpperColor.Brightness * Opacity)
-				);
+				Color opacifiedNewColor =
+					new Color (
+						(byte)(UpperColor.R * Opacity),
+						(byte)(UpperColor.G * Opacity),
+						(byte)(UpperColor.B * Opacity),
+						(byte)(UpperColor.Brightness * Opacity)
+					);
 				
 				// Take the brightest colors
 				R = Math.Max (R, opacifiedNewColor.R);
