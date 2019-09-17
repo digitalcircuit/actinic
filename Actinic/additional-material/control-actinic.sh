@@ -1,17 +1,19 @@
 #!/bin/bash
+# See http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
 
 _LOCAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Get directory of this file
 
 #-------------------------------------------------------------
-if [ -z "$CONFIG_ACTINIC_REMOTE_LOADED" ]; then
-	source "$_LOCAL_DIR/util-actinic-remote.sh"
+if [ -z "${CONFIG_ACTINIC_LOADED:-}" ]; then
+	source "$_LOCAL_DIR/util-actinic.sh"
 fi
 #-------------------------------------------------------------
 # Check if session environment is prepared
-if [ -z "$CONFIG_ACTINIC_REMOTE_LOADED" ]; then
+if [ -z "${CONFIG_ACTINIC_LOADED:-}" ]; then
 	# Quit as nothing can happen
-	echo "Actinic remote configuration module not loaded, does the file 'util-actinic-remote.sh' exist? (will now exit)" >&2
+	echo "Actinic configuration module not loaded, does the file 'util-actinic.sh' exist? (will now exit)" >&2
 	exit 1
 fi
 #-------------------------------------------------------------

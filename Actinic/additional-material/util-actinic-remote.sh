@@ -1,61 +1,31 @@
 #!/bin/bash
-# Indicates that Actinic utility module has been loaded
+# See http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+
+# Indicates that the remote Actinic utility module has been loaded
 CONFIG_ACTINIC_REMOTE_LOADED="true"
 
 _LOCAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Get directory of this file
 
-#______Setup______
-# Path to remote SSH configuration file
-SSH_ACTINIC_PATH="$_LOCAL_DIR/config-ssh-actinic.sh"
-
-if [ ! -f "$SSH_ACTINIC_PATH" ]; then
-	# No configuration file exists; create one from scratch
-	cat >"$SSH_ACTINIC_PATH" <<EOL
-#!/bin/bash
-# Indicates that SSH configuration has been loaded
-CONFIG_SSH_ACTINIC_LOADED="true"
-
-# Remote SSH server, e.g. "remote-computer.local"
-ACTINIC_SSH_SERVER=""
-# Port for SSH, e.g. "22"
-ACTINIC_SSH_PORT=""
-# User for connection, e.g. "ubuntu"
-ACTINIC_SSH_USER=""
-EOL
-	echo "New configuration written to '$SSH_ACTINIC_PATH'."
-	echo "Update this with your settings for the remote machine running Actinic."
-	exit 0
-fi
-
-
 #-------------------------------------------------------------
-if [ -z "$CONFIG_SSH_ACTINIC_LOADED" ]; then
-	source "$SSH_ACTINIC_PATH"
+if [ -z "${CONFIG_ACTINIC_SETTINGS_LOADED:-}" ]; then
+	source "$_LOCAL_DIR/util-actinic-settings.sh"
 fi
 #-------------------------------------------------------------
 # Check if session environment is prepared
-if [ -z "$CONFIG_SSH_ACTINIC_LOADED" ]; then
+if [ -z "${CONFIG_ACTINIC_SETTINGS_LOADED:-}" ]; then
 	# Quit as nothing can happen
-	echo "Actinic SSH configuration not loaded, does the file 'config-ssh-actinic.sh' exist? (will now exit)" >&2
+	echo "Actinic configuration module not loaded, does the file 'util-actinic-settings.sh' exist? (will now exit)"
 	exit 1
 fi
 #-------------------------------------------------------------
 
-
-# Check if any variables undefined or left empty
-if [ ! -n "$ACTINIC_SSH_SERVER" ] || [ ! -n "$ACTINIC_SSH_PORT" ] || [ ! -n "$ACTINIC_SSH_USER" ]; then
-	echo "Configuration in '$SSH_ACTINIC_PATH' is not valid." >&2
-	echo "Be sure to define a valid SSH_SERVER, SSH_PORT, and SSH_USER." >&2
-	exit 1
-fi
-#_________________
-
 # Run a command on the remote server
-function run_remote_cmd () {
+function remote_run_cmd () {
 	local EXPECTED_ARGS=1
 	if [ $# -lt $EXPECTED_ARGS ]; then
-		echo "Usage: `basename "$0"` [run_remote_cmd] {command to run}" >&2
+		echo "Usage: `basename "$0"` [remote_run_cmd] {command to run}" >&2
 		return
 	fi
 
@@ -63,23 +33,25 @@ function run_remote_cmd () {
 }
 
 # Run an Actinic command on the remote server
-function run_actinic_cmd () {
+function remote_run_actinic_cmd () {
 	local EXPECTED_ARGS=1
 	if [ $# -lt $EXPECTED_ARGS ]; then
-		echo "Usage: `basename "$0"` [run_actinic_cmd] {command to run}" >&2
-		return
+		echo "Usage: `basename "$0"` [remote_run_actinic_cmd] {command to run}" >&2
+		return 1
 	fi
 
-	run_remote_cmd "~/system/lights/control-actinic.sh '$*'"
+	# Run on the remote system
+	remote_run_cmd "~/system/lights/control-actinic.sh '$*'"
 }
 
 # Show a temporary notification on the remote server by invoking the remote script
-function notification_show_temporary () {
+function remote_notification_show_temporary () {
 	local EXPECTED_ARGS=7
 	if [ $# -ne $EXPECTED_ARGS ]; then
-		echo "Usage: `basename "$0"` [notification_show_temporary] {name of notification} {'all', hyphen-separated range of LEDs, or a single LED} {R} {G} {B} {brightness} {duration in seconds}" >&2
-		return
+		echo "Usage: `basename "$0"` [remote_notification_show_temporary] {name of notification} {'all', hyphen-separated range of LEDs, or a single LED} {R} {G} {B} {brightness} {duration in seconds}" >&2
+		return 1
 	fi
-	run_remote_cmd "~/system/lights/control-actinic-notify.sh 'notification_show_temporary' '$1' '$2' '$3' '$4' '$5' '$6' '$7'" &
+
+	remote_run_cmd "~/system/lights/control-actinic-notify.sh 'notification_show_temporary' '$1' '$2' '$3' '$4' '$5' '$6' '$7'" &
 	# Use a sub-shell to not force a wait
 }
