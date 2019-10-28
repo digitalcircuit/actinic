@@ -304,7 +304,7 @@ namespace Actinic.Animations
 			// How fast or slowly the lights will change
 			if (EnableAlgorithmicSmoothingControl) {
 				// Convert from old FPS-dependent values to independent values
-				double SmoothingAmount = Math.Min (Math.Max ((1 - (Audio_Average_Intensity * 1.1)), 0.45), 0.75);
+				double SmoothingAmount = Math.Min (Math.Max ((1 - (Audio_Average_Intensity)), 0.1), 0.75);
 				SmoothingConstant = ((2 / (1 - SmoothingAmount)) - 1) * 50;
 			}
 			// ColorShift_Amount is deprecated, replaced by calculating on

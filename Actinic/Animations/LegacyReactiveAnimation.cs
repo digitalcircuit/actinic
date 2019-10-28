@@ -1451,7 +1451,7 @@ namespace Actinic.Animations
 					// to intensity.  Convert from old FPS-dependent values to
 					// independent values.
 					EnableSmoothing = true;
-					double SmoothingAmount = Math.Min (Math.Max ((1 - (Audio_Average_Intensity * 1.1)), 0.45), 0.75);
+					double SmoothingAmount = Math.Min (Math.Max ((1 - (Audio_Average_Intensity)), 0.1), 0.75);
 					SmoothingAmount = Math.Max (SmoothingAmount - (VU_Solid_Color_Single_Strobe_Smoothing_Decrease * Audio_Average_Intensity), 0);
 					SmoothingConstant = ((2 / (1 - SmoothingAmount)) - 1) * 50;
 				}
