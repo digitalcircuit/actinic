@@ -200,6 +200,19 @@ namespace Actinic
 		public static bool Processing_Limit_Display = true;
 
 		/// <summary>
+		/// The last known width of the display console.
+		/// </summary>
+		private static int Processing_Console_Width = -1;
+		/// <summary>
+		/// The last known height of the display console.
+		/// </summary>
+		private static int Processing_Console_Height = -1;
+		/// <summary>
+		/// The last state of whether or not the console width was limited.
+		/// </summary>
+		private static bool Processing_Console_WidthWasLimited = true;
+
+		/// <summary>
 		/// Width of display when limiting the size.
 		/// </summary>
 		private const int Processing_Limited_Display_Width = 80;
@@ -215,33 +228,158 @@ namespace Actinic
 			if (CurrentAnimation.Audio_Delta_Intensity < 0) {
 				VU_Intensity_Delta_Sign = "-";
 			}
+			// Clear console if dimensions change and output is shown
+			if (Processing_Show_Analysis
+			    || Processing_Show_Variables
+			    || Processing_Show_Frequencies) {
+				// Output is shown, check if dimensions changed
+				if ((Processing_Console_Width != Console.WindowWidth)
+				    || (Processing_Console_Height != Console.WindowHeight)
+				    || (Processing_Console_WidthWasLimited != Processing_Limit_Display)) {
+					// Track dimensions, clear console
+					Processing_Console_Width = Console.WindowWidth;
+					Processing_Console_Height = Console.WindowHeight;
+					Processing_Console_WidthWasLimited = Processing_Limit_Display;
+					Console.Clear ();
+				}
+			}
 			if (Processing_Show_Analysis) {
 				try {
 					Console.SetCursorPosition (0, 0);
 				} catch (ArgumentOutOfRangeException) {
 					// Stupid Mono System.Console bug...
 				}
-				string animationType = CurrentAnimation.GetType ().Name.Replace ("ReactiveAnimation", "").Trim ();
+				string animationType;
+				if (CurrentAnimation is LegacyReactiveAnimation) {
+					animationType = String.Format (
+						"Legacy: {0}",
+						(CurrentAnimation as LegacyReactiveAnimation).VU_Selected_Mode.ToString ()
+					);
+				} else {
+					animationType = CurrentAnimation.GetType ().Name.Replace ("ReactiveAnimation", "").Trim ();
+				}
 				if (animationType == "") {
 					animationType = "Unknown";
 				}
-				if (CurrentAnimation is LegacyReactiveAnimation) {
-					animationType = String.Format ("Legacy: {0}", (CurrentAnimation as LegacyReactiveAnimation).VU_Selected_Mode.ToString ());
-				}
-				Console.WriteLine ("--------------------- [{0}] Channels: {1} ------------------------", animationType, CurrentAnimation.AudioProcessedSnapshot.Count);
-				Console.WriteLine ("Intensity: " + Math.Round (CurrentAnimation.Audio_Realtime_Intensity, 3).ToString ().PadRight (5) + " (avg: " + Math.Round (CurrentAnimation.Audio_Average_Intensity, 3).ToString ().PadRight (5) + ", delta: " + VU_Intensity_Delta_Sign + Math.Abs (Math.Round (CurrentAnimation.Audio_Delta_Intensity, 3)).ToString ().PadRight (5) + ")  Smoothing: " + Math.Round (CurrentAnimation.SmoothingConstant, 3).ToString ().PadRight (5));
-				Console.WriteLine ("Freq. distribution: " + Math.Round ((double)CurrentAnimation.Audio_Frequency_Distribution_Percentage, 3).ToString ().PadRight (5) + "  (avg: " + Math.Round ((double)CurrentAnimation.Audio_Average_Frequency_Distribution_Percentage, 3).ToString ().PadRight (5) + ")");
 
 				int availableWidth = (Processing_Limit_Display ? Processing_Limited_Display_Width : Console.WindowWidth);
 				// Limit the maximum output according to whether or not limited display width is requested
+
+				// CurrentAnimation.AudioProcessedSnapshot is being updated by
+				// the audio input thread.  Acquire a lock to avoid having the
+				// contents changed out from underneath the display, preventing
+				// inconsistencies or (worse) crashes due to race conditions.
+				//
+				// As the meter display is not usually enabled, the additional
+				// overhead should be fine to overlook.
+				List<double> lastAudioSnapshot;
+				lock (CurrentAnimation.AudioProcessedSnapshot) {
+					// Duplicate the snapshot into a local, non-reference copy
+					lastAudioSnapshot =
+						new List<double> (CurrentAnimation.AudioProcessedSnapshot);
+				}
+
+				// Generate header
+				string animationHeader =
+					String.Format (
+						" [{0}] Channels: {1} ",
+						animationType,
+						lastAudioSnapshot.Count
+					);
+
+				// [Line 1]
+				// Determine padding, accounting for header length to try to
+				// center the result
+				int paddingLeft =
+					(int)(availableWidth / 2) + (animationHeader.Length / 2);
+				Console.WriteLine (
+					animationHeader.PadLeft (paddingLeft, '-').PadRight (availableWidth, '-')
+				);
+				// [Line 2]
+				Console.WriteLine (
+					"Intensity: {0,5:F3} (avg: {1,5:F3}, delta: {2}{3,5:F3}) Smoothing: {4,7:F3}",
+					CurrentAnimation.Audio_Realtime_Intensity,
+					CurrentAnimation.Audio_Average_Intensity,
+					VU_Intensity_Delta_Sign,
+					Math.Abs (CurrentAnimation.Audio_Delta_Intensity),
+					CurrentAnimation.SmoothingConstant
+				);
+				// [Line 3]
+				Console.WriteLine (
+					"Freq. distribution: {0,-5:F3} (avg: {1,-5:F3})",
+					CurrentAnimation.Audio_Frequency_Distribution_Percentage,
+					CurrentAnimation.Audio_Average_Frequency_Distribution_Percentage
+				);
+
+				// [Line 4+]
 				int calculatedBarWidth = (availableWidth) - (5 + 2);
 				// Two for padding, a few for the numbers at the end.  Only one bar, no need to divide it
 				if (calculatedBarWidth < 10)
 					return;
 
-				for (int i = 0; i < CurrentAnimation.AudioProcessedSnapshot.Count; i++) {
-					Console.WriteLine (MathUtilities.GenerateMeterBar (CurrentAnimation.AudioProcessedSnapshot [i], 0, 1, calculatedBarWidth, true));
-					//Console.WriteLine (new String ('=', (int)MathUtilities.ConvertRange (CurrentAnimation.AudioProcessedSnapshot[i], 0, 1, 0, 50)).PadRight (50, ' ') + "|  (" + Math.Round (CurrentAnimation.AudioProcessedSnapshot[i], 3).ToString ().PadRight (5, ' ')+ ")");
+				// How much console height is left?  Try to avoid scrolling.
+				int remainingHeight =
+					Console.WindowHeight - Console.CursorTop - 1;
+				// Reserve 1 line for newline at end
+
+				// Require at least 1 bar
+				if (remainingHeight < 1) {
+					return;
+				}
+
+				// How many snapshots are represented by each meter bar
+				// Round up to the nearest integer
+				int snapshotsPerMeterBar =
+					(int)Math.Round (
+						(double)(lastAudioSnapshot.Count / remainingHeight)
+					);
+
+				// Can't show a fraction of a meter
+				if (snapshotsPerMeterBar < 1) {
+					snapshotsPerMeterBar = 1;
+				}
+
+				int snapshotIndex = 0;
+				for (int line = 0; line < remainingHeight; line++) {
+					int snapshotsGrouped = 0;
+					double snapshotMax = 0;
+
+					// Add together snapshots
+					// Don't exceed maximum
+					while ((snapshotsGrouped < snapshotsPerMeterBar)
+					       && (snapshotIndex < lastAudioSnapshot.Count)) {
+						// Add another snapshot
+						//
+						// One might guess that averaging makes the most sense.
+						// However, showing the highest value results in what
+						// appears closer to one's expectations.
+						//snapshotAverage +=
+						//	lastAudioSnapshot [snapshotIndex];
+						//
+						// Find the maximum
+						snapshotMax =
+							Math.Max (snapshotMax, lastAudioSnapshot [snapshotIndex]);
+						++snapshotIndex;
+						++snapshotsGrouped;
+
+						if (snapshotIndex >= lastAudioSnapshot.Count) {
+							// No more snapshots, exit
+							break;
+						}
+					}
+
+					if (snapshotsGrouped > 0) {
+						// Find the average of all values
+						//snapshotAverage /= snapshotsGrouped;
+
+						// Show result
+						Console.WriteLine (
+							MathUtilities.GenerateMeterBar (
+								snapshotMax,
+								0, 1, calculatedBarWidth, true
+							)
+						);
+					}
 				}
 			}
 			if (Processing_Show_Variables) {
