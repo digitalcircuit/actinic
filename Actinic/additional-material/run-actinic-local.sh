@@ -29,7 +29,10 @@ if [ "$SETTINGS_ACTINIC_LOCAL_ENABLED" != true ]; then
 	exit 1
 fi
 
-if ! tmux has-session -t "$ACTINIC_LOCAL_SESSION_NAME" >/dev/null 2>&1 ; then
+if tmux has-session -t "$ACTINIC_LOCAL_SESSION_NAME" >/dev/null 2>&1 ; then
+	# Connect to existing tmux
+	tmux attach-session -t "$ACTINIC_LOCAL_SESSION_NAME"
+else
 	# Launch tmux
 	# To run a command on launch, add it like so:
 	# (sleep 1 && local_run_actinic_cmd "anim play simple interval time") &
