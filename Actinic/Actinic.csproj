@@ -23,9 +23,19 @@
     <Externalconsole>true</Externalconsole>
     <CustomCommands>
       <CustomCommands>
-        <Command type="Custom" name="Push to Remote Device" command="gnome-terminal --command=&quot;bash '${ProjectDir}/additional-material/remote-update.sh'&quot;" />
-        <Command type="AfterBuild" command="&quot;${ProjectDir}/Audio/prepare-audio-processing.sh&quot; ${ProjectConfigName} allow-fail" />
-        <Command type="BeforeClean" command="rm -f &quot;${TargetDir}/libimpulse.so&quot;" />
+        <Command>
+          <type>Custom</type>
+          <name>Push to Remote Device</name>
+          <command>"${ProjectDir}/additional-material/cmd-in-terminal.sh" "bash '${ProjectDir}/additional-material/remote-update.sh'"</command>
+        </Command>
+        <Command>
+          <type>AfterBuild</type>
+          <command>"${ProjectDir}/Audio/prepare-audio-processing.sh" ${ProjectConfigName} allow-fail</command>
+        </Command>
+        <Command>
+          <type>BeforeClean</type>
+          <command>rm -f "${TargetDir}/libimpulse.so"</command>
+        </Command>
       </CustomCommands>
     </CustomCommands>
   </PropertyGroup>
@@ -103,7 +113,9 @@
       <Properties>
         <Policies>
           <VersionControlPolicy inheritsSet="Mono" />
-          <XmlFormattingPolicy inheritsSet="Mono" inheritsScope="application/xml" scope="application/xml" />
+          <XmlFormattingPolicy scope="application/xml">
+            <DefaultFormat OmitXmlDeclaration="False" IndentContent="True" AttributesInNewLine="False" MaxAttributesPerLine="10" WrapAttributes="False" AlignAttributes="False" AlignAttributeValues="False" QuoteChar="&quot;" SpacesBeforeAssignment="0" SpacesAfterAssignment="0" EmptyLinesBeforeStart="0" EmptyLinesAfterStart="0" EmptyLinesBeforeEnd="0" EmptyLinesAfterEnd="0" />
+          </XmlFormattingPolicy>
           <NameConventionPolicy>
             <Rules>
               <NamingRule Name="Namespaces" AffectedEntity="Namespace" VisibilityMask="VisibilityMask" NamingStyle="PascalCase" IncludeInstanceMembers="True" IncludeStaticEntities="True" />
@@ -157,7 +169,190 @@
               </NamingRule>
             </Rules>
           </NameConventionPolicy>
-          <TextStylePolicy inheritsSet="Mono" inheritsScope="text/plain" scope="application/xml" />
+          <TextStylePolicy TabsToSpaces="False" RemoveTrailingWhitespace="True" NoTabsAfterNonTabs="False" EolMarker="Native" FileWidth="80" TabWidth="8" IndentWidth="8" scope="application/xml" />
+          <TextStylePolicy TabWidth="4" TabsToSpaces="False" IndentWidth="4" RemoveTrailingWhitespace="True" NoTabsAfterNonTabs="False" EolMarker="Native" FileWidth="80" scope="text/plain" />
+          <VersionControlPolicy inheritsSet="Mono" />
+          <CSharpFormattingPolicy IndentBlock="True" IndentBraces="False" IndentSwitchCaseSection="True" LabelPositioning="OneLess" NewLinesForBracesInTypes="True" NewLinesForBracesInMethods="True" SpaceWithinMethodDeclarationParenthesis="False" SpaceBetweenEmptyMethodDeclarationParentheses="False" SpaceWithinMethodCallParentheses="False" SpaceBetweenEmptyMethodCallParentheses="False" SpaceAfterControlFlowStatementKeyword="True" SpaceWithinExpressionParentheses="False" SpaceWithinCastParentheses="False" SpaceWithinOtherParentheses="False" SpaceAfterCast="False" SpacesIgnoreAroundVariableDeclaration="False" SpaceBetweenEmptySquareBrackets="False" SpaceWithinSquareBrackets="False" SpaceAfterColonInBaseTypeDeclaration="True" SpaceAfterComma="True" SpaceAfterDot="False" SpaceAfterSemicolonsInForStatement="True" SpaceBeforeColonInBaseTypeDeclaration="True" SpaceBeforeComma="False" SpaceBeforeDot="False" SpaceBeforeSemicolonsInForStatement="False" SpacingAroundBinaryOperator="Single" WrappingPreserveSingleLine="True" WrappingKeepStatementsOnSingleLine="True" PlaceSystemDirectiveFirst="True" IndentSwitchSection="False" NewLinesForBracesInProperties="False" NewLinesForBracesInAccessors="False" NewLinesForBracesInAnonymousMethods="False" NewLinesForBracesInControlBlocks="False" NewLinesForBracesInAnonymousTypes="False" NewLinesForBracesInObjectCollectionArrayInitializers="False" NewLinesForBracesInLambdaExpressionBody="False" NewLineForElse="False" NewLineForCatch="False" NewLineForFinally="False" NewLineForMembersInObjectInit="False" NewLineForMembersInAnonymousTypes="False" NewLineForClausesInQuery="False" SpacingAfterMethodDeclarationName="True" SpaceAfterMethodCallName="True" SpaceBeforeOpenSquareBracket="True" scope="text/x-csharp" />
+          <TextStylePolicy inheritsSet="null" scope="text/x-csharp" />
+          <NameConventionPolicy>
+            <Rules>
+              <NamingRule>
+                <Name>Namespaces</Name>
+                <AffectedEntity>Namespace</AffectedEntity>
+                <VisibilityMask>VisibilityMask</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Types</Name>
+                <AffectedEntity>Class, Struct, Enum, Delegate</AffectedEntity>
+                <VisibilityMask>VisibilityMask</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Interfaces</Name>
+                <RequiredPrefixes>
+                  <String>I</String>
+                </RequiredPrefixes>
+                <AffectedEntity>Interface</AffectedEntity>
+                <VisibilityMask>VisibilityMask</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Attributes</Name>
+                <RequiredSuffixes>
+                  <String>Attribute</String>
+                </RequiredSuffixes>
+                <AffectedEntity>CustomAttributes</AffectedEntity>
+                <VisibilityMask>VisibilityMask</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Event Arguments</Name>
+                <RequiredSuffixes>
+                  <String>EventArgs</String>
+                </RequiredSuffixes>
+                <AffectedEntity>CustomEventArgs</AffectedEntity>
+                <VisibilityMask>VisibilityMask</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Exceptions</Name>
+                <RequiredSuffixes>
+                  <String>Exception</String>
+                </RequiredSuffixes>
+                <AffectedEntity>CustomExceptions</AffectedEntity>
+                <VisibilityMask>VisibilityMask</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Methods</Name>
+                <AffectedEntity>Methods</AffectedEntity>
+                <VisibilityMask>VisibilityMask</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Static Readonly Fields</Name>
+                <AffectedEntity>ReadonlyField</AffectedEntity>
+                <VisibilityMask>Internal, Protected, Public</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>False</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Fields (Non Private)</Name>
+                <AffectedEntity>Field</AffectedEntity>
+                <VisibilityMask>Internal, Protected, Public</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>ReadOnly Fields (Non Private)</Name>
+                <AffectedEntity>ReadonlyField</AffectedEntity>
+                <VisibilityMask>Internal, Protected, Public</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>False</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Fields (Private)</Name>
+                <AllowedPrefixes>
+                  <String>_</String>
+                  <String>m_</String>
+                </AllowedPrefixes>
+                <AffectedEntity>Field, ReadonlyField</AffectedEntity>
+                <VisibilityMask>Private</VisibilityMask>
+                <NamingStyle>CamelCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>False</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Static Fields (Private)</Name>
+                <AffectedEntity>Field</AffectedEntity>
+                <VisibilityMask>Private</VisibilityMask>
+                <NamingStyle>CamelCase</NamingStyle>
+                <IncludeInstanceMembers>False</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>ReadOnly Fields (Private)</Name>
+                <AllowedPrefixes>
+                  <String>_</String>
+                  <String>m_</String>
+                </AllowedPrefixes>
+                <AffectedEntity>ReadonlyField</AffectedEntity>
+                <VisibilityMask>Private</VisibilityMask>
+                <NamingStyle>CamelCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>False</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Constant Fields</Name>
+                <AffectedEntity>ConstantField</AffectedEntity>
+                <VisibilityMask>VisibilityMask</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Properties</Name>
+                <AffectedEntity>Property</AffectedEntity>
+                <VisibilityMask>VisibilityMask</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Events</Name>
+                <AffectedEntity>Event</AffectedEntity>
+                <VisibilityMask>VisibilityMask</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Enum Members</Name>
+                <AffectedEntity>EnumMember</AffectedEntity>
+                <VisibilityMask>VisibilityMask</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Parameters</Name>
+                <AffectedEntity>Parameter</AffectedEntity>
+                <VisibilityMask>VisibilityMask</VisibilityMask>
+                <NamingStyle>CamelCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+              <NamingRule>
+                <Name>Type Parameters</Name>
+                <RequiredPrefixes>
+                  <String>T</String>
+                </RequiredPrefixes>
+                <AffectedEntity>TypeParameter</AffectedEntity>
+                <VisibilityMask>VisibilityMask</VisibilityMask>
+                <NamingStyle>PascalCase</NamingStyle>
+                <IncludeInstanceMembers>True</IncludeInstanceMembers>
+                <IncludeStaticEntities>True</IncludeStaticEntities>
+              </NamingRule>
+            </Rules>
+          </NameConventionPolicy>
         </Policies>
       </Properties>
     </MonoDevelop>

@@ -33,10 +33,18 @@ SERVER_LOCAL_GVFS_DIR="/run/user/$(id -u $(whoami))/gvfs/sftp:host=$ACTINIC_SSH_
 # Local directory
 LOCAL_DIR="$_LOCAL_DIR/../bin/Debug"
 
+REMOVE_MNT_AFTER_COPY=false
+
 if ! [ -d "$SERVER_LOCAL_GVFS_DIR" ]; then
 	if (whiptail --title "Update Actinic" --backtitle "Actinic SSH remote management" --yesno "'$ACTINIC_SSH_SERVER' SFTP not connected.\nMount it now?" 10 60 --yes-button "Mount" --no-button "Cancel"); then
 		echo "* Mounting directory..."
-		gvfs-mount "sftp://$ACTINIC_SSH_USER@$ACTINIC_SSH_SERVER:$ACTINIC_SSH_PORT${SERVER_DIR}"
+		if command -v gvfs-mount; then
+			gvfs-mount "sftp://$ACTINIC_SSH_USER@$ACTINIC_SSH_SERVER:$ACTINIC_SSH_PORT${SERVER_DIR}"
+		else
+			SERVER_LOCAL_GVFS_DIR="$(mktemp -d)"
+			sshfs -o rw,nosuid,nodev,port=$ACTINIC_SSH_PORT $ACTINIC_SSH_USER@$ACTINIC_SSH_SERVER:${SERVER_DIR} "$SERVER_LOCAL_GVFS_DIR" #~/mnt
+			REMOVE_MNT_AFTER_COPY=true
+		fi
 		# Wait for the filesystem mount to settle
 		echo -n "> Waiting for mount"
 		while ! [ -d "$SERVER_LOCAL_GVFS_DIR" ]; do
@@ -56,4 +64,9 @@ if [ -d "$SERVER_LOCAL_GVFS_DIR" ]; then
 else
 	echo "You must connect to '$ACTINIC_SSH_SERVER' ('$SERVER_DIR') via GNOME VFS SFTP first!"
 	sleep 2
+fi
+
+if [[ "$REMOVE_MNT_AFTER_COPY" == "true" ]]; then
+	umount "$SERVER_LOCAL_GVFS_DIR"
+	rmdir "$SERVER_LOCAL_GVFS_DIR"
 fi

@@ -12,7 +12,10 @@ TestResults/
 *.docstates
 
 # MonoDevelop state
+# 5.10/etc
 *.userprefs
+# 7.8.4/etc
+.vs/Actinic/xs/UserPrefs.xml
 
 # Linux temporary and backup files
 *~
