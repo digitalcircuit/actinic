@@ -868,7 +868,7 @@ namespace Actinic.Tests.Rendering
 		/// Gets the possible choices of color properties to test.
 		/// </summary>
 		/// <returns>The color test choices.</returns>
-		private Array GetColorTestChoices ()
+		private static Array GetColorTestChoices ()
 		{
 			// See https://automaticchainsaw.blogspot.com/2010/04/unit-test-all-enum-values-with-nunit.html
 			return Enum.GetValues (typeof(ColorTestChoice));
