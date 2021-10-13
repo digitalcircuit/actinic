@@ -50,11 +50,22 @@ jobs:
 #      - name: Test
 #        run: dotnet test --no-build --verbosity normal
 
+      - name: Save build information
+        run: |
+          echo "Actinic" >> ${{ github.workspace }}/Actinic/bin/Debug/build-info.txt
+          echo "https://github.com/digitalcircuit/actinic/" >> ${{ github.workspace }}/Actinic/bin/Debug/build-info.txt
+          echo "--------" >> ${{ github.workspace }}/Actinic/bin/Debug/build-info.txt
+          git describe --always --long >> ${{ github.workspace }}/Actinic/bin/Debug/build-info.txt
+          #
+          echo "Commit hash: ${{ github.sha }}" >> ${{ github.workspace }}/Actinic/bin/Debug/build-info.txt
+          echo "Run ID: ${{ github.run_id }}" >> ${{ github.workspace }}/Actinic/bin/Debug/build-info.txt
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: Actinic-Linux-${{ github.sha }}-run_${{ github.run_id }}
+          name: Actinic-Linux
           path: |
+            ${{ github.workspace }}/Actinic/bin/Debug/build-info.txt
             ${{ github.workspace }}/Actinic/bin/Debug/*.exe
             ${{ github.workspace }}/Actinic/bin/Debug/*.so
           if-no-files-found: error # Require an artifact
@@ -80,9 +91,21 @@ jobs:
       - name: Test
         run: dotnet test --no-build --verbosity normal
 
+      - name: Save build information
+        run: |
+          echo "Actinic" >> ${{ github.workspace }}\Actinic\bin\Debug\build-info.txt
+          echo "https://github.com/digitalcircuit/actinic/" >> ${{ github.workspace }}\Actinic\bin\Debug\build-info.txt
+          echo "--------" >> ${{ github.workspace }}\Actinic\bin\Debug\build-info.txt
+          git describe --always --long >> ${{ github.workspace }}\Actinic\bin\Debug\build-info.txt
+          #
+          echo "Commit hash: ${{ github.sha }}" >> ${{ github.workspace }}\Actinic\bin\Debug\build-info.txt
+          echo "Run ID: ${{ github.run_id }}" >> ${{ github.workspace }}\Actinic\bin\Debug\build-info.txt
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: Actinic-Windows-${{ github.sha }}-run_${{ github.run_id }}
-          path: ${{ github.workspace }}\Actinic\bin\Debug\*.exe
+          name: Actinic-Windows
+          path: |
+            ${{ github.workspace }}\Actinic\bin\Debug\build-info.txt
+            ${{ github.workspace }}\Actinic\bin\Debug\*.exe
           if-no-files-found: error # Require an artifact

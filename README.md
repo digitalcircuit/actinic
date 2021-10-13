@@ -1,7 +1,14 @@
-Actinic [![Build Status](https://github.com/digitalcircuit/actinic/actions/workflows/main.yml/badge.svg)](https://github.com/digitalcircuit/actinic/actions/workflows/main.yml)
+Actinic [![Build Status](https://github.com/digitalcircuit/actinic/actions/workflows/main.yml/badge.svg)][ci-status-page]
 ===============
 
 Actinic interfaces with strands of LED lights to control them in various flashy or useful ways according to music, time of day, and multiple types of animations.  Currently supports an [Arduino-based LED controller firmware][arduino-firmware], but support can be easily added for other systems.
+
+## Downloads
+
+* [Download for Windows](https://nightly.link/digitalcircuit/actinic/workflows/main/main/Actinic-Windows.zip )
+* [Download for Linux (includes PulseAudio component)](https://nightly.link/digitalcircuit/actinic/workflows/main/main/Actinic-Linux.zip )
+
+More details at [the nightly.link page](https://nightly.link/digitalcircuit/actinic/workflows/main/main ), by `oprypin`.  Or, if you are logged in to GitHub, pick any build from the [GitHub Actions tab][ci-status-page].
 
 ## Building
 
@@ -40,3 +47,4 @@ To list commands, type `help`.  For help on a particular command, type it withou
 * *If you're missing, let me know, and I'll fix it as soon as I can!*
 
 [arduino-firmware]: https://github.com/digitalcircuit/ActinicArduino
+[ci-status-page]: https://github.com/digitalcircuit/actinic/actions?query=branch%3Amain
