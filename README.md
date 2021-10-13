@@ -1,4 +1,4 @@
-Actinic [![Build Status](https://travis-ci.org/digitalcircuit/actinic.svg?branch=master)](https://travis-ci.org/digitalcircuit/actinic)
+Actinic [![Build Status](https://github.com/digitalcircuit/actinic/actions/workflows/main.yml/badge.svg)](https://github.com/digitalcircuit/actinic/actions/workflows/main.yml)
 ===============
 
 Actinic interfaces with strands of LED lights to control them in various flashy or useful ways according to music, time of day, and multiple types of animations.  Currently supports an [Arduino-based LED controller firmware][arduino-firmware], but support can be easily added for other systems.
@@ -20,7 +20,7 @@ make libpulse-dev libfftw3-dev	# Tools to compile Impulse audio processing libra
 
 The project will automatically attempt to build the Impulse library upon compiling the solution in MonoDevelop.  Should anything go wrong, a file named `README-impulse-failed-to-build` will be put in the `bin/Debug` build directory.
 
-To manually compile, run [`prepare-audio-processing.sh`](https://github.com/digitalcircuit/actinic/blob/master/Actinic/Audio/prepare-audio-processing.sh) included in the `Actinic/Audio` folder.
+To manually compile, run [`prepare-audio-processing.sh`](https://github.com/digitalcircuit/actinic/blob/main/Actinic/Audio/prepare-audio-processing.sh) included in the `Actinic/Audio` folder.
 
 *If using the [Arduino LED controller][arduino-firmware], don't forget to change permissions on the USB device to allow access without root.*
 

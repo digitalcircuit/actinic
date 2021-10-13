@@ -1,0 +1,88 @@
+# Workflow that builds and tests Actinic on Windows and Ubuntu Linux
+name: Actinic CI
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    # Run at 13:17 on the 11th of every month (odd time to reduce load)
+    - cron: '37 13 11 * *'
+
+# Can't use simpler definition of [ push, pull_request, schedule ]
+# See https://www.jeffgeerling.com/blog/2020/running-github-actions-workflow-on-schedule-and-other-events
+
+jobs:
+  build-linux:
+    name: Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies for PulseAudio Impulse library
+        run: sudo apt install libpulse-dev libfftw3-dev
+        # Now included by default (used for light system):
+        # libmono-system-core4.0-cil, libmono-system-drawing4.0-cil
+
+      - name: Check out source code
+        uses: actions/checkout@v2.1.0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+
+      - name: Restore dependencies
+        run: |
+          dotnet restore
+          nuget restore # Legacy dependencies
+
+      - name: Build with debugging
+        run: make
+        env:
+          DEBUG: 1
+
+      - name: Build release
+        run: make
+
+      - name: Test
+        run: make test
+
+        # dotnet core is not (yet?) supported by MonoDevelop
+#      - name: Build
+#        run: dotnet build --no-restore
+#      - name: Test
+#        run: dotnet test --no-build --verbosity normal
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: Actinic-Linux-${{ github.sha }}-run_${{ github.run_id }}
+          path: |
+            ${{ github.workspace }}/Actinic/bin/Debug/*.exe
+            ${{ github.workspace }}/Actinic/bin/Debug/*.so
+          if-no-files-found: error # Require an artifact
+
+  build-windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2.1.0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+
+      - name: Restore dependencies
+        run: |
+          dotnet restore
+          nuget restore # Legacy dependencies
+
+      - name: Build
+        run: dotnet build --no-restore
+
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: Actinic-Windows-${{ github.sha }}-run_${{ github.run_id }}
+          path: ${{ github.workspace }}\Actinic\bin\Debug\*.exe
+          if-no-files-found: error # Require an artifact

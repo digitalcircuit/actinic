@@ -883,7 +883,7 @@ namespace Actinic.Tests.Rendering
 		/// Gets the possible choices of layer properties to test.
 		/// </summary>
 		/// <returns>The layer test choices.</returns>
-		private Array GetLayerTestChoices ()
+		private static Array GetLayerTestChoices ()
 		{
 			// See https://automaticchainsaw.blogspot.com/2010/04/unit-test-all-enum-values-with-nunit.html
 			return Enum.GetValues (typeof(LayerTestChoice));
