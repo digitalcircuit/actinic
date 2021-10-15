@@ -6,7 +6,7 @@ on:
   pull_request:
   schedule:
     # * is a special character in YAML so you have to quote this string
-    # Run at 13:17 on the 11th of every month (odd time to reduce load)
+    # Run at 13:37 on the 11th of every month (odd time to reduce load)
     - cron: '37 13 11 * *'
 
 # Can't use simpler definition of [ push, pull_request, schedule ]
