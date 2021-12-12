@@ -17,6 +17,9 @@ jobs:
     name: Linux
     runs-on: ubuntu-latest
     steps:
+      - name: Update repositories for dependencies
+        run: sudo apt update
+
       - name: Install dependencies for PulseAudio Impulse library
         run: sudo apt install libpulse-dev libfftw3-dev
         # Now included by default (used for light system):
