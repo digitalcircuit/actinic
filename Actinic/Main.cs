@@ -64,6 +64,15 @@ namespace Actinic
 		/// Exit code when a connected input or output device fails.
 		/// </summary>
 		private const int EXIT_ERROR_DEVICE_FAILURE = 2;
+		/// <summary>
+		/// Exit code when the input receiver for commands fails.
+		/// </summary>
+		private const int EXIT_ERROR_CMD_RECEIVER_FAILURE = 3;
+
+		/// <summary>
+		/// The input manager/receiver for all commands.
+		/// </summary>
+		private static Commands.CommandReceiver AppCommands;
 
 		private static AbstractAudioInput ActiveAudioInputSystem;
 
@@ -205,6 +214,23 @@ namespace Actinic
 #if DEBUG_FORCE_DUMMYOUTPUT
 			Console.WriteLine ("DEBUGGING:  Compiled with 'DEBUG_FORCE_DUMMYOUTPUT' enabled");
 #endif
+
+			Console.WriteLine ("Registering methods to receive commands...");
+			try {
+				AppCommands = new Commands.CommandReceiver (true,
+					AppArgs.HTTPServerEnabled, AppArgs.HTTPServerAddress);
+			} catch (InvalidOperationException ex) {
+				Console.Error.WriteLine ("Unable to listen for commands!");
+				Console.Error.WriteLine ("Reason: {0}", ex.Message);
+				if (ex.InnerException != null) {
+					Console.Error.WriteLine ();
+					Console.Error.WriteLine ("Error code: {0}", ex.InnerException);
+				}
+				return EXIT_ERROR_CMD_RECEIVER_FAILURE;
+			}
+			Console.WriteLine ("- Listening for commands from {0}",
+				string.Join (", ", AppCommands.InputIdentifiers));
+
 			if (PrepareAudioCapture (AppArgs.NoPrompts) == false) {
 				return EXIT_ERROR_DEVICE_FAILURE;
 			}
@@ -1496,7 +1522,7 @@ namespace Actinic
 					}
 				}
 				try {
-					command = Console.ReadLine ();
+					command = AppCommands.GetCommand ();
 				} catch (ArgumentOutOfRangeException) {
 					Console.WriteLine ("\n(Sorry, but there was a problem reading console input.  You'll have to re-type whatever you were going to say)");
 					command = "";

@@ -40,6 +40,30 @@ namespace Actinic.Parsing
 		}
 
 		/// <summary>
+		/// The default port for the HTTP API server if not specified
+		/// </summary>
+		/// <remarks>"54448" is "light" on a phone keypad.</remarks>
+		private const int HTTPServerDefaultPort = 54448;
+
+		/// <summary>
+		/// Gets a value indicating whether the HTTP API server is enabled.
+		/// </summary>
+		/// <value><c>true</c> if HTTP server enabled; otherwise, <c>false</c>.</value>
+		public bool HTTPServerEnabled {
+			get;
+			private set;
+		}
+
+		/// <summary>
+		/// Gets the HTTP API address and port used for the HTTP API server.
+		/// </summary>
+		/// <value>The HTTP API server listening address and port.</value>
+		public string HTTPServerAddress {
+			get;
+			private set;
+		} = "localhost:" + HTTPServerDefaultPort;
+
+		/// <summary>
 		/// Gets a value indicating whether interactive prompts should be skipped.
 		/// </summary>
 		/// <value><c>true</c> if prompts are disabled; otherwise, <c>false</c>.</value>
@@ -64,6 +88,12 @@ namespace Actinic.Parsing
 
 Actinic manages light strands according to animations and music.
 
+-l, --listen       Start a simple HTTP API server for remote control
+--listen-addr      Listening address for HTTP API server
+                   Specifying this implies '--listen'
+                   Use '*' to listen on all interfaces
+                   [default: '" + HTTPServerAddress + @"']
+
 --no-prompt        Exit on system errors instead of prompting to retry
 
 -h, --help         Show this help
@@ -87,6 +117,24 @@ Actinic manages light strands according to animations and music.
 					Console.WriteLine (projectURL);
 					ExitImmediately = true;
 					return;
+				case "-l":
+				case "--listen":
+					HTTPServerEnabled = true;
+					cli_args.RemoveAt (0);
+					break;
+				case "--listen-addr":
+					// Enable listener if not yet enabled
+					HTTPServerEnabled = true;
+					// Remove argument
+					cli_args.RemoveAt (0);
+					// Get listen address
+					HTTPServerAddress = cli_args [0];
+					cli_args.RemoveAt (0);
+					// Add default port if missing
+					if (!HTTPServerAddress.Contains (":")) {
+						HTTPServerAddress += ":54448";
+					}
+					break;
 				case "--no-prompt":
 					NoPrompts = true;
 					cli_args.RemoveAt (0);
