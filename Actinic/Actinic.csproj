@@ -38,10 +38,6 @@
         </Command>
       </CustomCommands>
     </CustomCommands>
-    <AssemblyName></AssemblyName>
-    <SignAssembly>false</SignAssembly>
-    <DelaySign>false</DelaySign>
-    <AssemblyOriginatorKeyFile></AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
     <DebugType>none</DebugType>
@@ -98,6 +94,7 @@
     <Compile Include="Output\ReadOnlyDeviceConfiguration.cs" />
     <Compile Include="Utilities\IntFraction.cs" />
     <Compile Include="Utilities\ScaledAverage.cs" />
+    <Compile Include="Parsing\ProgramArgs.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

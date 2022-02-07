@@ -47,6 +47,23 @@ namespace Actinic
 {
 	class MainClass
 	{
+		/// <summary>
+		/// The parsed application arguments from launching the program.
+		/// </summary>
+		private static Parsing.ProgramArgs AppArgs;
+
+		/// <summary>
+		/// Exit code when everything goes well.
+		/// </summary>
+		private const int EXIT_SUCCESS = 0;
+		/// <summary>
+		/// Exit code when invalid command line arguments are given.
+		/// </summary>
+		private const int EXIT_ERROR_BAD_ARGS = 1;
+		/// <summary>
+		/// Exit code when a connected input or output device fails.
+		/// </summary>
+		private const int EXIT_ERROR_DEVICE_FAILURE = 2;
 
 		private static AbstractAudioInput ActiveAudioInputSystem;
 
@@ -160,8 +177,19 @@ namespace Actinic
 		private const string Debug_Command_Help = "debug [display]";
 		private const string Queue_Command_Help = "queue [start, stop, clear, spam, test]";
 
-		public static void Main (string [] args)
+		public static int Main (string [] args)
 		{
+			// Parse command-line arguments
+			try {
+				AppArgs = new Parsing.ProgramArgs (args);
+			} catch (ArgumentException) {
+				return EXIT_ERROR_BAD_ARGS;
+			}
+			if (AppArgs.ExitImmediately) {
+				// Exit if the command-line arguments requested it
+				return EXIT_SUCCESS;
+			}
+
 #if DEBUG_PERFORMANCE
 			Console.WriteLine ("DEBUGGING:  Compiled with 'DEBUG_PERFORMANCE' enabled");
 #endif
@@ -177,23 +205,24 @@ namespace Actinic
 #if DEBUG_FORCE_DUMMYOUTPUT
 			Console.WriteLine ("DEBUGGING:  Compiled with 'DEBUG_FORCE_DUMMYOUTPUT' enabled");
 #endif
-			if (PrepareAudioCapture () == false) {
-				return;
+			if (PrepareAudioCapture (AppArgs.NoPrompts) == false) {
+				return EXIT_ERROR_DEVICE_FAILURE;
 			}
 
 			int retriesSinceLastSuccess = 0;
 			while (true) {
 				if (retriesSinceLastSuccess >= 5) {
 					Console.WriteLine ("Could not reconnect after 5 tries, giving up.");
-					return;
+					return EXIT_ERROR_DEVICE_FAILURE;
 				}
 				try {
-					if (PrepareLightingOutput () == false)
-						return;
+					if (PrepareLightingOutput (AppArgs.NoPrompts) == false) {
+						return EXIT_ERROR_DEVICE_FAILURE;
+					}
 					retriesSinceLastSuccess = 0;
 					RunMenu ();
 					ShutdownSystem ();
-					break;
+					return EXIT_SUCCESS;
 				} catch (System.IO.IOException ex) {
 					Console.WriteLine (DateTime.Now);
 					Console.WriteLine ("\n ! Unexpected connection loss, attempting to reconnect...\n\n{0}\n", ex);
