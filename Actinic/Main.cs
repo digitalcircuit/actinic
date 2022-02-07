@@ -1472,8 +1472,11 @@ namespace Actinic
 					Console.WriteLine ("\n(Sorry, but there was a problem reading console input.  You'll have to re-type whatever you were going to say)");
 					command = "";
 				}
-				if (command == null)
-					command = "";
+				if (command == null) {
+					// Ctrl+D (Linux) and Ctrl+Z (Windows) results in a null
+					// command input, commonly used for quickly exiting
+					command = "quit";
+				}
 			}
 		}
 
