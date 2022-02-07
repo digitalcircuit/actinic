@@ -64,6 +64,15 @@ namespace Actinic.Parsing
 		} = "localhost:" + HTTPServerDefaultPort;
 
 		/// <summary>
+		/// Gets a value indicating whether all console input is ignored.
+		/// </summary>
+		/// <value><c>true</c> if console input is ignored; otherwise, <c>false</c>.</value>
+		public bool NoConsole {
+			get;
+			private set;
+		}
+
+		/// <summary>
 		/// Gets a value indicating whether interactive prompts should be skipped.
 		/// </summary>
 		/// <value><c>true</c> if prompts are disabled; otherwise, <c>false</c>.</value>
@@ -94,10 +103,19 @@ Actinic manages light strands according to animations and music.
                    Use '*' to listen on all interfaces
                    [default: '" + HTTPServerAddress + @"']
 
+-T, --no-console   Ignore all console input
+                   Specifying this implies '--no-prompt'
+                   Requires enabling another input method (e.g. '--listen')
+                   Useful for running Actinic as a service
+
 --no-prompt        Exit on system errors instead of prompting to retry
 
 -h, --help         Show this help
 -v, --version      Show version information";
+
+			// Selected "--no-console" alias, if specified
+			// Used when validating options
+			var optNoConsoleAlias = "";
 
 			var cli_args = new System.Collections.Generic.List<string> (args);
 			while (cli_args.Count > 0) {
@@ -135,6 +153,14 @@ Actinic manages light strands according to animations and music.
 						HTTPServerAddress += ":54448";
 					}
 					break;
+				case "-T":
+				case "--no-console":
+					NoConsole = true;
+					optNoConsoleAlias = cli_args [0];
+					cli_args.RemoveAt (0);
+					// Also disable prompts if not already set
+					NoPrompts = true;
+					break;
 				case "--no-prompt":
 					NoPrompts = true;
 					cli_args.RemoveAt (0);
@@ -145,6 +171,20 @@ Actinic manages light strands according to animations and music.
 					Console.Error.WriteLine (errorMessage);
 					Console.Error.WriteLine (cliHelpPrompt);
 					throw new ArgumentException (errorMessage, cli_args [0]);
+				}
+			}
+
+			// Validate options
+			if (NoConsole) {
+				// Another option must be enabled
+				if (!HTTPServerEnabled) {
+					var errorMessage = string.Format ("{0}: option " +
+						"'{1}' requires another input method" +
+						" (e.g. '--listen')", appName, optNoConsoleAlias);
+					Console.Error.WriteLine (errorMessage);
+					Console.Error.WriteLine (cliHelpPrompt);
+					throw new ArgumentException (errorMessage,
+						optNoConsoleAlias);
 				}
 			}
 		}

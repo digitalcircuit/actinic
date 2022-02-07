@@ -217,7 +217,7 @@ namespace Actinic
 
 			Console.WriteLine ("Registering methods to receive commands...");
 			try {
-				AppCommands = new Commands.CommandReceiver (true,
+				AppCommands = new Commands.CommandReceiver (!AppArgs.NoConsole,
 					AppArgs.HTTPServerEnabled, AppArgs.HTTPServerAddress);
 			} catch (InvalidOperationException ex) {
 				Console.Error.WriteLine ("Unable to listen for commands!");
