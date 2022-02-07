@@ -53,7 +53,7 @@ namespace Actinic
 		private static AbstractOutput ActiveOutputSystem;
 
 		private static System.Threading.ManualResetEvent ActiveOutputSystemReadyEvent =
-			new System.Threading.ManualResetEvent(false);
+			new System.Threading.ManualResetEvent (false);
 
 		/// <summary>
 		/// The amount of additional time allowed for rendering before
@@ -78,7 +78,7 @@ namespace Actinic
 		/// How often to print the average performance value.
 		/// </summary>
 		private static TimeSpan Debug_Perf_PrintInterval =
-			new TimeSpan(0, 0, 1);
+			new TimeSpan (0, 0, 1);
 
 		/// <summary>
 		/// The last time the average performance value was printed.
@@ -101,9 +101,9 @@ namespace Actinic
 		/// </summary>
 		private const int Actinic_Light_Queue_MaxIdleWaitTime = 128;
 
-		#if DEBUG_VU_PERFORMANCE
+#if DEBUG_VU_PERFORMANCE
 		private static System.Diagnostics.Stopwatch VU_Processing_PerfStopwatch = new System.Diagnostics.Stopwatch ();
-		#endif
+#endif
 		private static LED_Queue Actinic_Lights_Queue;
 		private const string Actinic_Lights_Queue_Name = "base_layer";
 
@@ -119,7 +119,7 @@ namespace Actinic
 		/// <summary>
 		/// Function that takes in a given layer and modifies it.
 		/// </summary>
-		delegate void LayerTransformer(ref Layer lights);
+		delegate void LayerTransformer (ref Layer lights);
 
 		/// <summary>
 		/// The duration of the animation smoothing in milliseconds.
@@ -134,7 +134,7 @@ namespace Actinic
 		private static int Actinic_Light_Queue_BufferFullWarning {
 			get {
 				if (ActiveOutputSystem?.Configuration != null
-				    && ActiveOutputSystem.Configuration.AverageLatency > 0) {
+					&& ActiveOutputSystem.Configuration.AverageLatency > 0) {
 					return (int)((1 * 1000) / ActiveOutputSystem.Configuration.AverageLatency);
 					// First # is in seconds
 				} else {
@@ -160,23 +160,23 @@ namespace Actinic
 		private const string Debug_Command_Help = "debug [display]";
 		private const string Queue_Command_Help = "queue [start, stop, clear, spam, test]";
 
-		public static void Main (string[] args)
+		public static void Main (string [] args)
 		{
-			#if DEBUG_PERFORMANCE
+#if DEBUG_PERFORMANCE
 			Console.WriteLine ("DEBUGGING:  Compiled with 'DEBUG_PERFORMANCE' enabled");
-			#endif
-			#if DEBUG_BRIEF_PERFORMANCE
+#endif
+#if DEBUG_BRIEF_PERFORMANCE
 			Console.WriteLine ("DEBUGGING:  Compiled with 'DEBUG_BRIEF_PERFORMANCE' enabled");
-			#endif
-			#if DEBUG_VU_PERFORMANCE
+#endif
+#if DEBUG_VU_PERFORMANCE
 			Console.WriteLine ("DEBUGGING:  Compiled with 'DEBUG_VU_PERFORMANCE' enabled");
-			#endif
-			#if DEBUG_OVERLAY_MANAGEMENT
+#endif
+#if DEBUG_OVERLAY_MANAGEMENT
 			Console.WriteLine ("DEBUGGING:  Compiled with 'DEBUG_OVERLAY_MANAGEMENT' enabled");
-			#endif
-			#if DEBUG_FORCE_DUMMYOUTPUT
+#endif
+#if DEBUG_FORCE_DUMMYOUTPUT
 			Console.WriteLine ("DEBUGGING:  Compiled with 'DEBUG_FORCE_DUMMYOUTPUT' enabled");
-			#endif
+#endif
 			if (PrepareAudioCapture () == false) {
 				return;
 			}
@@ -216,16 +216,16 @@ namespace Actinic
 		{
 			Console.WriteLine ("Connecting to output system...");
 
-			#if DEBUG_FORCE_DUMMYOUTPUT
+#if DEBUG_FORCE_DUMMYOUTPUT
 			Console.WriteLine ("DEBUGGING:  Forcing DummyOutput, not checking other options!");
 			InitializeOutputSystem (new DummyOutput ());
-			#else
+#else
 			bool retryAgain = true;
 			bool success = false;
 			while (retryAgain && success == false) {
 				success = false;
 				foreach (AbstractOutput output_system in ReflectiveEnumerator.GetFilteredEnumerableOfType
-				         <AbstractOutput, IOutputDummy> (false)) {
+						 <AbstractOutput, IOutputDummy> (false)) {
 					if (InitializeOutputSystem (output_system)) {
 						success = true;
 						break;
@@ -242,7 +242,7 @@ namespace Actinic
 						switch (Console.ReadKey ().Key) {
 						case ConsoleKey.S:
 							foreach (AbstractOutput output_system in ReflectiveEnumerator.GetFilteredEnumerableOfType
-							         <AbstractOutput, IOutputDummy> (true)) {
+									 <AbstractOutput, IOutputDummy> (true)) {
 								if (InitializeOutputSystem (output_system)) {
 									success = true;
 									retryAgain = false;
@@ -265,7 +265,7 @@ namespace Actinic
 					}
 				}
 			}
-			#endif
+#endif
 
 			if (SkipPreparingSystem == false) {
 				Console.WriteLine ("Preparing system...");
@@ -330,8 +330,8 @@ namespace Actinic
 				if (command != "") {
 					if (command.Contains ("&&")) {
 						commands = new List<string> (command.Replace ("@", "LITERAL_AT")
-						                             .Replace (" && ", "@")
-						                             .Split ('@'));
+													 .Replace (" && ", "@")
+													 .Split ('@'));
 						for (int i = 0; i < commands.Count; i++) {
 							commands [i] = commands [i].Replace ("LITERAL_AT", "@").Trim ();
 						}
@@ -343,7 +343,7 @@ namespace Actinic
 						if (current_command == "")
 							continue;
 						// Ignore commands if output system isn't ready
-						if (!ActiveOutputSystemReady()) {
+						if (!ActiveOutputSystemReady ()) {
 							Console.Write (
 								"Waiting for output system to be ready...");
 							ActiveOutputSystemReadyEvent.WaitOne ();
@@ -381,14 +381,14 @@ namespace Actinic
 								} else {
 									// Get the selected range and color
 									if (Actinic.Parsing.Parameter.GetRange (ref cmd_args, LightSystem.LIGHT_COUNT, out selected_lights, true) &&
-									    Actinic.Parsing.Parameter.GetColor (ref cmd_args, out selected_color, true)) {
+										Actinic.Parsing.Parameter.GetColor (ref cmd_args, out selected_color, true)) {
 										// Stop any running animations
 										HaltActivity (false);
 										// If there's an argument at the end, don't touch brightness
 										bool keep_brightness = (cmd_args.Count > 0);
 
 										AddToAnimQueue (Actinic_Lights_Queue,
-											delegate(ref Layer lights) {
+											delegate (ref Layer lights) {
 												// For each selected light, set the color and brightness (if not preserved)
 												foreach (int light_index in selected_lights) {
 													lights [light_index].SetColor (
@@ -420,7 +420,7 @@ namespace Actinic
 									// Parse brightness if specified
 									if (cmd_args.Count >= 1 && byte.TryParse (cmd_args [0], out Brightness)) {
 										AddToAnimQueue (Actinic_Lights_Queue,
-											delegate(ref Layer lights) {
+											delegate (ref Layer lights) {
 												// For each selected light, set the brightness
 												foreach (int light_index in selected_lights) {
 													lights [light_index].Brightness = Brightness;
@@ -440,7 +440,7 @@ namespace Actinic
 							case "white":
 								HaltActivity (false);
 								AddToAnimQueue (Actinic_Lights_Queue,
-									delegate(ref Layer lights) {
+									delegate (ref Layer lights) {
 										lights.Fill (Color.Named ["white"]);
 									}
 								);
@@ -448,7 +448,7 @@ namespace Actinic
 							case "black":
 								HaltActivity (false);
 								AddToAnimQueue (Actinic_Lights_Queue,
-									delegate(ref Layer lights) {
+									delegate (ref Layer lights) {
 										lights.Fill (Color.Transparent);
 									}
 								);
@@ -457,7 +457,7 @@ namespace Actinic
 								HaltActivity (false);
 
 								AddToAnimQueue (Actinic_Lights_Queue,
-									delegate(ref Layer lights) {
+									delegate (ref Layer lights) {
 										lights.Fill (Color.Named ["black"]);
 										lights [0].SetColor (Color.Named ["red"]);
 										lights [1].SetColor (Color.Named ["yellow"]);
@@ -694,7 +694,7 @@ namespace Actinic
 												break;
 											}
 											if (style_changed == true) {
-												foreach (KeyValuePair <string, LED_Queue> queue in GetAllQueues ()) {
+												foreach (KeyValuePair<string, LED_Queue> queue in GetAllQueues ()) {
 													if (queue.Value.AnimationActive) {
 														queue.Value.SelectedAnimation.AnimationStyle = Animation_AnimationStyle;
 														// Force a new frame if the animation delay is greater, or a smooth crossfade is requested
@@ -724,7 +724,7 @@ namespace Actinic
 												Console.WriteLine ("(no overlay layers active)");
 											} else {
 												Console.Write ("(currently active layers:");
-												foreach (KeyValuePair <string, LED_Queue> queue in Actinic_Lights_Overlay_Queues) {
+												foreach (KeyValuePair<string, LED_Queue> queue in Actinic_Lights_Overlay_Queues) {
 													Console.Write (" '{0}'", queue.Key);
 												}
 												Console.WriteLine (")");
@@ -733,7 +733,7 @@ namespace Actinic
 										break;
 									case "clear_all":
 										lock (Actinic_Lights_Overlay_Queues) {
-											foreach (KeyValuePair <string, LED_Queue> queue in Actinic_Lights_Overlay_Queues) {
+											foreach (KeyValuePair<string, LED_Queue> queue in Actinic_Lights_Overlay_Queues) {
 												HaltActivity (queue.Value);
 											}
 											Actinic_Lights_Overlay_Queues.Clear ();
@@ -759,14 +759,14 @@ namespace Actinic
 
 															// Get the selected range and color
 															if (Actinic.Parsing.Parameter.GetRange (ref cmd_args, LightSystem.LIGHT_COUNT, out selected_lights, true) &&
-															    Actinic.Parsing.Parameter.GetColor (ref cmd_args, out selected_color, true)) {
+																Actinic.Parsing.Parameter.GetColor (ref cmd_args, out selected_color, true)) {
 																// Stop any running animations on this queue
 																HaltActivity (resulting_queue);
 																// If there's an argument at the end, don't touch brightness
 																bool keep_brightness = (cmd_args.Count > 0);
 
 																AddToAnimQueue (resulting_queue,
-																	delegate(ref Layer lights) {
+																	delegate (ref Layer lights) {
 																		// For each selected light, set the color and brightness (if not preserved)
 																		foreach (int light_index in selected_lights) {
 																			lights [light_index].SetColor (
@@ -806,7 +806,7 @@ namespace Actinic
 																// Parse brightness if specified
 																if (cmd_args.Count >= 1 && byte.TryParse (cmd_args [0], out Brightness)) {
 																	AddToAnimQueue (resulting_queue,
-																		delegate(ref Layer lights) {
+																		delegate (ref Layer lights) {
 																			// For each selected light, set the brightness
 																			foreach (int light_index in selected_lights) {
 																				lights [light_index].Brightness = Brightness;
@@ -834,7 +834,7 @@ namespace Actinic
 															HaltActivity (resulting_queue);
 
 															AddToAnimQueue (resulting_queue,
-																delegate(ref Layer lights) {
+																delegate (ref Layer lights) {
 																	lights.Fill (Color.Named ["black"]);
 																	lights [0].SetColor (Color.Named ["red"]);
 																	lights [1].SetColor (Color.Named ["yellow"]);
@@ -1067,7 +1067,7 @@ namespace Actinic
 									HaltActivity (false);
 									int Shift_Amount = Convert.ToByte (cmd_args [1]);
 									AddToAnimQueue (Actinic_Lights_Queue,
-										delegate(ref Layer lights) {
+										delegate (ref Layer lights) {
 											LightProcessing.ShiftLightsOutward (
 												lights, Shift_Amount);
 										}
@@ -1481,7 +1481,7 @@ namespace Actinic
 
 		#region Queue Management
 
-		private static Dictionary <string, LED_Queue> GetAllQueues ()
+		private static Dictionary<string, LED_Queue> GetAllQueues ()
 		{
 			lock (Actinic_Lights_Overlay_Queues) {
 				Dictionary<string, LED_Queue> MergedQueues = new Dictionary<string, LED_Queue> (Actinic_Lights_Overlay_Queues.Count + 1, Actinic_Lights_Overlay_Queues.Comparer);
@@ -1497,14 +1497,14 @@ namespace Actinic
 		{
 			lock (Actinic_Lights_Overlay_Queues) {
 				if (Actinic_Lights_Overlay_Queues.ContainsKey (QueueName) == false) {
-					#if DEBUG_OVERLAY_MANAGEMENT
+#if DEBUG_OVERLAY_MANAGEMENT
 					Console.WriteLine ("-- '{0}' does not exist; adding queue", QueueName);
-					#endif
+#endif
 					Actinic_Lights_Overlay_Queues.Add (QueueName, new LED_Queue (LightSystem.LIGHT_COUNT, true));
 				} else {
-					#if DEBUG_OVERLAY_MANAGEMENT
+#if DEBUG_OVERLAY_MANAGEMENT
 					Console.WriteLine ("-- '{0}' already exists; reusing", QueueName);
-					#endif
+#endif
 				}
 				return Actinic_Lights_Overlay_Queues [QueueName];
 			}
@@ -1524,7 +1524,7 @@ namespace Actinic
 		{
 			// Force an update on all existing layers
 			lock (Actinic_Lights_Overlay_Queues) {
-				foreach (KeyValuePair <string, LED_Queue> queue in Actinic_Lights_Overlay_Queues) {
+				foreach (KeyValuePair<string, LED_Queue> queue in Actinic_Lights_Overlay_Queues) {
 					queue.Value.PushToQueue (true);
 				}
 			}
@@ -1544,7 +1544,7 @@ namespace Actinic
 			// As some animations depend partially on the VU volume system, the animation framework should be shut down first.
 			//  That will also disable the VU volume system if the animation had requested it.
 			if (IncludeOverlayQueues) {
-				foreach (KeyValuePair <string, LED_Queue> queue in GetAllQueues ()) {
+				foreach (KeyValuePair<string, LED_Queue> queue in GetAllQueues ()) {
 					HaltActivity (queue.Value, KeepAudioInput);
 				}
 			} else {
@@ -1626,9 +1626,9 @@ namespace Actinic
 
 			// Keeps track of queue performance to maintain consistent FPS
 			System.Diagnostics.Stopwatch Queue_PerfStopwatch = new System.Diagnostics.Stopwatch ();
-			#if DEBUG_PERFORMANCE
+#if DEBUG_PERFORMANCE
 			bool wasIdle = false;
-			#endif
+#endif
 			while (true) {
 				// Keep track of how long these steps take to maintain a consistent FPS
 				Queue_PerfStopwatch.Restart ();
@@ -1637,15 +1637,15 @@ namespace Actinic
 				// Note: For now, only the base layer can be a ReactiveAnimation; overlays will not get updated
 				AbstractReactiveAnimation selected_reactive_animation = Actinic_Lights_Queue.SelectedAnimation as AbstractReactiveAnimation;
 				if (Actinic_Lights_Queue.AnimationActive && selected_reactive_animation != null) {
-					#if DEBUG_VU_PERFORMANCE
+#if DEBUG_VU_PERFORMANCE
 					VU_Processing_PerfStopwatch.Restart ();
-					#endif
-					#if DEBUG_PERFORMANCE
+#endif
+#if DEBUG_PERFORMANCE
 					Console.WriteLine ("{0,6:F2} ms - updating audio snapshot", Queue_PerfStopwatch.Elapsed.TotalMilliseconds);
-					#endif
+#endif
 					// Grab a snapshot of the current audio volumes
 					if (ActiveAudioInputSystem.Running) {
-						double[] Audio_Volumes = ActiveAudioInputSystem.GetSnapshot ();
+						double [] Audio_Volumes = ActiveAudioInputSystem.GetSnapshot ();
 						while (Audio_Volumes_Snapshot.Count < Audio_Volumes.Length) {
 							Audio_Volumes_Snapshot.Add (0);
 						}
@@ -1660,13 +1660,13 @@ namespace Actinic
 					// Update the current reactive animation with this volume snapshot
 					selected_reactive_animation.UpdateAudioSnapshot (Audio_Volumes_Snapshot);
 					ReactiveSystem.PrintAudioInformationToConsole (selected_reactive_animation);
-					#if DEBUG_VU_PERFORMANCE
+#if DEBUG_VU_PERFORMANCE
 					Console.WriteLine ("# Time until acknowledged: {0,6:F2}", VU_Processing_PerfStopwatch.Elapsed.TotalMilliseconds);
-					#endif
+#endif
 				}
 
 				// -- Animation-specific queue management --
-				foreach (KeyValuePair <string, LED_Queue> queue in GetAllQueues ()) {
+				foreach (KeyValuePair<string, LED_Queue> queue in GetAllQueues ()) {
 					if (queue.Value.AnimationActive) {
 						UpdateAnimationStackForQueue (queue.Value, Queue_PerfStopwatch.Elapsed.TotalMilliseconds, queue.Key);
 					}
@@ -1678,24 +1678,24 @@ namespace Actinic
 				if (ActiveOutputSystemReady ()) {
 					Layer QueueLightSnapshot = null;
 					bool update_needed = false;
-					foreach (KeyValuePair <string, LED_Queue> queue in GetAllQueues ()) {
+					foreach (KeyValuePair<string, LED_Queue> queue in GetAllQueues ()) {
 						if (queue.Value.QueueEmpty == false) {
 							update_needed = true;
 							break;
 						}
 					}
-					foreach (KeyValuePair <string, LED_Queue> queue in GetAllQueues ()) {
+					foreach (KeyValuePair<string, LED_Queue> queue in GetAllQueues ()) {
 						QueueLightSnapshot = queue.Value.PopFromQueue ();
 						if (QueueLightSnapshot != null) {
-							#if DEBUG_PERFORMANCE
+#if DEBUG_PERFORMANCE
 							Console.WriteLine ("{0,6:F2} ms - grabbing snapshot from light queue ({1})", Queue_PerfStopwatch.Elapsed.TotalMilliseconds, queue.Key);
-							#endif
+#endif
 							Light_Snapshots.Add (QueueLightSnapshot);
 							queue.Value.QueueIdleTime = 0;
 							queue.Value.Lights = QueueLightSnapshot;
-							#if DEBUG_PERFORMANCE
+#if DEBUG_PERFORMANCE
 							Console.WriteLine ("{0,6:F2} ms - updating last processed ({1})", Queue_PerfStopwatch.Elapsed.TotalMilliseconds, queue.Key);
-							#endif
+#endif
 							queue.Value.MarkAsProcessed ();
 						} else if (update_needed) {
 							// Nothing new in the queue, but it must be added to
@@ -1714,7 +1714,7 @@ namespace Actinic
 					IAnimationOneshot selected_oneshot_animation = null;
 					bool deletionRequested = false;
 					bool queueWithMaskBlendingActive = false;
-					foreach (KeyValuePair <string, LED_Queue> queue in Actinic_Lights_Overlay_Queues) {
+					foreach (KeyValuePair<string, LED_Queue> queue in Actinic_Lights_Overlay_Queues) {
 						selected_oneshot_animation = queue.Value.SelectedAnimation as IAnimationOneshot;
 						if (queue.Value.BlendMode == Color.BlendMode.Mask || queue.Value.BlendMode == Color.BlendMode.Replace)
 							queueWithMaskBlendingActive = true;
@@ -1740,9 +1740,9 @@ namespace Actinic
 					// [only green as set above should show]
 
 					foreach (string key in EmptyQueues) {
-						#if DEBUG_OVERLAY_MANAGEMENT
+#if DEBUG_OVERLAY_MANAGEMENT
 						Console.WriteLine (" {0,6:F2} ms - removing overlay '{1}' as it is empty", Queue_PerfStopwatch.Elapsed.TotalMilliseconds, key);
-						#endif
+#endif
 						Actinic_Lights_Overlay_Queues.Remove (key);
 					}
 				}
@@ -1756,16 +1756,16 @@ namespace Actinic
 				Light_Snapshots.Clear ();
 
 				if (Light_Snapshot != null && ActiveOutputSystemReady ()) {
-					#if DEBUG_PERFORMANCE
+#if DEBUG_PERFORMANCE
 					wasIdle = false;
-					#endif
+#endif
 					// There's a frame to play and the system is ready
 					Actinic_Light_Queue_CurrentIdleWait = 1;
 					// Reset the idle counter, used for implementing interval animations
 
-					#if DEBUG_PERFORMANCE
+#if DEBUG_PERFORMANCE
 					Console.WriteLine ("{0,6:F2} ms - frame generated", Queue_PerfStopwatch.Elapsed.TotalMilliseconds);
-					#endif
+#endif
 					int retriesSinceLastSuccess = 0;
 					while (true) {
 						if (retriesSinceLastSuccess >= 5) {
@@ -1814,7 +1814,7 @@ namespace Actinic
 						Debug_Perf_LastPrint = DateTime.UtcNow;
 					}
 
-					#if DEBUG_BRIEF_PERFORMANCE
+#if DEBUG_BRIEF_PERFORMANCE
 					double allowedLatency = Render_MaxLatency +
 						ActiveOutputSystem.Configuration.AverageDeviceLatency;
 					if (ActiveOutputSystem.Configuration.AverageLatency > allowedLatency)
@@ -1823,23 +1823,23 @@ namespace Actinic
 							ActiveOutputSystem.Configuration.AverageRenderLatency,
 							Render_MaxLatency,
 							DateTime.Now.ToLongTimeString ());
-					#endif
-					#if DEBUG_PERFORMANCE
+#endif
+#if DEBUG_PERFORMANCE
 					Console.WriteLine ("# {0,6:F2} ms - frame finished", Queue_PerfStopwatch.Elapsed.TotalMilliseconds);
-					#endif
-					#if DEBUG_VU_PERFORMANCE
+#endif
+#if DEBUG_VU_PERFORMANCE
 					Console.WriteLine ("# {0,6:F2} ms - frame finished", VU_Processing_PerfStopwatch.Elapsed.TotalMilliseconds);
 					VU_Processing_PerfStopwatch.Stop ();
-					#endif
+#endif
 				} else {
-					#if DEBUG_PERFORMANCE
+#if DEBUG_PERFORMANCE
 					if (wasIdle == false)
 						Console.WriteLine ("# Idle ({0} ms loop)", Actinic_Light_Queue_CurrentIdleWait);
 					if (Actinic_Light_Queue_CurrentIdleWait == Actinic_Light_Queue_MaxIdleWaitTime)
 						wasIdle = true;
-					#endif
+#endif
 					System.Threading.Thread.Sleep (Actinic_Light_Queue_CurrentIdleWait);
-					foreach (KeyValuePair <string, LED_Queue> queue in GetAllQueues ()) {
+					foreach (KeyValuePair<string, LED_Queue> queue in GetAllQueues ()) {
 						queue.Value.QueueIdleTime += Actinic_Light_Queue_CurrentIdleWait;
 					}
 					if (Actinic_Light_Queue_CurrentIdleWait < Actinic_Light_Queue_MaxIdleWaitTime) {
@@ -1871,12 +1871,12 @@ namespace Actinic
 			if (QueueToModify.AnimationActive && QueueToModify.QueueEmpty) {
 				// Only add an animation frame if enabled, and the queue is empty
 				if ((QueueToModify.SelectedAnimation.RequestedAnimationDelay <= 0) ||
-				    (QueueToModify.QueueIdleTime >= QueueToModify.SelectedAnimation.RequestedAnimationDelay) ||
-				    (QueueToModify.AnimationForceFrameRequest == true)) {
+					(QueueToModify.QueueIdleTime >= QueueToModify.SelectedAnimation.RequestedAnimationDelay) ||
+					(QueueToModify.AnimationForceFrameRequest == true)) {
 					// Only add an animation frame if default delay is requested, or enough time elapsed in idle
-					#if DEBUG_PERFORMANCE
+#if DEBUG_PERFORMANCE
 					Console.WriteLine ("{0,6:F2} ms - queuing frame from active animation ({1})", PerfTracking_TimeElapsed, PerfTracking_QueueName);
-					#endif
+#endif
 					try {
 						// In all of the below, you must set QueueToModify to the new, intended output, otherwise
 						//  animation transitions will contain old values.
@@ -1884,15 +1884,15 @@ namespace Actinic
 							// Get the next frame, filter it onto the current,
 							// frame, and add it to the queue
 							QueueToModify.PushToQueue (
-								QueueToModify.SelectedAnimation.GetNextFrameFiltered(QueueToModify.Lights)
+								QueueToModify.SelectedAnimation.GetNextFrameFiltered (QueueToModify.Lights)
 							);
 						} else if ((QueueToModify.AnimationForceFrameRequest == true) &&
-						           (QueueToModify.SelectedAnimation.RequestSmoothCrossfade)) {
+								   (QueueToModify.SelectedAnimation.RequestSmoothCrossfade)) {
 							// Animation has a potentially-sharp change and requests a smooth cross-fade
 							// Get the next frame and insert it into the queue
 							// with an animated transition.
 							AddToAnimQueue (QueueToModify,
-								delegate(ref Layer lights) {
+								delegate (ref Layer lights) {
 									lights = QueueToModify.SelectedAnimation.GetNextFrame ();
 								}
 							);
@@ -1933,8 +1933,8 @@ namespace Actinic
 
 			for (int i = 0; i < LightSnapshots.Count; i++) {
 				if (LightSnapshots [i].Blending == Color.BlendMode.Favor
-				    || LightSnapshots [i].Blending == Color.BlendMode.Mask
-				    || LightSnapshots [i].Blending == Color.BlendMode.Replace) {
+					|| LightSnapshots [i].Blending == Color.BlendMode.Mask
+					|| LightSnapshots [i].Blending == Color.BlendMode.Replace) {
 					snapshots_requesting_replacement.Add (i);
 				} else {
 					// Blend the layers together
@@ -1961,10 +1961,10 @@ namespace Actinic
 		{
 			if (Actinic_Light_Queue_Thread != null) {
 				if (Actinic_Light_Queue_Thread.IsAlive == true) {
-					#if DEBUG_PERFORMANCE
+#if DEBUG_PERFORMANCE
 					if (QueueToModify.QueueCount > MaximumRemainingEvents)
 						Console.WriteLine ("-- {0} events in queue, waiting until {1}...", QueueToModify.QueueCount, MaximumRemainingEvents);
-					#endif
+#endif
 					while (QueueToModify.QueueCount > MaximumRemainingEvents) {
 						System.Threading.Thread.Sleep (5);
 					}
@@ -1988,7 +1988,7 @@ namespace Actinic
 				// Ignore if the output system isn't ready yet
 				return;
 			}
-;			// Get current lights
+;           // Get current lights
 			Layer CurrentLayer;
 			lock (QueueToModify.LightsLastProcessed) {
 				CurrentLayer = QueueToModify.LightsLastProcessed.Clone ();
@@ -2122,16 +2122,16 @@ namespace Actinic
 		{
 			Console.WriteLine ("Connecting to audio capture system...");
 
-			#if DEBUG_FORCE_DUMMYAUDIOINPUT
+#if DEBUG_FORCE_DUMMYAUDIOINPUT
 			Console.WriteLine ("DEBUGGING:  Forcing DummyAudioInput, not checking other options!");
 			InitializeAudioInputSystem (new DummyAudioInput ());
-			#else
+#else
 			bool retryAgain = true;
 			bool success = false;
 			while (retryAgain && success == false) {
 				success = false;
 				foreach (AbstractAudioInput audio_input_system in ReflectiveEnumerator.GetFilteredEnumerableOfType
-				         <AbstractAudioInput, IAudioInputDummy> (false)) {
+						 <AbstractAudioInput, IAudioInputDummy> (false)) {
 					if (InitializeAudioInputSystem (audio_input_system)) {
 						success = true;
 						break;
@@ -2148,7 +2148,7 @@ namespace Actinic
 						switch (Console.ReadKey ().Key) {
 						case ConsoleKey.S:
 							foreach (AbstractAudioInput audio_input_system in ReflectiveEnumerator.GetFilteredEnumerableOfType
-							         <AbstractAudioInput, IAudioInputDummy> (true)) {
+									 <AbstractAudioInput, IAudioInputDummy> (true)) {
 								if (InitializeAudioInputSystem (audio_input_system)) {
 									success = true;
 									retryAgain = false;
@@ -2174,7 +2174,7 @@ namespace Actinic
 					}
 				}
 			}
-			#endif
+#endif
 			// Initialization successful!
 			return true;
 		}
