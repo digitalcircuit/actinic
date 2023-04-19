@@ -26,10 +26,10 @@ jobs:
         # libmono-system-core4.0-cil, libmono-system-drawing4.0-cil
 
       - name: Check out source code
-        uses: actions/checkout@v2.1.0
+        uses: actions/checkout@v3
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
 
       - name: Restore dependencies
         run: |
@@ -64,7 +64,7 @@ jobs:
           echo "Run ID: ${{ github.run_id }}" >> ${{ github.workspace }}/Actinic/bin/Debug/build-info.txt
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Actinic-Linux
           path: |
@@ -78,10 +78,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v2.1.0
+        uses: actions/checkout@v3
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v1
+        uses: actions/setup-dotnet@v3
 
       - name: Restore dependencies
         run: |
@@ -105,7 +105,7 @@ jobs:
           echo "Run ID: ${{ github.run_id }}" >> ${{ github.workspace }}\Actinic\bin\Debug\build-info.txt
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Actinic-Windows
           path: |
